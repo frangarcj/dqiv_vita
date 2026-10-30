@@ -127,19 +127,20 @@ Viewer without the game: create `ux0:data/dqiv/fldtest<slot>.on` with one line p
 `game/Field` (Field.cs): `Field::Init` (op 29) builds the 25 x 40 quad grid + an orthographic `FieldCamera` (layer 9, mask 512, disables MainLoop's camera); `SetIndexList` (op 30) calls the native `FieldSet` (needs `DevInit`: PowerVR half-texel bias comes from deviceInfo) to fill the tile UVs; `FieldSymbol` = the 42 atlas icons (picid 19 = volcano: plain quad until WP2's `game/Volcano.hpp` exists, picked up automatically via `__has_include`); `BlinkMapSymbol` is the red blinking dots of the city map (MenuPortItemTable ICityMap code 3).
 Viewer: `ux0:data/dqiv/fieldtest<slot>.on` with lines `"<col0> <row0> [scale] [frames]"` (atlas block shown in the grid, all 42 symbols beside it) boots normally but holds NativeManager paused; `tools/run_vita3k.sh 40 "150,270,390"`.
 
-**UI visual checklist (WP4, Vita3K, `ui_tour`, 2026-10-27)** - every screen was built, filled by `MenuPortItem::DebugFill` (sample text, visibility codes) and screenshotted; result = layout/atlas/text sane unless noted.
-Run: `CFG_EXTRA='ui_tour=150:57,150:58,...' tools/run_vita3k.sh 75 ""` -> `build/shots/dqivn<slot>_ui<ID>.jpg`.
+**UI visual checklist (DQ4, Vita3K, `ui_tour`, 2026-10-30)** - every screen id 1..80 (except 55 name entry, which needs the native's message, and 74 PortalButton, an empty port) was built, filled by `MenuPortItem::DebugFill` (sample text, visibility codes) and screenshotted over the real DQ4 title background; result = layout/atlas/text sane unless noted.
+Run (3 runs of ~27 ids, ~150 s each): `CFG_EXTRA='ui_tour=150:1,150:2,...' tools/run_vita3k.sh 150 ""` -> `build/shots/dqivn<slot>_ui<ID>.jpg`.
 | family | ids | result |
 |---|---|---|
-| title / start | 52 53 54 (+55 74 WP3) | OK (real flow verified with native: labels, grey disabled entries, back button) |
-| main menu | 1 2 3 4 5 6 7 8 9 10 11 13 14 18-23 | OK; 12 Chapter shows a grey 450x450 box: `Menu/map/hyodai1` does not exist in the original resources (C# would NRE) |
-| shop / inn / church / bank / museum | 57-72 | OK (frames, +/- buttons, paging arrows, item panels) |
-| battle menus | 29-43 | OK (status bars, command icons, target frames, battle-IM tabs); 38/42 partially empty until native fills codes |
-| maps | 24 ShopMap, 25 CityMap, 26 WorldLargeMap, 28 Encyclopedia | 24 shows the shop interior picture, 28 the parchment + 12 buttons; 25/26 empty until native sends the map name/flags (not exercised) |
-| casino / minigames | 44-51 78-79 81-91 93-101 | OK; ids 87 89 90 91 97 98 show nothing without native codes (invisible by design) |
-| network (offline) / license | 75-77 / 80 | OK; license text scrolls, privacy button reacts to the touch ray |
-| not exercised | 26/25 with real data, 85/86/92 content, touch hit-testing on real hardware | |
-Contact sheets: `build/ui_sheets/sheet1..6.png` (not committed); per-screen shots `build/ui_sheets/dqivn5_ui<ID>.jpg`.
+| title / start | 52 53 54 56 (73 TitleTouch is invisible by design) | OK (buttons, grey/red back icon) |
+| main menu | 1-11 13-23 27 | OK; atlas icons (items, arrows, status gems, back button, +/- triangles) render upright; windows without a frame code only show their text (the native sends the frame) |
+| 12 Chapter | `Menu/map/hyodai1` exists in DQ4: banner shown on its black card | OK |
+| battle | 29-43 | OK: faces (DQ4 `Create(2)` + AddIcon 0.3), tactics buttons with the 3 icon layers (id 30), spell/item lists, target frames; 38/42 partly empty until native fills codes |
+| maps | 24 ShopMap (picture + frame), 25 CityMap, 26 WorldLargeMap, 28 Encyclopedia | 24/28 OK; 25/26 empty until native sends the map name / flags (not exercised with real data) |
+| casino / coliseum | 44-51 | OK (+/- buttons with up/down triangles, frames) |
+| shop / bank / church | 57-67, 68 Chapter2Status, 69 TorunekoMiseban, 70 NENE_ItemView | OK; 70 is a dynamic frame (-1) that stays empty until native sends the frame/text |
+| network / license | 75-80 | OK (license text and scroll knob, Privacy Policy button) |
+| not exercised | pad navigation on real native screens, 25/26 with data, 55 InputName, 74 | |
+
 ### Battle (forced through the native debug hooks)
 
 `ux0:data/dqiv/battletest<slot>.on` (`game/BattleTest`): the game boots normally (title), then after `delay` frames the driver calls libdq4core's own debug entry points, as the original debug menu did: `DebugSetMapName("B-<short battle map>")`, optional `DebugSetValue(12, id, 0)`... `(12,-1,0)` (party; the default debug party is the hero LV14 + Harry), `DebugSetValue(8, g, monster<<16 | count)` for groups 0..3, then `DebugSetValue(8, 4, 0)` = `setTileId` + `Encount::brew` + `Global::startBattle()` (game part 5). File lines: `map btlca1` (the SHORT native name; `unity_load_fld` copies it into a 16-byte stack buffer and builds `map/btl/btlca/stage/btlca1`, so a full path smashes the stack), `mon <id> <count>` (up to 4), `party <id>`, `delay N`, `repeat N`.
