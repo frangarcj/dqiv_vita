@@ -262,10 +262,6 @@ void NativeManager::cmd_mesh() {
     if ((i & 3) == 0) color.a = (uint8_t)GetInt();
     col[i] = color;
   }
-  { static int dbg[24]; int sl = -1; for (int k = 0; k < 24; k++) if (m_dssa[k] == mc) sl = k;   // TMPDBG
-    if (sl >= 0 && dbg[sl]++ < 2 && n > 0) { float u0 = uv[0].x, u1 = uv[0].x, v0 = uv[0].y, v1 = uv[0].y, x0 = vtx[0].x, x1 = x0, y0 = vtx[0].y, y1 = y0, z0 = vtx[0].z;
-      for (int k = 0; k < n; k++) { u0 = fminf(u0, uv[k].x); u1 = fmaxf(u1, uv[k].x); v0 = fminf(v0, uv[k].y); v1 = fmaxf(v1, uv[k].y); x0 = fminf(x0, vtx[k].x); x1 = fmaxf(x1, vtx[k].x); y0 = fminf(y0, vtx[k].y); y1 = fmaxf(y1, vtx[k].y); }
-      l_info("TMPDBG mesh slot %d n=%d uv u[%f,%f] v[%f,%f] xy x[%f,%f] y[%f,%f] z0=%f pos=%f,%f,%f", sl, n, u0, u1, v0, v1, x0, x1, y0, y1, z0, pos.x, pos.y, pos.z); } }
   int ni = n * 6 / 4;
   std::vector<int> tri(m_output + m_output_offset, m_output + m_output_offset + ni);
   m_output_offset += ni;
