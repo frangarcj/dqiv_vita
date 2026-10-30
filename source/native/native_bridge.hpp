@@ -16,8 +16,9 @@ namespace NativeCall {
 bool Bind();                       // resolve every symbol with so_symbol(); false if a required one is missing
 bool IsBound();
 
-// ---- libdq4core exports (Neon.cs) ----
-extern bool (*DevInit)(const char* assetsPath, const char* savePath, int langagesNumber, int deviceInfo);
+// ---- libdq4core exports (NativeCall.cs, class Normal) ----
+// ResetNativePacket, MenuPortResetNativePacket, FieldSet, ParticleSystemInit/ResetNativePacket are DQ5-only: they are NULL in this game, callers must test them.
+extern bool (*DevInit)(const char* assetsPath, const char* savePath, int langagesNumber);
 extern void (*GameInit)(int* input, int* output, float* output_float, const char** str);
 extern void (*ResetNativePacket)(int* input, int* output, float* output_float, const char** str);
 extern void (*GameUpdate)(int pad_press, int pad_toggle);
@@ -35,12 +36,12 @@ extern int (*IsLoadNativeCode)();
 extern void (*DebugSetMapName)(const char*);
 extern void (*DebugSetValue)(int, unsigned, unsigned);
 extern void (*DebugGetValue)(int, unsigned*);
-// JNI: Java_com_cattlecall_unityandroidaccessor_OverrideUnityPlayerNativeActivity_LoadFileList(env, cls, assetManager)
-extern void (*LoadFileList_JNI)(void* env, void* cls, void* assetManager);
 
 // ---- derived, same names as NativeCall.cs ----
-extern int s_deviceInfo;           // DQIV_DEVICE_INFO (bit0 = PowerVR/SGX)
-bool DeviceInit();                 // DevInit(OBB path, save path, lang, s_deviceInfo)
-bool LoadFileList();               // Boot.loadFilelistFromAssets(): LoadFileList_JNI with a fake asset manager
+// Dev hooks that depend on DQ5 semantics of DebugSetValue ids / DQ5-only mangled symbols (Encount::brew, PartyStatusUtility::setNoDamageEnable, Global::startTown(int),
+// Global::loadGame, FieldPlayerManager ...). NOT re-derived for libdq4core yet: WarpTest, BattleTest and the DevCheats patches are disabled (logged) while this is false.
+// TODO(dq4): re-derive with tools/re/decomp.sh (see docs/TODO_DQ4.md), then flip.
+constexpr bool kDevHooksVerified = false;
+bool DeviceInit();                 // DevInit(OBB path, save path, lang)
 
 }  // namespace NativeCall

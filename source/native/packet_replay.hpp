@@ -12,7 +12,7 @@ namespace PacketReplay {
 bool Init();                       // reads replay.on
 bool Active();
 bool QuitAtEnd();
-// Copies frame `frame` into the arrays (out: 8192 ints, outF: 8192 floats, str0: strCap bytes, menuNative: 2048 shorts). False if there is no such frame (end of trace).
+// Copies frame `frame` into the arrays (out: 8192 ints, outF: 8192 floats, str0: strCap bytes, menuNative: 1089 shorts (DQ4)). False if there is no such frame (end of trace).
 bool LoadFrame(int frame, int* out, float* outF, char* str0, int strCap, short* menuNative);
 int  FramesPlayed();
 }

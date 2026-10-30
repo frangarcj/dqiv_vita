@@ -69,6 +69,7 @@ bool Requested() {
   return true;
 }
 void Create() {
+  if (!NativeCall::kDevHooksVerified) { l_warn("BattleTest: DISABLED for DQ4 (DebugSetValue ids not re-derived, see docs/TODO_DQ4.md)"); return; }
   GameObject* g = new GameObject("BattleTestDriver");
   g->AddComponent<BattleTestDriver>();
   Object::DontDestroyOnLoad(g);

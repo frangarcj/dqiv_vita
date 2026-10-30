@@ -7,6 +7,7 @@
 #include <algorithm>
 #include <cmath>
 
+#include "game/Boot.hpp"
 #include "game/FieldSymbol.hpp"
 #include "game/MainLoop.hpp"
 #include "native/native_bridge.hpp"
@@ -15,6 +16,27 @@
 Camera* Field::m_camera = nullptr;
 Quaternion Field::m_objRot = Quaternion::Euler(90.f, 0.f, 0.f);
 Color Field::m_color = Color::white;
+float Field::c_uvAdjustZero = 0.f;
+
+// DQ4 Field.SystemInit (the Custom/Field material creation of the C# is still done by Init(): TODO(dq4) Field port).
+void Field::SystemInit() {
+  TextAsset* textAsset = Resources::Load<TextAsset>("FieldAdjustDeviceModel");
+  std::string text = textAsset ? textAsset->text() : std::string();
+  c_uvAdjustZero = 0.f;
+  if (Boot::s_gpuName.find("POWERVR") != std::string::npos || Boot::s_gpuName.find("SGX") != std::string::npos) c_uvAdjustZero = 0.0005f;
+  if (!Boot::s_deviceModel.empty()) {
+    size_t p = 0;
+    while (p <= text.size()) {
+      size_t q = text.find('\n', p); std::string line = text.substr(p, q == std::string::npos ? std::string::npos : q - p);
+      size_t t = line.find('\t');
+      if (t != std::string::npos && t > 0 && line.substr(0, t) == Boot::s_deviceModel) { c_uvAdjustZero = (float)atof(line.c_str() + t + 1); break; }
+      if (q == std::string::npos) break;
+      p = q + 1;
+    }
+  }
+  if (textAsset) Resources::UnloadAsset(textAsset);
+  l_info("Field::SystemInit: c_uvAdjustZero=%g (gpu \"%s\")", c_uvAdjustZero, Boot::s_gpuName.c_str());
+}
 
 namespace {
 struct FloatingObject {
@@ -167,4 +189,8 @@ void Field::SetIndexList(int startX, int startY, int width, const std::vector<in
   }
   m_mesh->uv = m_uv;
   m_mesh->SetDirty();
+}
+
+void Field::UpdatePattern() {
+  // TODO(dq4): port Field.UpdatePattern (m_patternCounter / m_patternInfo / m_patternAcc / m_patternTarget; part of the DQ4 Field delta, 249 lines)
 }

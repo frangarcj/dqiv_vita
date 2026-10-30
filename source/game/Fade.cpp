@@ -89,9 +89,10 @@ bool Fade::IsEnd() { return l_fade[0] && l_fade[1] && l_fade[0]->m_count <= 0 &&
 Camera* Fade::FullCamera(int i) { return l_fullCam[i]; }
 void Fade::SetFadePriority(int layer, int priority) { l_fade[layer]->SetPriority(priority); }
 
-void Fade::Awake() {
+Coroutine Fade::StartCo() {
   std::vector<Vector3> vtx = { Vector3(-1.f, -1.f, 0.f), Vector3(1.f, -1.f, 0.f), Vector3(1.f, 1.f, 0.f), Vector3(-1.f, 1.f, 0.f) };
   std::vector<int> indic = { 0, 2, 1, 2, 0, 3 };
+  while ((Global::Flag & 0x10000) != 0) co_yield 0;
   l_shader[0] = Shader::Find("Custom/FrontFade");
   l_shader[1] = Shader::Find("Custom/BackFade");
   Transform* cam = TouchPad::m_camera->transform();
@@ -113,6 +114,8 @@ void Fade::Awake() {
 }
 
 void Fade::Update() {
-  l_fade[0]->Update();
-  l_fade[1]->Update();
+  if (l_fade[1] != nullptr) {
+    l_fade[0]->Update();
+    l_fade[1]->Update();
+  }
 }

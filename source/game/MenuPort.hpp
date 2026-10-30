@@ -55,9 +55,8 @@ public:
   void SendByteVec(const std::vector<unsigned char>& prms);
 };
 
-// Ports implemented by other work packages (category 3 = EndrollPort, 5 = SlimeTouchPort (WP6); category 4 = NetConnection stub). MenuPort::CreateMenuPort
+// Ports implemented by other work packages (category 3 = StaffrollPort (DQ4; DQ5 had EndrollPort + category 5 SlimeTouchPort); category 4 = NetConnection stub). MenuPort::CreateMenuPort
 // calls these factories; the defaults (menu_port_factories.cpp, weak) log and return nullptr. A WP6 port overrides with a strong definition:
 //   MenuPort* dqiv_CreateEndrollPort(short port, short type) { return new EndrollPort(port, type); }
-MenuPort* dqiv_CreateEndrollPort(short port, short type);
+MenuPort* dqiv_CreateStaffrollPort(short port);      // DQ4 category 3 (weak UNPORTED stub in ui_weak_stubs.cpp until StaffrollPort is ported)
 MenuPort* dqiv_CreateNetConnection(short port);
-MenuPort* dqiv_CreateSlimeTouchPort(short port, short type);

@@ -11,7 +11,7 @@
  *   u32 n_out          then n_out x i32  m_output (native->host, [0] = flag, ..., -1 terminator)
  *   u32 n_float        then n_float x f32 m_output_float (used part: found with a sentinel pre-fill)
  *   u32 str_len        then str_len bytes: m_string[0] (NUL terminated), 0 if null
- *   u32 n_menu_unity   then n_menu_unity  x i16  MenuPort host->native buffer (whole 128)
+ *   u32 n_menu_unity   then n_menu_unity  x i16  MenuPort host->native buffer (whole 129)
  *   u32 n_menu_native  then n_menu_native x i16  MenuPort native->host buffer (up to the write cursor buf[64])
  */
 #pragma once

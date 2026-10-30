@@ -68,9 +68,8 @@ MenuPort* MenuPort::CreateMenuPort(short port, short catego, short type) {
   switch (catego) {
     case 1: result = MenuPortItemTable::CreateMenuPortItem(port, type); break;
     case 2: result = new MenuMessage(port); break;
-    case 3: result = dqiv_CreateEndrollPort(port, type); break;
+    case 3: result = dqiv_CreateStaffrollPort(port); break;       // DQ4 StaffrollPort (DQ5: EndrollPort(port, type))
     case 4: result = dqiv_CreateNetConnection(port); break;
-    case 5: result = dqiv_CreateSlimeTouchPort(port, type); break;
     default: Debug::LogError("Error. Not Find Unity method. catego:%d", (int)catego); break;
   }
   UiCameras::s_creatingBoot = false;

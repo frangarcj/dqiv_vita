@@ -17,7 +17,8 @@ public:
   static bool IsEnd();
   static void SetFadeInBlack(int frames);
   static void SetFadeInWhite(int frames);
-  void Awake() override;
+  bool HasCoStart() const override { return true; }
+  Coroutine StartCo() override;      // DQ4: IEnumerator Start() waits for FLAG_PAUSE to clear before building the planes (DQ5: Awake)
   void Update() override;
   static void SetFadePriority(int layer, int priority);
   // landscape (Layout::Wide): full-surface cameras for everything that must cover the whole surface although the MenuCamera is only the panel.

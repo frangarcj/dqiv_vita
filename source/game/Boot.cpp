@@ -9,6 +9,8 @@
 #include "utils/logger.h"
 
 bool Boot::s_useFixedUpdate = false;
+std::string Boot::s_deviceModel;
+std::string Boot::s_gpuName;
 
 #ifdef DQIV_FAST_BOOT
 static const float c_fadeTime = 0.35f, c_waitTime = 0.6f;
@@ -50,7 +52,7 @@ Coroutine Boot::Logo() {
   obj->transform->localRotation = Quaternion::identity;
   obj->renderer()->setMaterial(mat);
   co_yield 0;
-  const char* logos[2] = { "boot/sqex", "boot/arte_logo720_240" };   // Boot.m_logoTexture[2]
+  const char* logos[2] = { "title/sqex", "title/arte_logo720_240" };   // Boot.m_logoTexture[2] (DQ4: Resources "Title/", DQ5 had "Boot/")
   for (const char* path : logos) {
     Texture* a = Resources::Load<Texture>(path);
     bool press = false, bSkip = false;
@@ -84,7 +86,7 @@ Coroutine Boot::Logo() {
 Coroutine Boot::StartCo() {
   Screen::fullScreen = true;
   GetLangages::Init();                                                // language from the config (README "Language")
-  { TextAsset* qm = Resources::Load<TextAsset>("boot/quitmsg"); ApplicationQuit::SystemInit(qm ? qm->text() : std::string()); }   // Boot.m_quitmsg
+  { TextAsset* qm = Resources::Load<TextAsset>("quitmsg"); ApplicationQuit::SystemInit(qm ? qm->text() : std::string()); }   // Boot.m_quitmsg (DQ4: top-level Resources "quitmsg")
   {
     Coroutine i2 = Logo();
     while (i2.MoveNext()) {
@@ -94,7 +96,9 @@ Coroutine Boot::StartCo() {
   }
   s_useFixedUpdate = false;
   while (NativeCall::IsLoadNativeCode() == 0) co_yield 0;
-  NativeCall::LoadFileList();                                         // OverrideUnityPlayerNativeActivity.loadFilelistFromAssets()
-  NativeCall::s_deviceInfo |= 1;                                      // PowerVR/SGX (Vita = SGX543)
+  // DQ4 (Boot.cs): no loadFilelistFromAssets (libdq4core parses the OBB itself) and no deviceInfo; instead android.os.Build.MODEL -> s_deviceModel and the
+  // GPU name from /system/lib/egl/egl.cfg -> s_gpuName (used by Field.SystemInit: PowerVR/SGX half-texel UV bias). Vita = SGX543.
+  s_deviceModel = "";                                                 // Build.MODEL has no Vita equivalent (Field's FieldAdjustDeviceModel list has no match -> default bias)
+  s_gpuName = "POWERVR SGX543MP4+";
   Engine::LoadLevel("dq4sp");
 }
