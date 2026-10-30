@@ -7,6 +7,7 @@
 
 // ------------------------------------------------------------------------------------------------ statics
 std::string MenuParts::FONT_NAME;
+float MenuParts::HIRO_NAME_SCALE = 1.f;
 float MenuParts::BIAS_FONT_SIZE = 0.f, MenuParts::BIAS_FONT_LINE = 0.f, MenuParts::BIAS_FONT_Y = 0.f, MenuParts::NAME_BASE_SCALE = 1.f;
 int MenuParts::APPLY_HERO = 0;
 

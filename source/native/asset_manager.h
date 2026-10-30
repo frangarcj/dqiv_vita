@@ -1,4 +1,4 @@
-/* NDK AAssetManager subset consumed by libdq4core (LoadFileList) and libsdlib (BGM streaming). */
+/* NDK AAssetManager subset consumed by libsdlib (BGM streaming; libdq4core reads the OBB itself). */
 #ifndef DQIVN_ASSET_MANAGER_H
 #define DQIVN_ASSET_MANAGER_H
 #include <stdint.h>

@@ -2,6 +2,7 @@
 #include "game/MenuPortSystem.hpp"
 #include "game/ApplicationQuit.hpp"
 #include "game/Boot.hpp"
+#include "game/MenuParts.hpp"
 #include "game/Global.hpp"
 #include "game/SceneCamera.hpp"
 #include "game/UiCameras.hpp"
@@ -12,8 +13,8 @@
 #include "native/native_bridge.hpp"
 #include "utils/logger.h"
 
-short MenuPortSystem::s_unityBuffer[128];
-short MenuPortSystem::s_nativeBuffer[2048];
+short MenuPortSystem::s_unityBuffer[129];      // DQ4: c_unityTotalSize 129 (DQ5 128)
+short MenuPortSystem::s_nativeBuffer[1089];     // DQ4: c_nativeTotalSize 1089 = 65 + 1024 (DQ5 2048)
 MenuPort* MenuPortSystem::s_ports[32];
 int MenuPortSystem::s_pushState = 0;
 Ray MenuPortSystem::s_ray;
@@ -29,18 +30,18 @@ short* dqiv_menu_unity_buffer() { return MenuPortSystem::s_unityBuffer; }
 short* dqiv_menu_native_buffer() { return MenuPortSystem::s_nativeBuffer; }
 
 void MenuPortSystem::SystemInit() {
-  NativeCall::MenuPortInit(32, s_unityBuffer, 128, s_nativeBuffer, 2048);
-  GameObject* gameObject = new GameObject();
+  NativeCall::MenuPortInit(32, s_unityBuffer, 129, s_nativeBuffer, 1089);
+  GameObject* gameObject = new GameObject("MenuPortSystem");
   gameObject->AddComponent<MenuPortSystem>();            // (MenuPortSystemEx / FixedUpdate variant: never used)
   MenuPort::s_frameCounter = 0;
 }
 
-void MenuPortSystem::ResetNativePacket() { NativeCall::MenuPortResetNativePacket(s_unityBuffer, s_nativeBuffer); }
+void MenuPortSystem::ResetNativePacket() { if (NativeCall::MenuPortResetNativePacket) NativeCall::MenuPortResetNativePacket(s_unityBuffer, s_nativeBuffer); }   // DQ5-only export, unused in DQ4
 
 void MenuPortSystem::Send(short port, const std::vector<short>& prms) {
   short num = s_unityBuffer[64];
   short num2 = s_unityBuffer[32 + port];
-  if (num + (int)prms.size() + 2 > 128) { l_error("MenuPortSystem::Send: host->native buffer full (port %d, %d shorts, cursor %d)", (int)port, (int)prms.size(), (int)num); return; }
+  if (num + (int)prms.size() + 2 > 129) { l_error("MenuPortSystem::Send: host->native buffer full (port %d, %d shorts, cursor %d)", (int)port, (int)prms.size(), (int)num); return; }
   s_unityBuffer[(s_unityBuffer[port] != 0 && num2 != 0) ? num2 : port] = num;
   s_unityBuffer[num++] = (short)prms.size();
   for (size_t i = 0; i < prms.size(); i++) s_unityBuffer[num++] = prms[i];
@@ -80,7 +81,7 @@ MenuPort::Param MenuPortSystem::Receive(short port) {
   MenuPort::Param param;
   if (s_nativeBuffer[port] != 0) {
     short offset = s_nativeBuffer[port];
-    if (offset < 65 || offset >= 2047) l_error("MenuPortSystem::Receive(%d): bad head offset %d (frame %d)", (int)port, (int)offset, Time::frameCount);
+    if (offset < 65 || offset >= 1088) l_error("MenuPortSystem::Receive(%d): bad head offset %d (frame %d)", (int)port, (int)offset, Time::frameCount);
     param = MenuPort::Param(offset);
     s_nativeBuffer[port] = param.Next();
   }
@@ -128,8 +129,8 @@ void MenuPortSystem::internalUpdate() {
         break;
       case 4: Sound::SetVolumeSE((float)(param[2] / 25 - 1)); break;
       case 5: Sound::SetVolumeBGM((float)(param[2] / 25 - 1)); break;
+      case 7: MenuParts::HIRO_NAME_SCALE = (float)param[2] / (float)param[3]; break;
       case 8: TouchPad::SetPosPadSize(param[2], param[3]); break;
-      case 9: TouchPad::SetInputMode(param[2]); break;
       case 999: ApplicationQuit::Create(); break;
       default: Debug::LogError("Port%d Unknown CMD:%d", (int)num, (int)param[1]); break;
     }

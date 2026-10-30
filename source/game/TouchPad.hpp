@@ -3,8 +3,9 @@
 //   * RawPad/RawPads verbatim (press/toggle edges of Input.touches[0], rays through a camera) -> the hit-test source for every MenuPort button,
 //   * the ray API MenuPortSystem needs: GetPressRay/GetToggleRay/IsTouchPress, m_pressRay, m_camera (= MenuCamera).
 // NOT ported: the on-screen virtual pad (ring, rotate bar, Map/Command/Talk/PadPos buttons, MOVE/ROT/KEY states): physical buttons replace it (06 §3).
-// SetPosPadSize/SetInputMode/SetPadBlink are accepted (their state is kept: l_inputMode decides nothing here but is queryable).
+// SetPosPadSize/SetPadBlink are accepted (their state is kept). DQ4 has no SetInputMode (DQ5 port-0 command 9).
 #pragma once
+#include <vector>
 #include "miniunity.hpp"
 using namespace miniunity;
 
@@ -17,15 +18,19 @@ public:
 
 class RawPads {
 public:
-  bool bIsPress() const { return m_pad.bPress; }
-  bool bIsToggle() const { return m_pad.bToggle; }
-  Ray GetRay(Camera* cam) const;        // C# Ray(cam)
-  Vector3 WorldDelta(Camera* cam) const;
-  Vector3 BeginWorldDelta(Camera* cam) const;
-  void Update();                        // once per frame from Input.touches[0]
-  const RawPad& pad() const { return m_pad; }
+  explicit RawPads(int maxim);          // DQ4 RawPads(int maxim): one RawPad per simultaneous finger (TouchPad uses 1)
+  int Count = 0;                        // C# Count { get; private set; }
+  RawPad& operator[](int index) { return pads[index]; }
+  const RawPad& operator[](int index) const { return pads[index]; }
+  bool bIsPress() const { return pads[0].bPress; }
+  bool bIsToggle() const { return pads[0].bToggle; }
+  Ray GetRay(Camera* cam, int idx = 0) const;        // C# Ray(cam, idx = 0)
+  Vector3 WorldDelta(Camera* cam, int idx = 0) const;
+  Vector3 BeginWorldDelta(Camera* cam, int idx = 0) const;
+  void Update();                        // once per frame from Input.touches[]
+  const RawPad& pad() const { return pads[0]; }
 private:
-  RawPad m_pad;
+  std::vector<RawPad> pads;
 };
 
 class TouchPad : public Component {
@@ -35,7 +40,7 @@ public:
                        PAD_B = 1024, PAD_X = 2048, PAD_Y = 4096, PAD_START = 8192, PAD_SELECT = 16384, PAD_DEBUG = 32768, PAD_UDLR = 15, PAD_BLR = 48, PAD_ALL = 63;
 
   static Camera* m_camera;
-  static int m_press, m_toggle, m_externalToggle;   // GameUpdate(m_press, m_toggle)
+  static int m_press, m_toggle, m_upToggle, m_externalToggle;   // GameUpdate(m_press, m_toggle); m_upToggle = DQ4: the pad word of the frame before the release
   static Ray m_pressRay;
   static bool m_bVisible, m_bPressESC, m_bToggleESC;
   static RawPads m_pad;
@@ -48,13 +53,11 @@ public:
   static bool IsTouchPress() { return m_pad.bIsPress(); }
   static void AdjustCameraOrtho();                   // MenuCamera.orthographicSize = 225 / aspect
   static void SetPosPadSize(int pos, int size);
-  static void SetInputMode(int mode);
-  static int  GetInputMode();
 
   void Awake() override;
   void Update() override;                            // factUpdate()
 private:
   static int s_prevPress;
   static ePadState l_state; static bool l_NoMove; static Vector2 l_prsStart; static bool l_bSystemLock;
-  static int l_inputMode, l_padPos, l_padSize; static bool l_padBlink;
+  static int l_padPos, l_padSize; static bool l_padBlink;
 };

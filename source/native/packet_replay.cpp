@@ -54,8 +54,8 @@ bool LoadFrame(int frame, int* out, float* outF, char* str0, int strCap, short* 
   if (ok) { ok = R32(f, n) && (int)n <= strCap; if (ok) { ok = n == 0 || fread(str0, 1, n, f) == n; if (n == 0) str0[0] = 0; } }
   if (ok) { ok = R32(f, n); if (ok) { tmp.assign((n + 1) / 2 + 1, 0); ok = fread(tmp.data(), 2, n, f) == n; } }   // host->native menu buffer (ignored)
   if (ok) {
-    ok = R32(f, n) && n <= 2048;
-    if (ok) { memset(menuNative, 0, 2048 * sizeof(short)); ok = fread(menuNative, 2, n, f) == n; }
+    ok = R32(f, n) && n <= 1089;
+    if (ok) { memset(menuNative, 0, 1089 * sizeof(short)); ok = fread(menuNative, 2, n, f) == n; }
   }
   fclose(f);
   if (!ok) { l_error("PacketReplay: %s is truncated / corrupt", path); return false; }

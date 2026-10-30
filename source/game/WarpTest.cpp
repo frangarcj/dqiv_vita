@@ -125,6 +125,7 @@ void CreateFromCfg() {
   Create();
 }
 void Create() {
+  if (!NativeCall::kDevHooksVerified) { l_warn("WarpTest: DISABLED for DQ4 (DQ5 debug-hook ids / mangled names not re-derived, see docs/TODO_DQ4.md)"); return; }
   GameObject* g = new GameObject("WarpDriver");
   g->AddComponent<WarpDriver>();
   Object::DontDestroyOnLoad(g);

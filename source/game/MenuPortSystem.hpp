@@ -9,8 +9,8 @@ using namespace miniunity;
 
 class MenuPortSystem : public Component {
 public:
-  static short s_unityBuffer[128];        // host -> native
-  static short s_nativeBuffer[2048];      // native -> host
+  static short s_unityBuffer[129];        // host -> native
+  static short s_nativeBuffer[1089];      // native -> host
   static MenuPort* s_ports[32];
   static void SystemInit();               // NativeCall.MenuPortInit(32, unity, 128, native, 2048) + spawns the component
   static void ResetNativePacket();

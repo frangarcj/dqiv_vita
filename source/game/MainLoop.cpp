@@ -1,4 +1,4 @@
-// game/MainLoop.cpp -- OWNER: WP3. C# source: MainLoop.cs. The SystemInit order matters (01 §1.1): DevInit, ..., ParticleSystemInit, ..., MenuPortInit, GameInit.
+// game/MainLoop.cpp -- OWNER: WP3. C# source: MainLoop.cs. The SystemInit order matters (01 §1.1): DevInit, ..., MenuPortInit, GameInit. (DQ4: no ParticleSystem, + Field.SystemInit)
 #include "game/MainLoop.hpp"
 
 #include <cstdio>
@@ -14,7 +14,7 @@
 #include "game/MenuPortSystem.hpp"
 #include "game/MeshChara.hpp"
 #include "game/NativeManager.hpp"
-#include "game/ParticleSystem.hpp"
+#include "game/Field.hpp"
 #include "game/Riseup.hpp"
 #include "game/SceneCamera.hpp"
 #include "game/Sound.hpp"
@@ -27,10 +27,9 @@ Camera* MainLoop::m_camera = nullptr;
 bool MainLoop::s_ready = false;
 
 Coroutine MainLoop::StartCo() {
-  Debug::Log("MainLoop.Start()");
   m_camera = camera();
   Object::DontDestroyOnLoad(gameObject);
-  if (!NativeCall::DeviceInit()) l_error("DevInit returned false: libdq4core could not open its data (OBB / filelist)");
+  if (!NativeCall::DeviceInit()) l_error("DevInit returned false: libdq4core could not open its data (OBB)");
   BackColor::SystemInit();
   Fade::SystemInit();
   Capture::SystemInit();
@@ -38,12 +37,12 @@ Coroutine MainLoop::StartCo() {
   Chara::SystemInit();
   Riseup::SystemInit();
   MeshChara::SystemInit();
-  ParticleSystem::SystemInit();
   SceneCamera::SystemInit();
   TouchPad::AdjustCameraOrtho();
   MenuParts::SystemInit();
   MenuPortSystem::SystemInit();
   Sound::SystemInit();
+  Field::SystemInit();
   NativeManager::Init();
   l_success("libdq4core: DevInit + GameInit done");
   Vector3 pos(0.f, 0.f, 0.f);
@@ -52,7 +51,11 @@ Coroutine MainLoop::StartCo() {
   SceneCamera::SetTarget(pos);
   SceneCamera::Update();
   co_yield 0;
-  Global::Flag &= ~0x10000;      // FLAG_PAUSE cleared: from now on NativeManager.Update runs each frame
+  // DQ4: (Boot.s_useFixedUpdate -> MainLoopEx, never on Vita)
+  Global::Flag |= 131072;        // FLAG_CLEANER on while FLAG_PAUSE is cleared, released after 0.5 s
+  Global::Flag &= -65537;
+  co_yield WaitForSeconds{0.5f};
+  Global::Flag &= -131073;       // from now on NativeManager.Update runs each frame
   s_ready = true;
   l_success("MainLoop: running (Global.Flag=0x%x)", Global::Flag);
 }
@@ -93,6 +96,5 @@ void MainLoop::Update() {
 
 void MainLoop::OnApplicationPause(bool pause) {
   Sound::SystemPause(pause);
-  if (!pause) { NativeManager::ResetNativePacket(); MenuPortSystem::ResetNativePacket(); ParticleSystem::ResetNativePacket(); }
 }
 void MainLoop::OnApplicationQuit() { Sound::SystemQuit(); }

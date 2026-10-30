@@ -13,7 +13,6 @@
 #include "game/Fade.hpp"
 #include "game/Field.hpp"
 #include "game/Global.hpp"
-#include "game/ParticleSystem.hpp"
 #include "game/PadFocus.hpp"
 #include "game/DevCheats.hpp"
 #include "game/SceneCamera.hpp"
@@ -37,36 +36,35 @@ int NativeManager::m_output[8192];
 float NativeManager::m_output_float[8192];
 const char* NativeManager::m_string[32];
 int NativeManager::m_input_offset = 0, NativeManager::m_output_offset = 0, NativeManager::m_float_offset = 0;
-int NativeManager::m_camera_mode = 0, NativeManager::m_camera_flag = 0, NativeManager::m_fld_etc = -1;
+int NativeManager::m_camera_mode = 0, NativeManager::m_camera_flag = 0;
 bool NativeManager::m_fld_load = false;
 std::string NativeManager::s_sceneName = "(title)";
 std::list<int> NativeManager::m_anim_list;
 FldObject NativeManager::m_fld;
 Chara* NativeManager::m_chara[40];
 Riseup* NativeManager::m_rise[16];
-MeshChara* NativeManager::m_dssa[40];
+MeshChara* NativeManager::m_dssa[24];
 FbxObject* NativeManager::m_model[16];
 NativeManager::FrameStats NativeManager::s_stats;
 static int s_frame = 0;
 
 NativeManager::NativeCmd NativeManager::m_cmd_tbl[NUM_CMDS] = {
-  cmd_fld_load, cmd_fld_color, cmd_fld_alpha, cmd_fld_pos, cmd_fld_rot, cmd_fld_common_anim, cmd_fld_event_anim, cmd_fld_on_off, cmd_fld_etc, cmd_back_color,
-  cmd_fade, cmd_camera, cmd_camera_sub, cmd_chara_load, cmd_chara, cmd_chara_on_off, cmd_chara_shadow, cmd_chara_sleep_pose, cmd_chara_sleep_near, cmd_chara_pose,
-  cmd_rise_icon_load, cmd_rise_icon, cmd_mesh_load, cmd_mesh, cmd_mesh_on_off, cmd_mesh_shader, cmd_mesh_color, cmd_mesh_tex_offset, cmd_mesh_ortho, cmd_field_load,
-  cmd_field, cmd_field_symbol, cmd_field_scale, cmd_fbx_load, cmd_fbx, cmd_map_color_rate, cmd_screen_effect, cmd_se_play, cmd_se_stop, cmd_bgm,
-  cmd_particle
+  cmd_fld_load, cmd_fld_color, cmd_fld_alpha, cmd_fld_pos, cmd_fld_rot, cmd_fld_common_anim, cmd_fld_event_anim, cmd_fld_on_off, cmd_back_color, cmd_fade,
+  cmd_camera, cmd_camera_sub, cmd_chara_load, cmd_chara, cmd_chara_on_off, cmd_chara_shadow, cmd_chara_sleep_pose, cmd_chara_sleep_near, cmd_chara_pose, cmd_rise_icon_load,
+  cmd_rise_icon, cmd_mesh_load, cmd_mesh, cmd_mesh_on_off, cmd_mesh_shader, cmd_mesh_color, cmd_mesh_tex_offset, cmd_field_load, cmd_field, cmd_field_symbol,
+  cmd_field_scale, cmd_fbx_load, cmd_fbx, cmd_map_color_rate, cmd_screen_effect, cmd_se_play, cmd_se_stop, cmd_bgm
 };
 
 const char* NativeManager::OpName(int op) {
-  static const char* n[NUM_CMDS] = { "fld_load", "fld_color", "fld_alpha", "fld_pos", "fld_rot", "fld_common_anim", "fld_event_anim", "fld_on_off", "fld_etc", "back_color",
-    "fade", "camera", "camera_sub", "chara_load", "chara", "chara_on_off", "chara_shadow", "chara_sleep_pose", "chara_sleep_near", "chara_pose",
-    "rise_icon_load", "rise_icon", "mesh_load", "mesh", "mesh_on_off", "mesh_shader", "mesh_color", "mesh_tex_offset", "mesh_ortho", "field_load",
-    "field", "field_symbol", "field_scale", "fbx_load", "fbx", "map_color_rate", "screen_effect", "se_play", "se_stop", "bgm", "particle" };
+  static const char* n[NUM_CMDS] = { "fld_load", "fld_color", "fld_alpha", "fld_pos", "fld_rot", "fld_common_anim", "fld_event_anim", "fld_on_off", "back_color", "fade",
+    "camera", "camera_sub", "chara_load", "chara", "chara_on_off", "chara_shadow", "chara_sleep_pose", "chara_sleep_near", "chara_pose", "rise_icon_load",
+    "rise_icon", "mesh_load", "mesh", "mesh_on_off", "mesh_shader", "mesh_color", "mesh_tex_offset", "field_load", "field", "field_symbol",
+    "field_scale", "fbx_load", "fbx", "map_color_rate", "screen_effect", "se_play", "se_stop", "bgm" };
   return (op >= 0 && op < NUM_CMDS) ? n[op] : "?";
 }
 
 void NativeManager::Init() { NativeCall::GameInit(m_input, m_output, m_output_float, m_string); }
-void NativeManager::ResetNativePacket() { NativeCall::ResetNativePacket(m_input, m_output, m_output_float, m_string); }
+void NativeManager::ResetNativePacket() { if (NativeCall::ResetNativePacket) NativeCall::ResetNativePacket(m_input, m_output, m_output_float, m_string); }
 
 void NativeManager::CharaTerm() {
   for (int i = 0; i < 40; i++)
@@ -81,28 +79,21 @@ void NativeManager::cmd_fld_load() {
   if (num2 == 2) SceneCamera::SetTargetCamera(false);
   CharaTerm();
   std::string text = std::string("map/") + (GetString(num & 0xFF) ? GetString(num & 0xFF) : "");
-  Debug::Log("map_name = [%s] : %d", text.c_str(), num2);
   s_sceneName = text;
-  if (m_fld_load) m_fld.Term();
+  if (m_fld_load) {
+    if (m_fld.GetCameraNo() > 0) m_fld.SetCameraNo(0, 0);       // DQ4: done here (DQ5's FldObject.Term did it)
+    m_fld.Term();
+  }
   m_anim_list.clear();
   m_fld.Load(text);
   m_fld_load = true;
-  m_fld_etc = -1;
   if (num2 == 1) m_fld.SetDispScale(6.f, 6.f, 6.f);
   BackColor::SetColor(m_fld.GetMapEtc().bg_color);
   Chara::SetSleepNear(0, 0);
-  Chara::SetPriorityShader();
   Cleaner::Cleaning();
-}
-void NativeManager::cmd_fld_etc() {
-  int num = GetInt();
-  if (btst(num, 1073741824)) Chara::SetPriorityShader(num & 0xFFFF);
-  else if (btst(num, 536870912)) m_fld.FixProblems(num & 0xFFFF);
-  else m_fld_etc = num;
 }
 void NativeManager::cmd_field_load() {
   int num = GetInt();
-  Debug::Log("cmd_field_load(%d)", num);
   s_sceneName = num > 0 ? "worldmap" : s_sceneName;
   if (num > 0) {
     if (m_fld_load) { m_fld_load = false; m_fld.Term(); }
@@ -146,14 +137,12 @@ void NativeManager::cmd_field_scale() {
 void NativeManager::cmd_fld_common_anim() {
   int num = GetInt();
   m_fld.SetCommonAnimation(num & 0xFFFF, num >> 16);
-  Debug::Log("SetCommonAnimation(%d) num = %d", num & 0xFFFF, num >> 16);
-  if ((num >> 16) >= 2) m_anim_list.push_back(num & 0xFFFF);
+  m_anim_list.push_back(num & 0xFFFF);
 }
 void NativeManager::cmd_fld_event_anim() {
   int num = GetInt();
   if (num < 16384) m_fld.SetEventAnimation(num);
   else m_fld.SetCameraNo(num & 0x3FFF, 0);
-  Debug::Log("SetEventAnimation(%d) num = %d", num, m_fld.GetEventAnimationNum());
 }
 void NativeManager::cmd_fld_alpha() { int num = GetInt(); m_fld.SetMapObjAlpha(num & 0xFFFF, (num >> 16) & 0xFF, num >> 24); }
 void NativeManager::cmd_fld_pos() { int obj_id = GetInt(); m_fld.SetMapObjPos(obj_id, GetVector3()); }
@@ -169,7 +158,7 @@ void NativeManager::cmd_chara_load() {
   int num = GetInt(), num2 = GetInt();
   if ((unsigned)num >= 40) { l_error("cmd_chara_load: bad slot %d", num); return; }
   if (num2 >= 0) {
-    Chara* chara = new Chara(num2);
+    Chara* chara = new Chara(num2 & 0xFFF);
     if (btst(num2, 4096)) { chara->m_billboard_request = false; chara->SetFieldMode(); chara->SetVisible(false); }
     if (m_chara[num]) { m_chara[num]->Release(); delete m_chara[num]; }
     m_chara[num] = chara;
@@ -217,7 +206,6 @@ void NativeManager::cmd_chara_pose() { int num = GetInt(); if (Slot(m_chara, num
 
 void NativeManager::cmd_fbx_load() {
   int num = GetInt(), num2 = GetInt();
-  Debug::Log("cmd_fbx_load(%d) : %d", num, num2);
   if ((unsigned)num >= 16) { l_error("cmd_fbx_load: bad slot %d", num); return; }
   if (num2 >= 0) {
     if (m_model[num]) { m_model[num]->Release(); delete m_model[num]; }
@@ -235,7 +223,7 @@ void NativeManager::cmd_fbx() {
   if (btst(num, 4096)) { Color c; c.r = GetFloat(); c.g = GetFloat(); c.b = GetFloat(); c.a = GetFloat(); if (f) f->SetColor(c); }
   if (btst(num, 8192)) { Vector3 v = GetVector3(); if (f) f->SetPosition(v); }
   if (btst(num, 16384)) { Vector3 v = GetVector3(); if (f) f->SetRotation(v); }
-  if (btst(num, 32768)) { int seq = GetInt(); if (f) f->PlayAnimation(seq); m_anim_list.push_back((num & 0xFF) | 0x1000); }
+  if (btst(num, 32768)) { int seq = GetInt(); if (f) f->PlayAnimation(seq, btst(num, 1024)); m_anim_list.push_back((num & 0xFF) | 0x1000); }
 }
 void NativeManager::cmd_rise_icon_load() {
   int num = GetInt(), num2 = GetInt();
@@ -253,7 +241,7 @@ void NativeManager::cmd_rise_icon() {
 }
 void NativeManager::cmd_mesh_load() {
   int num = GetInt(), num2 = GetInt();
-  if ((unsigned)num >= 40) { l_error("cmd_mesh_load: bad slot %d", num); return; }
+  if ((unsigned)num >= 24) { l_error("cmd_mesh_load: bad slot %d", num); return; }
   if (num2 >= 0) {
     if (m_dssa[num]) { m_dssa[num]->Release(); delete m_dssa[num]; }
     m_dssa[num] = new MeshChara(num2, num2 < 1000 ? 1 : 3);
@@ -302,10 +290,6 @@ void NativeManager::cmd_mesh_tex_offset() {
   int slot = GetInt();
   if (Slot(m_dssa, slot)) m_dssa[slot]->SetTextureOffset(u, v);
 }
-void NativeManager::cmd_mesh_ortho() {
-  int slot = GetInt();
-  if (Slot(m_dssa, slot) && m_dssa[slot]->m_chara) m_dssa[slot]->m_chara->layer = 11;
-}
 void NativeManager::cmd_camera() {
   int a = GetInt();
   if (btst(a, 1)) SceneCamera::SetPosition(GetVector3());
@@ -345,20 +329,12 @@ void NativeManager::cmd_back_color() {
   BackColor::SetColor(up, down);
 }
 void NativeManager::cmd_screen_effect() {
-  Debug::Log("cmd_screen_effect()");
   int v = GetInt();
   Capture::ScreenEffect(v);
 }
 void NativeManager::cmd_se_play() { Sound::PlaySE(GetInt()); }
 void NativeManager::cmd_se_stop() { Sound::StopSE(GetInt()); }
 void NativeManager::cmd_bgm() { int num = GetInt(); if (num < 16384) Sound::PlayBGM(num); else Sound::StopBGM(num & 0x3FFF); }
-void NativeManager::cmd_particle() { int num = GetInt(); ParticleSystem::s_funcs[num & 0xFF](num); }
-
-void NativeManager::ReleaseStage() {
-  if (m_fld_load) { m_fld_load = false; m_fld.Term(); }
-  CharaTerm();
-  Cleaner::Cleaning();
-}
 
 // ---------------------------------------------------------------------------------------------------- the frame (01 §1.2)
 void NativeManager::Update() { Update(TouchPad::m_press, TouchPad::m_toggle); }
@@ -434,8 +410,8 @@ void NativeManager::Update(int padPress, int padToggle) {
     fv.outF = m_output_float; fv.nOutF = s_stats.desync ? PacketRecorder::UsedFloats(m_output_float, 8192) : s_stats.nFloats;
     fv.str0 = m_string[0];
     extern short* dqiv_menu_unity_buffer(); extern short* dqiv_menu_native_buffer();
-    fv.menuUnity = dqiv_menu_unity_buffer(); fv.nMenuUnity = 128;
-    short* nb = dqiv_menu_native_buffer(); fv.menuNative = nb; fv.nMenuNative = nb[64] > 65 && nb[64] <= 2048 ? nb[64] : 65;
+    fv.menuUnity = dqiv_menu_unity_buffer(); fv.nMenuUnity = 129;
+    short* nb = dqiv_menu_native_buffer(); fv.menuNative = nb; fv.nMenuNative = nb[64] > 65 && nb[64] <= 1089 ? nb[64] : 65;
     PacketRecorder::Record(fv);
   }
   s_frame++;
@@ -453,19 +429,8 @@ void NativeManager::Update(int padPress, int padToggle) {
     if (m_dssa[n]) m_dssa[n]->SetBillboard();
   if (m_fld_load) {
     m_fld.Update();
-    if (m_fld_etc == 0 && m_fld.m_map_objs.size() > 38) {            // attach chara[0] to map object 38 (NativeManager.cs:865-885)
-      Transform* model = m_fld.m_map_objs[38]->model;
-      if (model) {
-        Vector3 vector = model->rotation() * Vector3::up * 0.3f;
-        Vector3 position = model->position();
-        if (vector.z >= 0.0001f) {
-          vector.y = vector.y * vector.z / 0.212f;
-          position = position + vector;
-          position = position + model->rotation() * Vector3::forward * (vector.z * 0.15f / 0.212f);
-        }
-        if (m_chara[0]) { m_chara[0]->SetPosition(position); m_chara[0]->SetBillboard(); }
-      }
-    }
+  } else {
+    Field::UpdatePattern();
   }
   if (Sound::s_bgmState != 0) Sound::SystemUpdate();
 }

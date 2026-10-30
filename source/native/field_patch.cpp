@@ -11,35 +11,16 @@
 // The host mesh (Field::Init) uses the same width.  Every word is checked before it is written; a different libdq4core build is left alone.
 #include "native/field_patch.hpp"
 
-#include <kubridge.h>
-#include <cstdint>
-#include "loader/loader.h"
 #include "utils/logger.h"
 
 namespace NativeCall {
 
-static const uint32_t kDrawBlock = 0x162e04, kFieldSet = 0xe57b4;
-struct Site { uint32_t vaddr, expect, repl; };
-
+// DISABLED for DQ4 (TODO(dq4) field_patch): the sites below are libdq4core of DQ5 (fld::FieldData::drawBlock, FieldSet). libdq4core is the older codebase and exports
+// neither symbol, so the four words cannot be located by name. Re-derive the world-map tile block of DQ4 with Ghidra (tools/re/decomp.sh) before enabling anything;
+// until then nothing is patched, the host uses the original 25-column block (Field.cpp: FieldCols(false)).
 bool PatchFieldBlock() {
-  uintptr_t fs = loader_symbol("dq4core", "FieldSet");
-  if (!fs) { l_error("PatchFieldBlock: FieldSet not found"); return false; }
-  uintptr_t base = fs - kFieldSet;
-  const Site sites[] = {
-    { 0x162e44, 0xe2455004u, 0xe2455000u | kFieldBack },
-    { 0x162fb8, 0xe3520014u, 0xe3520000u | kFieldFwd },
-    { 0x162fd0, 0xd2435004u, 0xd2435000u | kFieldBack },
-    { 0x0e5924, 0xe2855019u, 0xe2855000u | kFieldCols },
-  };
-  (void)kDrawBlock;
-  for (const Site& s : sites) if (*(volatile uint32_t*)(base + s.vaddr) != s.expect) { l_error("PatchFieldBlock: unexpected word %08x at +%x, not patching", *(volatile uint32_t*)(base + s.vaddr), s.vaddr); return false; }
-  for (const Site& s : sites) {
-    uint32_t w = s.repl;
-    kuKernelCpuUnrestrictedMemcpy((void*)(base + s.vaddr), &w, sizeof(w));
-    kuKernelFlushCaches((void*)(base + s.vaddr), 4);
-  }
-  l_success("world map tile block widened to %d columns (back %d, forward %d)", kFieldCols, kFieldBack, kFieldFwd);
-  return true;
+  l_warn("field_patch: DISABLED for DQ4 (DQ5 offsets, FieldSet/drawBlock not present in libdq4core); world map keeps the original 25-column tile block. TODO(dq4)");
+  return false;
 }
 
 }  // namespace NativeCall

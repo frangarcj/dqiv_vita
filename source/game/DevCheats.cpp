@@ -63,6 +63,10 @@ public:
 
 namespace DevCheats {
 void Create() {
+  if (!NativeCall::kDevHooksVerified) {
+    l_warn("DevCheats: DISABLED for DQ4 (nodamage/noencount patch DQ5 symbols, gold/party_hp/party_mp use DQ5 DebugSetValue ids, warp needs WarpTest; see docs/TODO_DQ4.md)");
+    return;
+  }
   bool any = Cfg::GetInt("nodamage", 0) || Cfg::GetInt("noencount", 0) || Cfg::Has("gold") || Cfg::Has("party_hp") || Cfg::Has("party_mp");
   if (any) {
     GameObject* g = new GameObject("DevCheats");

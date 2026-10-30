@@ -5,7 +5,7 @@
 class TapToStart : public MenuParts {
 public:
   static constexpr float c_acc = 0.025f, c_bias = 0.68f, c_width = 223.04001f, c_height = 41.48f, c_copyrightWidth = 450.f, c_copyrightHeight = 40.0005f, c_copyrightAcc = 0.0625f;
-  static constexpr int c_cwait = 20, c_firstWait = 799, c_copyrightFirstWait = 767, c_copyrightSecondWait = 999999;
+  static constexpr int c_cwait = 20, c_firstWait = 720, c_copyrightFirstWait = 690, c_copyrightSecondWait = 2508;
 
   static TapToStart* Create();
   void OnDestroy() override;
