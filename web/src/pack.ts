@@ -73,7 +73,7 @@ export function layoutPack(reg: Registry, results: Map<number, PackObj>, contain
   const strs = sp.bytes();
   const HDR = 128, objsOff = HDR, resOff = objsOff + objs.length, strOff = resOff + resb.length;
   const hdr = new Uint8Array(HDR), hv = new DataView(hdr.buffer);
-  hdr.set([0x44, 0x51, 0x56, 0x50]);                                                       // "DQIVP"
+  hdr.set([0x44, 0x51, 0x49, 0x56]);                                                       // "DQIV" (what dqiv_convert.py writes and dqiv_pack.c checks)
   [1, n + 1, resEntries.length, objsOff, resOff, strOff, strs.length, B.DF_NAMES.length, 0].forEach((v, i) => hv.setUint32(4 + 4 * i, v, true));
   for (let i = 0; i < 4; i++) { hv.setUint32(64 + 8 * i, dfn[i], true); hv.setUint32(68 + 8 * i, sizes[i], true); }
   return { index: concat([hdr, objs, resb, strs]), sizes, placements };

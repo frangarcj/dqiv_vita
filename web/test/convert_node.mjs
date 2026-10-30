@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Headless run of the web converter: node web/test/convert_node.mjs <DQ4.apk> <main.105....obb> <outdir> [--lang en|ja|ko|zh-tw|zh-cn] [--layout landscape|split|portrait] [--jobs N] [--skip-md5] [--zip file.zip] [--mem]
+// Headless run of the web converter: node web/test/convert_node.mjs <DQ4.apk> <main.106....obb> <outdir> [--lang en|ko|zh-tw|zh-cn] [--layout landscape|split|portrait] [--jobs N] [--skip-md5] [--zip file.zip] [--mem]
 // Exit code 0 only if the pack files are byte-identical (sha256) to the reference conversion.
 import { existsSync } from "node:fs";
 import { execFileSync } from "node:child_process";

@@ -15,18 +15,20 @@ import { hex } from "./util";
 import { CG_FILES } from "./cgdata";
 
 export const KNOWN_MD5 = {
-  apk: "c2d52842b467815c2f1f36ece53e151f",     // Dragon Quest IV v1.0.3 APK (com.square_enix.android_googleplay.dq4)
-  obb: "dd15c635f179d7cbf1deca1263313c16",     // main.105.com.square_enix.android_googleplay.dq4.obb
+  apk: "2f0bcb22598a16ce50a038488696bc98",     // Dragon Quest IV v1.0.5 APK (com.square_enix.android_googleplay.dq4)
+  obb: "3d27a44d87f30f119fa4a7d73805c4b7",     // main.106.com.square_enix.android_googleplay.dq4.obb
 };
 /** sha256 of the pack produced from the supported APK/OBB by tools/make_data.py (the conversion is deterministic). */
 export const PACK_SHA256: Record<string, string> = {
-  "index.bin": "f545c720de3fd605762e8f4b9368afac7a13109b6b2a1e5473e049975e38271d",
-  "meta.pak": "56cac028071c9146217ba60d3e64899beb553d0e3a364c932798e4d410143a64",
-  "mesh.pak": "c467d7f28000a0dc1e5c497826adcd3bcdbdf0eee3b6109d45f88ed3fc704449",
-  "tex.pak": "9becf4f626f50408bbe66cf4379ad81d5a5e6a62f169cee75b820e1fab33c189",
-  "blob.pak": "5fd6ae21586b87d8ae65ad7f41da03e0253bcec6b6fa92d49d6b120ad4b51cc8",
+  "index.bin": "e09f13f2c90ebbe010d6b96a531a481ea3cf27159aeca1a736b342699c6d2ab6",
+  "meta.pak": "9e21a1a6770ada363aa11a389377e918c4426bbbdfd8bcb44fbd183e11fcd176",
+  "mesh.pak": "0f27a607a7e6c76d487d82410dd7afff7f9a038481ad8fa4ddde936906cce29a",
+  "tex.pak": "a593dfd60e1548ac9d9d3d305fb2ccc102c0041e385de5d28842a7412f9a02cd",
+  "blob.pak": "2301d6a60b0c59b175756e66b02ef572fd87645381f870518769212acafa0a48",
 };
-export const LANGS = ["en", "ja", "ko", "zh-tw", "zh-cn"];
+export const LANGS = ["en", "ko", "zh-tw", "zh-cn"];       // the OBB carries no Japanese game text
+/** <32 hex> Unity serialized files in the supported OBB (a different count only warns when the md5 is skipped). */
+export const OBB_GUID_FILES = 17769;
 export const LAYOUTS = ["landscape", "split", "portrait"];
 const LIBS = ["libdq4core.so", "libsdlib_android.so"];
 
@@ -72,7 +74,7 @@ class PakWriter {
 
 export function configText(lang: string, layout: string): string {
   let t = "# Dragon Quest IV (native port) -- ux0:data/dqiv/config.txt, one key=value per line\n";
-  t += `# lang: en (default) | ja | ko | zh-tw | zh-cn\nlang=${lang}\n`;
+  t += `# lang: en (default) | ko | zh-tw | zh-cn   (the OBB has no Japanese game text)\nlang=${lang}\n`;
   t += "# confirm=circle   swap Cross/Circle (Japanese layout)\n# layout=landscape|split|portrait   screen layout (default landscape)\n";
   if (layout !== "landscape") t += `layout=${layout}\n`;
   return t;
@@ -90,8 +92,8 @@ export async function convertAll(inputs: { apk: SourceHandle; obb: SourceHandle 
   let apkZip: ZipReader, obbZip: ZipReader;
   try { apkZip = await ZipReader.open(apkSrc); } catch (e: any) { throw new InputError("bad_zip", "apk", "APK is not a valid zip file: " + e.message); }
   try { obbZip = await ZipReader.open(obbSrc); } catch (e: any) { throw new InputError("bad_zip", "obb", "OBB is not a valid zip file: " + e.message); }
-  if (!apkZip.has("lib/armeabi-v7a/libdq4core.so") || !apkZip.has("assets/bin/Data/mainData")) throw new InputError("wrong_apk", "apk", "this APK does not look like Dragon Quest IV (libdq4core.so / mainData missing)");
-  if (obbZip.entries.filter(e => HEX32.test(e.name)).length < 21000) throw new InputError("wrong_obb", "obb", "this OBB does not hold the Dragon Quest IV assets");
+  if (!LIBS.every(l => apkZip.has("lib/armeabi-v7a/" + l)) || !apkZip.has("assets/bin/Data/mainData")) throw new InputError("wrong_apk", "apk", "this APK does not look like Dragon Quest IV (libdq4core.so / libsdlib_android.so / mainData missing)");
+  if (obbZip.entries.filter(e => HEX32.test(e.name)).length < 17000 || !obbZip.has("assets/bin/Data/level0") || !obbZip.has("assets/bin/Data/sharedassets1.assets")) throw new InputError("wrong_obb", "obb", "this OBB does not hold the Dragon Quest IV assets");
   const frac = [0, 0];
   const sums = await Promise.all((["apk", "obb"] as const).map((k, i) =>
     pool.run<string>({ t: "md5", file: inputs[k] }, { onProgress: p => { frac[i] = p; progress({ phase: "check", frac: (frac[0] * apkSrc.size + frac[1] * obbSrc.size) / (apkSrc.size + obbSrc.size) }); } })));
@@ -105,7 +107,8 @@ export async function convertAll(inputs: { apk: SourceHandle; obb: SourceHandle 
   // ---- 2. files that are copied/extracted as they are
   progress({ phase: "extract", frac: 0 });
   for (const lib of LIBS) await sink.put("lib/" + lib, await apkZip.read("lib/armeabi-v7a/" + lib));
-  for (const a of ["filelist.bin", "ct.inf"]) await sink.put("assets/" + a, await apkZip.read("assets/" + a));
+  // DQ4 has no assets/filelist.bin (libdq4core parses the OBB zip itself); only copy what the APK really holds
+  for (const a of ["ct.inf"]) if (apkZip.has("assets/" + a)) await sink.put("assets/" + a, await apkZip.read("assets/" + a));
   for (const [name, data] of Object.entries(CG_FILES)) await sink.put("cg/" + name, data);
   await sink.put("config.txt", new TextEncoder().encode(configText(opts.lang, opts.layout)));
   // main.obb is the user's own file, copied byte for byte; runs in the background while the workers convert

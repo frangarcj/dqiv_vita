@@ -56,7 +56,7 @@ vertex/index arrays are 16-byte aligned for DMA/GPU upload. Only the part of the
 
 ```
 0x000  DqvIndexHeader (128 B)
-         char magic[4]="DQIVP"; u32 version=1; u32 obj_count; u32 res_count; u32 objs_off; u32 res_off;
+         char magic[4]="DQIV"; u32 version=1; u32 obj_count; u32 res_count; u32 objs_off; u32 res_off;
          u32 str_off; u32 str_size; u32 data_file_count=4; u32 flags=0; u32 pad[6];
          struct{u32 name_off; u32 size;} data_files[8]   // 0 meta.pak 1 mesh.pak 2 tex.pak 3 blob.pak
 objs_off  DqvObject[obj_count]   (24 B, entry 0 = null)
