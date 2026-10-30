@@ -1,5 +1,7 @@
-#shots 450,650
+#shots 450,700,900
+#dur 90
 delay 150
-chapter 1
-wait 200
+eventinit 4
+town maout
+wait 150
 title

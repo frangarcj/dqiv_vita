@@ -27,7 +27,7 @@ public:
     if (!MainLoop::s_ready) return;
     // both flags live in native state that EventInit / Encount::initialize rewrite: re-arm them (cheap calls)
     if (Cfg::GetInt("nodamage", 0) && (tick % 30) == 0) DevHooks::SetNoDamage(true);
-    if (Cfg::GetInt("noencount", 0) && (tick % 60) == 0) DevHooks::SetNoEncount(true);
+    if (Cfg::GetInt("noencount", 0) && (tick % 60) == 0) { DevHooks::SetNoEncount(true); if (tick == 0) l_info("cheat: noencount armed, encounters %s", DevHooks::NoEncountActive() ? "off" : "STILL ON"); }
     tick++;
     if (!applied) {
       const std::string& sc = NativeManager::s_sceneName;
@@ -43,7 +43,15 @@ public:
           if (hp > 0) NativeCall::DebugSetValue(0x11, (unsigned)p, (unsigned)hp);
           if (mp > 0) NativeCall::DebugSetValue(0x12, (unsigned)p, (unsigned)mp);
         }
-        if (hp > 0 || mp > 0 || lv > 0) { NativeCall::DebugSetValue(9, 0, 0); l_info("cheat: party_hp=%d party_mp=%d (all players), healed", hp, mp); }
+        if (hp > 0 || mp > 0 || lv > 0) {
+          NativeCall::DebugSetValue(9, 0, 0); l_info("cheat: party_hp=%d party_mp=%d (all players), healed", hp, mp);
+          auto get = reinterpret_cast<unsigned (*)(int, int*)>(loader_symbol("dq4core", "DebugGetValue"));
+          for (int p = 1; p < 26 && get; p++) {            // read back (DebugGetValue 0x11: [player] -> hpmax, mpmax, ...): only players whose max HP changed are interesting
+            if ((0x104ec00u >> p) & 1) continue;
+            alignas(16) int v[8] = {p, 0, 0, 0, 0, 0, 0, 0}; get(0x11, v);
+            if (v[1] > 0 && v[1] < 100000) l_info("cheat: player %d hpmax %d mpmax %d", p, v[1], v[2]);
+          }
+        }
       }
     }
   }

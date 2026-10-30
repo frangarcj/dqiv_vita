@@ -8,7 +8,7 @@ The party is the chapter-5 event 289 (party of 3, level 31) with nodamage + 9999
 import sys
 TOWNS = ["maout", "mfout", "dab1", "cdout", "hcout", "mhg1n1", "ceout", "dpb1a", "mnout"]
 STAGES = ["btl_pl_d", "btl_mt_d", "btlda1", "btl_wd_d", "btl_sd_e", "btlcb1_d"]
-MONS = ["1x2", "2x1 3x1", "5x2", "8x1", "10x2 1x1", "3x3"]
+MONS = ["34x2", "38x1 42x1", "51x2", "59x1", "69x2 89x1", "91x3"]
 def main():
     n = int(sys.argv[1]); ready = int(sys.argv[2]); inp = sys.argv[sys.argv.index("--input") + 1] if "--input" in sys.argv else None
     delay = 150
