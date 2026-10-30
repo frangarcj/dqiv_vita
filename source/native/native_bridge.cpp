@@ -11,7 +11,7 @@
 
 namespace NativeCall {
 
-bool (*DevInit)(const char*, const char*, int, int);
+bool (*DevInit)(const char*, const char*, int);       // DQ4: 3 arguments (no deviceInfo)
 void (*GameInit)(int*, int*, float*, const char**);
 void (*ResetNativePacket)(int*, int*, float*, const char**);
 void (*GameUpdate)(int, int);
@@ -27,9 +27,7 @@ int (*IsLoadNativeCode)();
 void (*DebugSetMapName)(const char*);
 void (*DebugSetValue)(int, unsigned, unsigned);
 void (*DebugGetValue)(int, unsigned*);
-void (*LoadFileList_JNI)(void*, void*, void*);
 
-int s_deviceInfo = DQIV_DEVICE_INFO;
 static bool g_bound;
 bool g_fieldPatched = false;
 
@@ -45,42 +43,39 @@ bool Bind() {
     bool ok = true;
     ok &= bind(DevInit, "DevInit");
     ok &= bind(GameInit, "GameInit");
-    ok &= bind(ResetNativePacket, "ResetNativePacket");
     ok &= bind(GameUpdate, "GameUpdate");
     ok &= bind(MenuPortInit, "MenuPortInit");
-    ok &= bind(MenuPortResetNativePacket, "MenuPortResetNativePacket");
     ok &= bind(UnityRenderEvent, "UnityRenderEvent");
-    ok &= bind(FieldSet, "FieldSet");
     ok &= bind(FileReadAllBytes, "FileReadAllBytes");
     ok &= bind(FreeFileMemory, "FreeFileMemory");
-    ok &= bind(ParticleSystemInit, "ParticleSystemInit");
-    ok &= bind(ParticleSystemResetNativePacket, "ParticleSystemResetNativePacket");
     ok &= bind(IsLoadNativeCode, "IsLoadNativeCode");
-    ok &= bind(LoadFileList_JNI, "Java_com_cattlecall_unityandroidaccessor_OverrideUnityPlayerNativeActivity_LoadFileList");
+    // DQ5-only exports (absent from libdq4core, verified with readelf): the C# of DQ4 has no such P/Invoke. They stay null; every caller is guarded.
+    //   ResetNativePacket / MenuPortResetNativePacket / ParticleSystemResetNativePacket (packet re-registration after a GC compaction: DQ4 never does it),
+    //   ParticleSystemInit (no ParticleSystem class in DQ4), FieldSet (DQ4's Field.cs fills the tile UVs itself, TODO(dq4) Field port),
+    //   Java_..._LoadFileList (libdq4core parses the OBB zip itself in InitFileLoader).
+    ResetNativePacket = reinterpret_cast<decltype(ResetNativePacket)>(loader_symbol("dq4core", "ResetNativePacket"));
+    MenuPortResetNativePacket = reinterpret_cast<decltype(MenuPortResetNativePacket)>(loader_symbol("dq4core", "MenuPortResetNativePacket"));
+    FieldSet = reinterpret_cast<decltype(FieldSet)>(loader_symbol("dq4core", "FieldSet"));
+    ParticleSystemInit = reinterpret_cast<decltype(ParticleSystemInit)>(loader_symbol("dq4core", "ParticleSystemInit"));
+    ParticleSystemResetNativePacket = reinterpret_cast<decltype(ParticleSystemResetNativePacket)>(loader_symbol("dq4core", "ParticleSystemResetNativePacket"));
+    if (!ResetNativePacket && !FieldSet && !ParticleSystemInit) l_info("libdq4core: DQ5-only exports (ResetNativePacket, FieldSet, ParticleSystem*, LoadFileList) are absent, as expected for DQ4");
     // optional debug hooks (not counted in `ok`)
     DebugSetMapName = reinterpret_cast<void (*)(const char*)>(loader_symbol("dq4core", "DebugSetMapName"));
     DebugSetValue = reinterpret_cast<void (*)(int, unsigned, unsigned)>(loader_symbol("dq4core", "DebugSetValue"));
     DebugGetValue = reinterpret_cast<void (*)(int, unsigned*)>(loader_symbol("dq4core", "DebugGetValue"));
     g_bound = ok;
-    if (ok && Layout::Wide() && Cfg::GetInt("field_patch", 1)) g_fieldPatched = PatchFieldBlock();     // landscape: wider world-map tile block (field_patch.cpp)
-    if (ok) l_success("libdq4core: all %d entry points bound", 14);
+    // TODO(dq4): field_patch (wider world-map tile block) is DQ5-only: fld::FieldData::drawBlock / FieldSet do not exist in libdq4core. PatchFieldBlock() refuses to patch and logs why.
+    if (ok && Layout::Wide() && Cfg::GetInt("field_patch", 1)) g_fieldPatched = PatchFieldBlock();
+    if (ok) l_success("libdq4core: all required entry points bound (DevInit/GameInit/GameUpdate/MenuPortInit/UnityRenderEvent/FileReadAllBytes/FreeFileMemory/IsLoadNativeCode)");
     return ok;
 }
 
 bool IsBound() { return g_bound; }
 
-bool LoadFileList() {
-    // Boot.cs: OverrideUnityPlayerNativeActivity.loadFilelistFromAssets() -> LoadFileList(env, cls, AAssetManager).
-    // The "asset manager" is any non-null token: AAssetManager_fromJava() ignores it (native/asset_manager.c).
-    static char fake_asset_manager;
-    LoadFileList_JNI(nullptr, nullptr, &fake_asset_manager);
-    return true;
-}
-
 bool DeviceInit() {
-    // NativeCall.DeviceInit(): DevInit(streamingAssetsPath-derived OBB path, persistentDataPath + "/", lang, deviceInfo)
-    bool r = DevInit(OBB_PATH, SAVE_PATH, GetLangages::m_langagesNumber, s_deviceInfo);
-    l_info("DevInit(\"%s\", \"%s\", lang=%d, devInfo=%d) -> %d", OBB_PATH, SAVE_PATH, GetLangages::m_langagesNumber, s_deviceInfo, (int)r);
+    // NativeCall.DeviceInit(): DevInit(streamingAssetsPath-derived OBB path, persistentDataPath + "/", lang)   (DQ4: no deviceInfo argument)
+    bool r = DevInit(OBB_PATH, SAVE_PATH, GetLangages::m_langagesNumber);
+    l_info("DevInit(\"%s\", \"%s\", lang=%d) -> %d", OBB_PATH, SAVE_PATH, GetLangages::m_langagesNumber, (int)r);
     return r;
 }
 

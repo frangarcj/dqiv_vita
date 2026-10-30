@@ -118,6 +118,7 @@ public:
 
   // ---- statics ----
   static std::string FONT_NAME;
+  static float HIRO_NAME_SCALE;    // DQ4 (MenuParts.cs:583), set by MenuPort port-0 command 7; used by the name parts (TODO(dq4) MenuParts delta)
   static float BIAS_FONT_SIZE, BIAS_FONT_LINE, BIAS_FONT_Y, NAME_BASE_SCALE;
   static int APPLY_HERO;
   static PartsInfo s_info[15];

@@ -16,7 +16,7 @@ public:
   void SetScale(Vector3 s);
   void SetColor(Color c);
   void SetPosition(Vector3 p);
-  void PlayAnimation(int seq);
+  void PlayAnimation(int seqNo, bool bForce = false);
   bool IsEndAnimation();
 private:
   float m_defScale = 1.f; WrapMode m_mode = WrapMode::Default;

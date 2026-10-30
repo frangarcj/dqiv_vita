@@ -20,50 +20,50 @@ void RawPad::SetTouch(const Touch& value) {
   }
 }
 
-Ray RawPads::GetRay(Camera* cam) const {
-  Vector3 position(m_pad.position.x, m_pad.position.y, 0.f);
+RawPads::RawPads(int maxim) : pads(maxim) {}
+
+Ray RawPads::GetRay(Camera* cam, int idx) const {
+  Vector3 position(pads[idx].position.x, pads[idx].position.y, 0.f);
   position.z = cam->transform()->position().z;
   return cam->ScreenPointToRay(position);
 }
-Vector3 RawPads::WorldDelta(Camera* cam) const {
-  Vector3 vector(m_pad.position.x, m_pad.position.y, 0.f);
-  Vector3 vector2(m_pad.deltaPosition.x, m_pad.deltaPosition.y, 0.f);
+Vector3 RawPads::WorldDelta(Camera* cam, int idx) const {
+  Vector3 vector(pads[idx].position.x, pads[idx].position.y, 0.f);
+  Vector3 vector2(pads[idx].deltaPosition.x, pads[idx].deltaPosition.y, 0.f);
   vector2 = vector - vector2;
   vector.z = (vector2.z = cam->transform()->position().z);
   vector = cam->ScreenPointToRay(vector).origin;
   vector2 = cam->ScreenPointToRay(vector2).origin;
   return vector - vector2;
 }
-Vector3 RawPads::BeginWorldDelta(Camera* cam) const {
-  Vector3 position(m_pad.position.x, m_pad.position.y, 0.f);
-  Vector3 position2(m_pad.beginPosition.x, m_pad.beginPosition.y, 0.f);
+Vector3 RawPads::BeginWorldDelta(Camera* cam, int idx) const {
+  Vector3 position(pads[idx].position.x, pads[idx].position.y, 0.f);
+  Vector3 position2(pads[idx].beginPosition.x, pads[idx].beginPosition.y, 0.f);
   position.z = (position2.z = cam->transform()->position().z);
   position = cam->ScreenPointToRay(position).origin;
   position2 = cam->ScreenPointToRay(position2).origin;
   return position2 - position;
 }
 void RawPads::Update() {
-  if (Input::touchCount > 0) { m_pad.SetTouch(Input::touches[0]); return; }
-  m_pad.bPress = false;
-  m_pad.bToggle = false;
+  Count = Input::touchCount >= (int)pads.size() ? (int)pads.size() : Input::touchCount;
+  for (RawPad& p : pads) { p.bPress = false; p.bToggle = false; }
+  for (int j = 0; j < Count; j++) pads[j].SetTouch(Input::touches[j]);
 }
 
 // ------------------------------------------------------------------------------------------------ TouchPad
 Camera* TouchPad::m_camera = nullptr;
-int TouchPad::m_press = 0, TouchPad::m_toggle = 0, TouchPad::m_externalToggle = 0, TouchPad::s_prevPress = 0;
+int TouchPad::m_press = 0, TouchPad::m_toggle = 0, TouchPad::m_upToggle = 0, TouchPad::m_externalToggle = 0, TouchPad::s_prevPress = 0;
 Ray TouchPad::m_pressRay;
 bool TouchPad::m_bVisible = true, TouchPad::m_bPressESC = false, TouchPad::m_bToggleESC = false;
-RawPads TouchPad::m_pad;
+RawPads TouchPad::m_pad(1);
 TouchPad::ePadState TouchPad::l_state = TouchPad::NONE;
 bool TouchPad::l_NoMove = false, TouchPad::l_bSystemLock = false, TouchPad::l_padBlink = false;
 Vector2 TouchPad::l_prsStart;
-int TouchPad::l_inputMode = 0, TouchPad::l_padPos = 1, TouchPad::l_padSize = 1;
+int TouchPad::l_padPos = 1, TouchPad::l_padSize = 1;
 
 void TouchPad::SetPadBlink(bool b) { l_padBlink = b; }
 void TouchPad::SetActivity(bool) { m_press = 0; m_toggle = 0; }
 void TouchPad::SetPosPadSize(int pos, int size) { l_padPos = pos; l_padSize = size; }
-void TouchPad::SetInputMode(int mode) { l_inputMode = mode; }
-int TouchPad::GetInputMode() { return l_inputMode; }
 bool TouchPad::GetPressRayFor(Camera* cam, Ray& ray) {
   if (!cam || !m_pad.bIsPress()) return false;
   ray = m_pad.GetRay(cam);

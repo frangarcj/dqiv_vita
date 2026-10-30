@@ -8,10 +8,8 @@
 #include "config.h"
 #include "game/BackColor.hpp"
 #include "game/Capture.hpp"
-#include "game/Endroll.hpp"
 #include "game/MenuParts.hpp"
 #include "game/SceneCamera.hpp"
-#include "game/SlimeTouch.hpp"
 #include "game/Fade.hpp"
 #include "game/Global.hpp"
 #include "game/Layout.hpp"
@@ -27,8 +25,6 @@ using namespace miniunity;
 namespace {
 std::string g_effect = "battle";
 int g_start = 40, g_arg = 0;
-EndrollPort* g_endroll = nullptr;
-MenuPort* g_slime = nullptr;
 
 GameObject* FxQuad(const char* name, int layer, float x, float y, float w, float h, const char* shader, Texture* tex, Color tint, bool grad = false) {
   GameObject* g = new GameObject(name);
@@ -54,13 +50,6 @@ public:
   int frame = 0;
   void Update() override {
     frame++;
-    if (g_endroll && g_endroll->m_drawInstance == nullptr) g_endroll = nullptr;
-    if (g_slime) {           // draw the slime CG in turn (CgController.Draw must be called every frame, Update clears the bits)
-      static SlimeTouchBehaviour* b = nullptr;
-      if (!b) { GameObject* go = GameObject::Find("SlimeTouchBehaviour"); if (go) b = go->GetComponent<SlimeTouchBehaviour>(); }
-      if (b && frame % 60 == 0) l_info("FxTest: slime behaviour found, controller=%p", (void*)b->controller);
-      if (b) { int which = 1 + (((frame - 20) / 90) % 3); b->controller->Draw(which); }
-    }
     if (frame == 3) Global::Flag &= ~0x10000;           // Capture::Start waits for it
     if (frame != g_start) return;
     l_info("FxTest: start '%s' at frame %d", g_effect.c_str(), frame);
@@ -72,12 +61,6 @@ public:
     else if (e == "tabi") Capture::ScreenEffect(3);
     else if (e == "tabirev") Capture::ScreenEffect(3 | 0x8000);
     else if (e == "sepia") Sepia::Setup();
-    else if (e == "endroll") {
-      g_endroll = new EndrollPort(1, g_arg);
-      g_endroll->m_drawInstance->transform()->setPosition(Vector3(0.f, Endroll::POSITIVE_H, 0.f));
-      g_endroll->m_drawInstance->SetExclude(false);
-    }
-    else if (e == "slime") g_slime = new SlimeTouchPort(1, 0);
     else if (e == "buttons") {
       Texture2D* col = new Texture2D(64, 64, TextureFormat::RGBA32);
       std::vector<Color32> px(64 * 64);
@@ -149,7 +132,7 @@ void Create() {
   FxQuad("grad", 0, -W * 0.2f, H * 0.2f, W * 0.4f, W * 0.4f, "Custom/DssaNormal", nullptr, Color::white, true);
   FxQuad("logo", 0, 0, -H * 0.25f, W * 0.8f, W * 0.8f * 0.33f, "Custom/Picture", Resources::Load<Texture>("boot/sqex"), Color::white);
 
-  SceneCamera::SystemInit();                             // DSSA ortho camera (layer 11: Endroll, SlimeTouch)
+  SceneCamera::SystemInit();                             
   MenuParts::SystemInit();                               // shader/font statics (Endroll uses l_fontShader)
   Fade::SystemInit();
   Capture::SystemInit();

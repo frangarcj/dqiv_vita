@@ -30,12 +30,12 @@ void FbxObject::SetRotation(Vector3 euler) { if (m_obj) m_obj->setRotation(Quate
 void FbxObject::SetVisible(bool bVisible) { if (m_obj) m_obj->gameObject->SetActiveRecursively(bVisible); }
 void FbxObject::SetColor(Color color) { for (Material* m : m_materials) if (miniunity::engine::IsLive(m)) m->color = color; }
 
-void FbxObject::PlayAnimation(int seqNo) {
+void FbxObject::PlayAnimation(int seqNo, bool bForce) {
   Animation* anim = m_obj ? m_obj->GetComponent<Animation>() : nullptr;
   if (!anim) return;
   char buf[24]; snprintf(buf, sizeof(buf), "Take %03d", 1 + seqNo);
   std::string text = buf;
-  if (anim->isPlaying()) {
+  if (!bForce && anim->isPlaying()) {
     if (m_mode == WrapMode::Loop) anim->CrossFade(text, m_blend_time);
     else anim->PlayQueued(text);
   } else {

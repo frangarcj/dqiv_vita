@@ -1,6 +1,7 @@
 // game/SceneCamera.cpp -- OWNER: WP5a (written by WP2 to get the title screen: DSSA ortho camera + MainCamera projection). Port of SceneCamera.cs.
 
 #include "game/SceneCamera.hpp"
+#include "game/Boot.hpp"
 #include "game/Chara.hpp"
 #include "game/MainLoop.hpp"
 #include "game/Layout.hpp"
@@ -24,6 +25,7 @@ GameObject* SceneCamera::s_clearPlane = nullptr;
 Camera* SceneCamera::s_DSSAOrthoCamera = nullptr;
 static Camera* l_camera = nullptr;
 static bool l_bCalcProjection = false;
+static bool s_bFixAdrendo = false;     // DQ4 SceneCamera.s_bFixAdrendo (GPU name contains ADRENO)
 static float l_shiftApplied = 0.f;
 static int l_battleFrames = 0; static float l_fitZoom = 1.f, l_ext1W = 0.f, l_ext1H = 0.f;   // layout "large": auto-fit zoom state
 static bool l_wideBattle = false;      // landscape battle view (whole surface, zoomed about the monsters' feet)
@@ -69,19 +71,8 @@ void SceneCamera::SystemInit() {
   l_camera = MainLoop::m_camera;
   s_yReverse = Quaternion::Euler(Vector3(0.f, 180.f, 0.f));
   l_bCalcProjection = true;
-  Debug::Log("Screen Info pixel[ %d x %d ]  aspect = %f", Screen::width, Screen::height, (float)Screen::height / (float)Screen::width);
-  GameObject* gameObject = new GameObject();
-  gameObject->name = "DSSAOrthoCamera";
-  gameObject->transform->localPosition = Vector3(0.f, 0.f, 100.f);
-  s_DSSAOrthoCamera = gameObject->AddComponent<Camera>();
-  s_DSSAOrthoCamera->orthographic = true;
-  s_DSSAOrthoCamera->rect = Layout::WorldRect();
-  s_DSSAOrthoCamera->orthographicSize = 128.53125f / Layout::Aspect(s_DSSAOrthoCamera->aspect());
-  s_DSSAOrthoCamera->nearClipPlane = -1024.f;
-  s_DSSAOrthoCamera->farClipPlane = 1024.f;
-  s_DSSAOrthoCamera->depth = 0.5f;
-  s_DSSAOrthoCamera->clearFlags = CameraClearFlags::Depth;
-  s_DSSAOrthoCamera->cullingMask = 2048;
+  // DQ4: no DSSA ortho camera (DQ5 SceneCamera.SystemInit created s_DSSAOrthoCamera, layer 11 / cmd_mesh_ortho); s_DSSAOrthoCamera stays null.
+  s_bFixAdrendo = Boot::s_gpuName.find("ADRENO") != std::string::npos;     // false on the Vita (PowerVR): TODO(dq4) the non-Adreno clear-plane path (a black Camera at depth-1) is not ported, the DQ5 mesh plane is used for both
 }
 static void CalcProjection() {
   if (!l_camera) return;
@@ -110,6 +101,8 @@ static void CalcProjection() {
       identity(1, 3) = z * SceneCamera::s_yOffset + (1.f - z) * feet;
     }
     identity(0, 3) = l_shiftApplied = Layout::ShiftNdc();       // landscape: world slid left while a menu covers the panel (identity otherwise)
+    // DQ4: the whole matrix is scaled by s_scaleW (C#: [0,0],[1,1],[2,2],[2,3] *= scaleW and [3,2] = -scaleW); the projected NDC is unchanged (precision hack of the old engine)
+    for (int r = 0; r < 4; r++) for (int c = 0; c < 4; c++) matrix4x(r, c) *= SceneCamera::s_scaleW;
     l_camera->setProjectionMatrix(identity * matrix4x);
     l_bCalcProjection = false;
   }

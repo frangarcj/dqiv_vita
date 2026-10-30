@@ -5,7 +5,7 @@ usage: tools/pktcheck.py [-v] [-q] TRACE_DIR_OR_FILES...
 
 Walks every native->host command stream with the EXACT operand consumption of NativeManager.cs (ints AND floats, 02_PACKET_PROTOCOL.md §C; the same table
 as NativeManager.cpp) and verifies, per frame:
-  * the int stream ends with -1 exactly at the recorded length,  * the float stream is consumed exactly,  * opcode range / slot ranges (chara 40, rise 16, mesh 40, fbx 16),
+  * the int stream ends with -1 exactly at the recorded length,  * the float stream is consumed exactly,  * opcode range / slot ranges (chara 40, rise 16, mesh 24, fbx 16),
   * op0 (fld_load) has a string,  * mesh (op23) vertex counts are multiples of 4 and index values stay inside the vertex range,
   * the MenuPort native->host buffer is a valid linked list (heads, offsets, lengths),  * the host->native input stream is well formed (ops 0/1, -1),
   * the frame numbers are consecutive.
@@ -14,10 +14,16 @@ Exit status 1 when any frame is bad.  This is the "--replay" offline equivalent:
 """
 import struct, sys, os, glob
 
-NAMES = ["fld_load","fld_color","fld_alpha","fld_pos","fld_rot","fld_common_anim","fld_event_anim","fld_on_off","fld_etc","back_color","fade","camera","camera_sub",
+# DQ4 command table (NativeManager.cs m_cmd_tbl, 38 entries): DQ5's ops 8 fld_etc, 28 mesh_ortho and 40 particle do not exist, so every later op number is lower.
+NAMES = ["fld_load","fld_color","fld_alpha","fld_pos","fld_rot","fld_common_anim","fld_event_anim","fld_on_off","back_color","fade","camera","camera_sub",
          "chara_load","chara","chara_on_off","chara_shadow","chara_sleep_pose","chara_sleep_near","chara_pose","rise_icon_load","rise_icon","mesh_load","mesh","mesh_on_off",
-         "mesh_shader","mesh_color","mesh_tex_offset","mesh_ortho","field_load","field","field_symbol","field_scale","fbx_load","fbx","map_color_rate","screen_effect",
-         "se_play","se_stop","bgm","particle"]
+         "mesh_shader","mesh_color","mesh_tex_offset","field_load","field","field_symbol","field_scale","fbx_load","fbx","map_color_rate","screen_effect",
+         "se_play","se_stop","bgm"]
+# the operand walker below is written with the DQ5 op numbers (shared operand layouts); translate DQ4 -> DQ5 numbering
+_DQ5 = ["fld_load","fld_color","fld_alpha","fld_pos","fld_rot","fld_common_anim","fld_event_anim","fld_on_off","fld_etc","back_color","fade","camera","camera_sub",
+        "chara_load","chara","chara_on_off","chara_shadow","chara_sleep_pose","chara_sleep_near","chara_pose","rise_icon_load","rise_icon","mesh_load","mesh","mesh_on_off",
+        "mesh_shader","mesh_color","mesh_tex_offset","mesh_ortho","field_load","field","field_symbol","field_scale","fbx_load","fbx","map_color_rate","screen_effect",
+        "se_play","se_stop","bgm","particle"]
 SENT_I = 0x7EADBEEF
 
 
@@ -47,8 +53,11 @@ class Stream:
 
 
 def run_command(op, s, strings, info):
+    if not (0 <= op < len(NAMES)): raise Bad("opcode %d out of range (DQ4 has %d)" % (op, len(NAMES)))
+    name = NAMES[op]
+    op = _DQ5.index(name)
     def slot(v, n, what):
-        if not (0 <= v < n): raise Bad("%s slot %d out of range (op %s)" % (what, v, NAMES[op]))
+        if not (0 <= v < n): raise Bad("%s slot %d out of range (op %s)" % (what, v, name))
     if op == 0:
         v = s.gi()
         if not strings: raise Bad("fld_load without a string")
@@ -91,9 +100,9 @@ def run_command(op, s, strings, info):
     elif op == 19: v = s.gi(); slot(v & 0xFF, 40, "chara")
     elif op == 20: s.gi(); s.gi()
     elif op == 21: sl = s.gi(); slot(sl, 16, "rise"); s.gf(4)
-    elif op == 22: sl = s.gi(); s.gi(); slot(sl, 40, "mesh")
+    elif op == 22: sl = s.gi(); s.gi(); slot(sl, 24, "mesh")
     elif op == 23:
-        sl = s.gi(); slot(sl, 40, "mesh"); s.gf(3)
+        sl = s.gi(); slot(sl, 24, "mesh"); s.gf(3)
         n = s.gi()
         if n < 0 or n % 4 or n > 4096: raise Bad("mesh vertex count %d" % n)
         for i in range(n):
@@ -104,11 +113,11 @@ def run_command(op, s, strings, info):
         for k in range(ni):
             if not (0 <= s.i[base + k] < n): raise Bad("mesh index %d out of range (n=%d)" % (s.i[base + k], n))
         info["mesh"] = info.get("mesh", 0) + 1
-    elif op == 24: sl = s.gi(); s.gi(); slot(sl, 40, "mesh")
-    elif op == 25: v = s.gi(); slot(v & 0xFF, 40, "mesh")
-    elif op == 26: sl = s.gi(); slot(sl, 40, "mesh"); s.gf(3)
-    elif op == 27: s.gf(2); sl = s.gi(); slot(sl, 40, "mesh")
-    elif op == 28: sl = s.gi(); slot(sl, 40, "mesh")
+    elif op == 24: sl = s.gi(); s.gi(); slot(sl, 24, "mesh")
+    elif op == 25: v = s.gi(); slot(v & 0xFF, 24, "mesh")
+    elif op == 26: sl = s.gi(); slot(sl, 24, "mesh"); s.gf(3)
+    elif op == 27: s.gf(2); sl = s.gi(); slot(sl, 24, "mesh")
+    elif op == 28: sl = s.gi(); slot(sl, 24, "mesh")
     elif op == 29: s.gi()
     elif op == 30:
         s.gi(); s.gi(); s.gi(); n = s.gi(); s.skip_i(n); s.gf(2)
@@ -147,7 +156,7 @@ def check_menu(buf):
     """native->host MenuPort buffer: heads[32], tails[32], cursor, messages"""
     if len(buf) < 65: return "menu buffer shorter than the header"
     heads = buf[:32]; cursor = buf[64]
-    if not (65 <= cursor <= 2048): return "menu cursor %d out of range" % cursor
+    if not (65 <= cursor <= 1089): return "menu cursor %d out of range" % cursor
     msgs = 0
     for p in range(32):
         o = heads[p]; guard = 0
