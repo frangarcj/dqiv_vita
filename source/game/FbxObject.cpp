@@ -12,10 +12,9 @@ FbxObject::FbxObject(int no) {
   GameObject* go = prefab ? Object::Instantiate(prefab) : nullptr;
   if (!go) { Debug::LogError("FbxObject: %s not found", path); return; }
   m_obj = go->transform;
+  if (no == 10) m_defScale = 0.4f;
   MaterialScan(m_materials, m_obj);
   m_obj->gameObject->SetActiveRecursively(false);
-  Animation* anim = m_obj->GetComponent<Animation>();
-  if (anim && anim->clip) m_mode = anim->clip->wrapMode;
 }
 
 void FbxObject::MaterialScan(std::vector<Material*>& list, Transform* a) {

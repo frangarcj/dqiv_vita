@@ -34,7 +34,6 @@ public:
     int16_t seq_obj_id = -1, pmv_id = -1, org_mdl_id = 0, org_seq_id = 0, org_pmv_id = 0, canim_id = -1, canim_no = 0, btest = 0;
     Transform* model = nullptr; Mesh* seq_mesh1 = nullptr; Mesh* seq_mesh2 = nullptr; int dirty = 0;
     std::shared_ptr<FLD_MOTION> m_motion; int alpha = 31;
-    std::vector<Material*> mat_normal, mat_transz;
   };
   struct FLD_SEQ_OBJ { int16_t obj_id = 0, seq_id = -1, grp_id = 0, start_delay = 0, repeat_delay = 0, repeat_num = 0, _start_delay = 0, _repeat_num = 0, cur_frame = 0; };
   struct FLD_MDL_DATA { int size = 0, flag = 0, common_id = 0; std::string name; int display_size = 0, shape_id1 = 0, shape_id2 = 0; float time = 0; };
@@ -70,8 +69,6 @@ public:
   void SetMaterialColor(Color c);
   void SetVertexColor(Color c);
   void calculateExecSepia();
-  void FixProblems(int mapId);
-  void update_material_color_force();
   bool IsLoaded() const { return m_root_obj != nullptr; }
   GameObject* GetRootObject() const { return m_root_obj; }
 
@@ -134,7 +131,6 @@ private:
 
   Quaternion rotateXZY(Vector3 rot);
   void set_obj_material_alpha(FLD_MAP_OBJ* obj, float alpha);
-  void update_obj_material_color(FLD_MAP_OBJ* obj);
   void set_priority(FLD_MAP_OBJ* obj, int priority);
   void set_priority2(FLD_MAP_OBJ* obj, int priority);
   std::vector<Material*> get_material_list(const std::string& name);
@@ -143,7 +139,6 @@ private:
   void init_model(Transform* model);
   void disable_game_object(Transform* obj, bool sw);
   void init_fld();
-  void ReplaseShader(FLD_MAP_OBJ* obj, Shader* src, Shader* dst);
   void init_seq_one(int idx);
   void init_seq();
   int fld_motion_update(FLD_MOTION* mot, KEY_TYPE key_type, FLD_MAP_OBJ* obj);
@@ -162,7 +157,7 @@ private:
   void set_palette_data(FLD_PLP_DATA* plp, FLD_PAM_DATA* pam, int key);
   void update_plp();
   void update_sra();
-  void update_material_color();
+  void update_material_color(GameObject* obj);
   void obj_visible(FLD_MAP_OBJ* obj, bool sw);
   std::shared_ptr<MotionArray> ReadMotion(ChunkFile& file, int n, KEY_TYPE key_type);
   void ChangeMapTable(int16_t tbl_id, int16_t obj_id);
@@ -185,5 +180,5 @@ private:
   FLD_MAP_ETC m_etc;
   int m_camera_no[2] = { 0, 0 };
   Vector3 m_x32_camera_pos[2], m_x32_camera_tag[2], m_x32_camera_vec[2];
-  bool m_updateColor = true; Color m_color; Vector3 m_scale; std::string m_data_path;
+  Color m_color; Vector3 m_scale; std::string m_data_path;
 };

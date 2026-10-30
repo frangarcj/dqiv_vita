@@ -14,8 +14,6 @@
 #include "game/Global.hpp"
 #include "game/Layout.hpp"
 #include "game/MainLoop.hpp"
-#include "game/Sepia.hpp"
-#include "game/Spotlight.hpp"
 #include "game/TouchPad.hpp"
 #include "miniunity.hpp"
 #include "utils/logger.h"
@@ -60,7 +58,6 @@ public:
     else if (e == "riremito") Capture::ScreenEffect(6);
     else if (e == "tabi") Capture::ScreenEffect(3);
     else if (e == "tabirev") Capture::ScreenEffect(3 | 0x8000);
-    else if (e == "sepia") Sepia::Setup();
     else if (e == "buttons") {
       Texture2D* col = new Texture2D(64, 64, TextureFormat::RGBA32);
       std::vector<Color32> px(64 * 64);
@@ -69,13 +66,6 @@ public:
       float W = (float)Screen::width;
       const char* sh[3] = { "Custom/Picture", "Custom/ButtonGray", "Custom/ButtonReverse" };
       for (int i = 0; i < 3; i++) FxQuad("btn", 0, 0, 150.f - i * 130.f, W * 0.6f, 100.f, sh[i], col, Color::white);
-    }
-    else if (e == "spot" || e == "torch") {
-      Spotlight::Create(e == "torch", 0.f, 0.f, 0.f);
-      Spotlight::SetSideColor(0.f, 0.f, 0.1f, 0.85f);
-      Spotlight::SetLightColor(1.f, 0.8f, 0.4f, 0.3f);
-      Spotlight::SetSize(96);
-      Spotlight::SetVisible(true);
     }
   }
 };

@@ -14,9 +14,9 @@ enum Op : uint8_t {
   OP_POST_A,       // (C.rgb, tex.a * C.a)        Post-Spotlight
   OP_INVERT,       // (1 - tex.rgb, tex.a)        ButtonReverse
   OP_GRAY,         // (|tex.rgb| * _Brightness).xxx, tex.a      ButtonGray        (CG program, FFP approximation without it)
-  OP_SEPIA_SCR,    // screen sepia                                Sepia             (CG program, FFP approximation without it)
   OP_SEPIA_FLD,    // sepia of tex*C                              fld_*_sepia       (CG program, FFP approximation without it)
   OP_LIT,          // ImdShadeChara: per-vertex lighting done on the CPU, then MUL
+  OP_SLEEP,        // CharaSleep(Ex): MUL with clip.xy = (mvp*v).xy and clip.zw = (VP * _sleepMatrix * v).zw (CG vertex program dqiv_sleep.v.cg; FFP fallback = MUL)
   OP_COUNT
 };
 enum { CMP_ALWAYS = 0, CMP_LEQUAL = 1, CMP_LESS = 2 };
@@ -52,6 +52,7 @@ struct DrawCall {
   const uint16_t* indices16 = nullptr; int maxIndex = -1;   // optional pre-converted u16 indices (cached per mesh revision by the renderer); maxIndex = highest index
   const Mesh* mesh = nullptr; int sub = 0;                  // source mesh/submesh when the draw comes from a MeshFilter (enables the GL buffer-object path for immutable pack meshes)
   Matrix4x4 model;                     // object -> world
+  Matrix4x4 sleepMatrix;               // _sleepMatrix (OP_SLEEP only)
 };
 
 // Per-frame render counters (reset by platform/perf.cpp when DQIVN_MEMSTATS is on; cheap increments otherwise).

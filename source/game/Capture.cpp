@@ -11,8 +11,6 @@
 #include "game/Global.hpp"
 #include "game/MainLoop.hpp"
 #include "game/NativeManager.hpp"
-#include "game/Sepia.hpp"
-#include "game/Spotlight.hpp"
 #include "game/TouchPad.hpp"
 
 namespace {
@@ -57,38 +55,16 @@ void HideSceneCameras() {
 void Capture::SystemInit() { (new GameObject())->AddComponent<Capture>()->name = "CaptureCTRL"; }
 
 void Capture::ScreenEffect(int screen_effect) {
-  switch (screen_effect & 0xFF) {
-    case 5: l_doFunc = DarkLamp((screen_effect & 0x8000) != 0); break;
-    case 6: l_doFunc = Riremito(); break;
-    case 3: l_doFunc = Tabi((screen_effect & 0x8000) != 0); break;
-    case 7:
-      if ((screen_effect & 0x8000) != 0) { Spotlight::Release(); return; }
-      if ((screen_effect & 0x100) != 0) {
-        float x = NativeManager::GetFloatEx(), y = NativeManager::GetFloatEx(), z = NativeManager::GetFloatEx();
-        Spotlight::Create((screen_effect & 0x800) != 0, x, y, z);
-      }
-      if ((screen_effect & 0x200) != 0) {
-        float r = NativeManager::GetFloatEx(), g = NativeManager::GetFloatEx(), b = NativeManager::GetFloatEx(), a = NativeManager::GetFloatEx();
-        Spotlight::SetSideColor(r, g, b, a);
-      }
-      if ((screen_effect & 0x400) != 0) {
-        float r = NativeManager::GetFloatEx(), g = NativeManager::GetFloatEx(), b = NativeManager::GetFloatEx(), a = NativeManager::GetFloatEx();
-        Spotlight::SetLightColor(r, g, b, a);
-      }
-      Spotlight::SetSize((screen_effect >> 16) & 0xFFFF);
-      Spotlight::SetVisible((screen_effect & 0x1000) != 0);
-      return;
-    case 8:
-      if ((screen_effect & 0x8000) != 0) Sepia::Release(); else Sepia::Setup();
-      return;
-    default:
-      l_doFunc = BattleEffect();
-      l_doFunc.MoveNext();
-      break;
-  }
-  if (!l_self) return;                                   // SystemInit's Start has not finished (never during the game: Flag 0x10000 gates the native calls)
-  l_self->gameObject->setActive(true);
+  bool flag = (screen_effect & 0x80) != 0;
+  screen_effect &= 0xF;
   Global::Flag |= 2;
+  if (l_self) l_self->gameObject->setActive(true);       // SystemInit's Start has not finished (never during the game: Flag 0x10000 gates the native calls)
+  switch (screen_effect) {
+    case 5: l_doFunc = DarkLamp(flag); break;
+    case 6: l_doFunc = Riremito(); break;
+    case 3: l_doFunc = Tabi(flag); break;
+    default: l_doFunc = BattleEffect(); break;
+  }
 }
 
 void Capture::Snap() { l_self->SnapShot(); }
@@ -466,7 +442,6 @@ Coroutine Capture::Riremito() {
 Coroutine Capture::Tabi(bool bReverse) {
   int h_divX = 16, h_divY = m_divY >> 1, divX = h_divX + 1, divY = h_divY + 1;
   float ay = 2.f / (float)h_divY, ax = 2.f / (float)h_divX;
-  if (bReverse) NativeManager::m_fld.update_material_color_force();
   SetBlur(true);
   Snap();
   co_yield 0;
@@ -476,7 +451,7 @@ Coroutine Capture::Tabi(bool bReverse) {
   std::vector<int> tr(h_divX * h_divY * 6);
   std::vector<Vector3> vt(uv.size());
   std::vector<Color32> cl(uv.size(), Color32(0, 0, 0, 0));
-  if (bReverse) { ax = 0.f - ax; ay = 0.f - ay; NativeManager::m_fld.update_material_color_force(); }
+  if (bReverse) { ax = 0.f - ax; ay = 0.f - ay; }
   for (int y = 0; y < divY; y++) {
     float fx = -1.f, fu = 0.f;
     for (int x = 0; x < divX; x++) {

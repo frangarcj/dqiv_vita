@@ -3,17 +3,15 @@
 #include "game/MenuParts.hpp"
 #include "game/SceneCamera.hpp"
 
-static const int s_offsetExhibit = 2000;
 static Mesh* s_mesh = nullptr;
-static Shader* s_shader[2] = { nullptr, nullptr };
+static Shader* s_shader = nullptr;
 
 Riseup::Riseup(int no) {
   GameObject* go = new GameObject();
   m_riseup = go->transform;
   m_riseup->localScale = Vector3::one * 1.f;
   go->AddComponent<MeshFilter>()->sharedMesh = s_mesh;
-  if (s_offsetExhibit <= no) { no -= s_offsetExhibit; m_material = new Material(s_shader[1]); }
-  else m_material = new Material(s_shader[0]);
+  m_material = new Material(s_shader);
   SetTexture(no);
   go->AddComponent<MeshRenderer>()->setMaterial(m_material);
 }
@@ -32,12 +30,11 @@ void Riseup::SetFieldMode() { m_riseup->gameObject->layer = 9; m_riseup->localSc
 void Riseup::SetFieldPosition(Vector3 pos) { m_riseup->setPosition(Vector3(pos.x, pos.z, 0.f - pos.y)); }
 void Riseup::SystemInit() {
   static const int tri[6] = { 0, 1, 3, 3, 1, 2 };
-  s_shader[0] = Shader::Find("Custom/Riseup");
-  s_shader[1] = Shader::Find("Custom/Chara");
+  s_shader = Shader::Find("Custom/Riseup");
   s_mesh = new Mesh();
   s_mesh->vertices = { Vector3(-0.48f, 0.f, 0.f), Vector3(0.48f, 0.f, 0.f), Vector3(0.48f, 0.96f, 0.48f), Vector3(-0.48f, 0.96f, 0.48f) };
   s_mesh->uv = { Vector2(1.f / 32.f, -1.f / 32.f), Vector2(0.f, -1.f / 32.f), Vector2(0.f, 0.f), Vector2(1.f / 32.f, 0.f) };
   s_mesh->SetSubMeshCount(1);
   s_mesh->SetTriangles(tri, 6, 0);
-  Object::DontDestroyOnLoad(s_shader[0]); Object::DontDestroyOnLoad(s_shader[1]); Object::DontDestroyOnLoad(s_mesh);
+  Object::DontDestroyOnLoad(s_shader); Object::DontDestroyOnLoad(s_mesh);
 }

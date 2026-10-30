@@ -1,0 +1,8 @@
+// CharaSleep: c = tex * _Color; discard if c.a == 0 (atest 1)   CharaSleepEx pass 0: discard if c.a != 1 (atest 2)
+float4 main(float2 vTex : TEXCOORD0, float4 vColor : COLOR0, uniform sampler2D tex : TEXUNIT0, uniform float atest) : COLOR
+{
+  float4 c = tex2D(tex, vTex) * vColor;
+  if (atest > 0.5 && atest < 1.5 && c.w == 0.0) discard;
+  if (atest > 1.5 && c.w != 1.0) discard;
+  return c;
+}

@@ -234,6 +234,7 @@ static void RenderCamera(Camera* cam) {
       if (it.sub < (int)gc.idx16.size()) { dc.indices16 = gc.idx16[it.sub].data(); dc.maxIndex = gc.idxMax[it.sub]; }
     }
     dc.model = s_models[it.mi];
+    dc.sleepMatrix = it.sd->pass[0].op == backend::OP_SLEEP ? it.mat->GetMatrix("_sleepMatrix") : Matrix4x4::identity();
     for (int pass = 0; pass < it.sd->npass; pass++) { dc.pass = pass; backend::Draw(dc); }
   }
 }

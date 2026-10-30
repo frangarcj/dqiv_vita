@@ -2,7 +2,7 @@
 // extract/pack_shaders (which attributes/uniforms each program really reads: vertex colour, _Color, _MainTex_ST) and the ShaderLab state of
 // re/arch/shaders/*.shader.txt (Cull default Back, ZWrite default On, ZTest default LEqual; AlphaTest lines are realised by the programs' `discard`).
 //
-// All 53 shader objects of the game are present; the coverage table is printed by `ShaderTableDump()` at start-up in debug builds.
+// DQ4 pack: 45 shader objects (docs/TODO_DQ4.md lists them) (DQ5's Sepia, Spotlight, Particle, Volcano, Bssa*, DssaNormal, ImdShade*, Field_iOS do not exist);  the coverage table is printed by `ShaderTableDump()` at start-up in debug builds.
 #include "engine/backend.hpp"
 #include "utils/logger.h"
 
@@ -40,21 +40,17 @@ static const ShaderDesc k_table[] = {
   // ---- image effects (clip-space)
   { "Custom/Capture",             3000, ONE(P(0,0,CMP_ALWAYS,BLEND_ALPHA,AT_NONE,OP_RGB_A1)), 1,1,0, 1 },
   { "Custom/CaptureBlur",         1000, ONE(P(0,0,CMP_ALWAYS,BLEND_ADD,AT_NONE,OP_RGB_A1)),   0,1,0, 1 },
-  { "Custom/Sepia",               3950, ONE(P(1,0,CMP_ALWAYS,BLEND_NONE,AT_NONE,OP_SEPIA_SCR)), 0,0,0, 1 },
-  { "Custom/Pre-Spotlight",       3950, ONE(P(1,0,CMP_ALWAYS,BLEND_ALPHA,AT_NONE,OP_INV_A)),  0,1,0, 1 },
-  { "Custom/Post-Spotlight",      3951, ONE(P(1,0,CMP_ALWAYS,BLEND_ALPHA,AT_NONE,OP_POST_A)), 0,1,0, 1 },
   // ---- billboards / sprites
   { "Custom/Chara",               3000, ONE(P(0,1,CMP_LEQUAL,BLEND_ALPHA,AT_GREATER0,OP_MUL)), 0,1,2, 0 },
   { "Custom/CharaEx",             3000, 2, { P(0,1,CMP_LEQUAL,BLEND_NONE,AT_EQUAL1,OP_MUL), P(0,0,CMP_LEQUAL,BLEND_ALPHA,AT_NONE,OP_MUL) }, 0,1,2, 0 },
+  { "Custom/CharaSleep",          3000, ONE(P(0,1,CMP_LEQUAL,BLEND_ALPHA,AT_GREATER0,OP_SLEEP)), 0,1,2, 0 },     // DQ4: lying sprite, depth from _sleepMatrix
+  { "Custom/CharaSleepEx",        3000, 2, { P(0,1,CMP_LEQUAL,BLEND_NONE,AT_EQUAL1,OP_SLEEP), P(0,0,CMP_LEQUAL,BLEND_ALPHA,AT_GREATER0,OP_SLEEP) }, 0,1,2, 0 },
   { "Custom/CharaShadow",         2999, ONE(P(1,0,CMP_LEQUAL,BLEND_ALPHA,AT_NONE,OP_MUL)),    0,1,0, 0 },
   { "Custom/Riseup",              3850, ONE(P(0,0,CMP_ALWAYS,BLEND_ALPHA,AT_NONE,OP_MUL)),    1,1,2, 0 },
   { "Custom/Effect0",             3300, ONE(P(0,0,CMP_LEQUAL,BLEND_ALPHA,AT_GREATER0,OP_MUL)), 0,1,2, 0 },
-  { "Custom/Particle",            3400, ONE(P(0,0,CMP_LEQUAL,BLEND_ALPHA,AT_NONE,OP_MUL)),    1,0,0, 0 },
   // ---- world map
   { "Custom/Field",               2000, ONE(P(0,1,CMP_LEQUAL,BLEND_NONE,AT_NONE,OP_MUL)),     0,1,0, 0 },
-  { "Custom/Field_iOS",           2000, ONE(P(0,1,CMP_LEQUAL,BLEND_NONE,AT_NONE,OP_MUL)),     0,1,0, 0 },
   { "Custom/FieldSymbol",         3000, ONE(P(0,0,CMP_LEQUAL,BLEND_ALPHA,AT_NONE,OP_MUL)),    0,1,0, 0 },
-  { "Custom/FieldVolcano",        3001, ONE(P(0,0,CMP_LEQUAL,BLEND_ALPHA,AT_NONE,OP_MUL)),    1,0,0, 0 },
   { "Custom/SmallMapSymbol",      2000, ONE(P(0,1,CMP_LEQUAL,BLEND_NONE,AT_NONE,OP_FLAT)),    0,1,0, 0 },
   // ---- FLD (town/dungeon) models: tex * (vc * _Color), no ST
   { "Custom/fld_normal",          2000, ONE(P(1,1,CMP_LEQUAL,BLEND_NONE,AT_NONE,OP_MUL)),      1,1,0, 0 },
@@ -65,17 +61,12 @@ static const ShaderDesc k_table[] = {
   { "Custom/fld_atest_sepia",     2450, ONE(P(1,1,CMP_LEQUAL,BLEND_NONE,AT_GREATER0,OP_SEPIA_FLD)), 1,1,0, 0 },
   { "Custom/fld_trans_sepia",     3000, ONE(P(1,0,CMP_LEQUAL,BLEND_ALPHA,AT_NONE,OP_SEPIA_FLD)),    1,1,0, 0 },
   // ---- DSSA / BSSA (DS 3D-sprite emulation quads): tex * vc * _Color
-  { "Custom/DssaNormal",          2000, ONE(P(0,1,CMP_LEQUAL,BLEND_ALPHA,AT_GREATER0,OP_MUL)), 1,1,2, 0 },
   { "Custom/DssaChara",           3100, ONE(P(0,1,CMP_LEQUAL,BLEND_ALPHA,AT_GREATER0,OP_MUL)), 1,1,2, 0 },
   { "Custom/DssaMonster0",        3150, ONE(P(0,0,CMP_LEQUAL,BLEND_ALPHA,AT_NONE,OP_MUL)),     1,1,2, 0 },
   { "Custom/DssaMonster1",        3200, ONE(P(0,0,CMP_LEQUAL,BLEND_ALPHA,AT_NONE,OP_MUL)),     1,1,2, 0 },
   { "Custom/DssaCharaTransparent",3850, ONE(P(0,0,CMP_ALWAYS,BLEND_ALPHA,AT_NONE,OP_MUL)),     1,1,2, 0 },
-  { "Custom/BssaCharaTransparent",3000, ONE(P(0,1,CMP_LESS,BLEND_ALPHA,AT_GREATER0,OP_MUL)),   1,1,2, 0 },
-  { "Custom/BssaEffectTransparent",3001,ONE(P(0,0,CMP_LESS,BLEND_ALPHA,AT_NONE,OP_MUL)),       1,0,1, 0 },
   // ---- prefab materials (cutscene / minigame characters, props)
   { "Custom/ImdChara",            2000, ONE(P(1,1,CMP_LEQUAL,BLEND_ALPHA,AT_NONE,OP_MUL)),     1,1,0, 0 },
-  { "Custom/ImdShadeChara",       2000, ONE(P(1,1,CMP_LEQUAL,BLEND_ALPHA,AT_NONE,OP_LIT)),     1,1,0, 0 },
-  { "Custom/ImdShadeChara2",      3000, ONE(P(1,1,CMP_LEQUAL,BLEND_ALPHA,AT_NONE,OP_LIT)),     1,1,0, 0 },
   { "Custom/Simple",              2000, ONE(P(1,1,CMP_LEQUAL,BLEND_NONE,AT_NONE,OP_MUL)),      0,0,2, 0 },
   { "Custom/SimpleTransparent",   3000, ONE(P(1,0,CMP_LEQUAL,BLEND_ALPHA,AT_NONE,OP_MUL)),     0,0,2, 0 },
   { "Custom/DebugColl",           2000, ONE(P(0,1,CMP_LEQUAL,BLEND_NONE,AT_NONE,OP_FLAT)),     1,1,0, 0 },

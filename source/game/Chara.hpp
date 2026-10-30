@@ -10,7 +10,7 @@ using namespace miniunity;
 class Chara : public BillboardObject {
 public:
   GameObject* m_chara = nullptr; Transform* m_charaT = nullptr; GameObject* m_shadow = nullptr; Material* m_material = nullptr;
-  int m_patternYmax = 0; bool m_bSeparateShadow = false, m_bVisibleShadow = true;
+  int m_patternYmax = 0; bool m_bSeparateShadow = false;
   explicit Chara(int no);
   void Release() override;
   void SetPosition(Vector3 p) override;
@@ -32,11 +32,11 @@ public:
   static void SystemInit();
   static void SetSleepNear(int defNear, int offset);
   static void CalcLieBillboard(Quaternion camRot);
-  static void SetPriorityShader(int prio = 0);
   static void UpdateBillboardShadows();
 private:
-  int l_sizeType = 0, l_patternYmax = 0; Material* l_shadowMat = nullptr;
-  bool l_colorWithShadow = false, l_shadowMatMade = false, l_bSleep = false;
+  float m_vPatternSize = 0.f; Vector2 l_uvOffset; float l_vAdjust = 0.f, l_uChara = 0.f;
+  int l_patternYmax = 0; Material* l_shadowMat = nullptr;
+  bool l_colorWithShadow = false, l_shadowMatMade = false, l_bSleep = false, l_useCharaShaderEx = false;
   int l_sleepDigitalDir = 0; Quaternion l_sleepRotation = Quaternion::identity; Vector3 l_sleepPosition;
   void normalBillboard(); void lieBillboard(); void SetColorWithShadow(Color c); void SetShadowAlphaThereafter(float a);
 };

@@ -31,7 +31,6 @@ public:
     Global::InitCamera(0);
     SceneCamera::SetAngleDeg(Global::CameraInitParams[0].GetAngleVector());
     Chara::SetSleepNear(0, 0);
-    Chara::SetPriorityShader();
     const int cols = 4;
     for (int i = 0; i < g_count; i++) {
       int tex = (g_first + i) | (4 << 16);                       // CharaTex/hNNN, 4 pattern rows, size type 0 (32x64 sprite)
