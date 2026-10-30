@@ -43,12 +43,9 @@ public:
   };
   class ICityMap : public MenuParts::IBase {
   public:
-    Transform* m_self = nullptr;
-    ICityMap(MenuPortItem* item, MenuParts* posf, Transform* root);
-  };
-  class IBetText : public MenuParts::IBase {
-  public:
-    explicit IBetText(TextMesh* textMesh);
+    ICityMap(MenuPortItem* item, MenuParts* posf);
+  private:
+    MenuParts* m_map = nullptr;
   };
 
 
@@ -62,14 +59,12 @@ public:
   };
   class MonsterMarkList {
   public:
+    Vector3 m_pos = Vector3::zero;
     uint32_t m_used = 0;
     MenuParts* m_list[12];
     explicit MonsterMarkList(MenuPortItem* item);
-    static void CalcMarkY();
     void Reset();
-    void SetMark(int id, float x, float y);
-  private:
-    static float s_posY;
+    void SetMark(int id, float x);
   };
   class MonsterNamePlate {
   public:
@@ -101,10 +96,6 @@ public:
   static void Sub_CasinoBuyUD(MenuPortItem* item, short pos, short bid, MenuParts* parent, int parentIndex);
   static MenuParts* Sub_CasinoEnter(MenuPortItem* item, short bid, short pad, Transform* parent, short cid, short did);
   static MenuParts* Sub_CasinoStart(MenuPortItem* item, short bid, short pad, Transform* parent, short cid, short did);
-  static void Sub_MonsNameButton(MenuPortItem* item, MenuParts* parent, short no, float x, float y);
-  static Transform* Sub_SlimeTButton(MenuPortItem* item, MenuParts* parent, short bid, float x, float y);
-  static MenuParts* Sub_SlimeRace_Bet(MenuPortItem* item, MenuParts* frame, short bid, short xx, short yy);
-  static void Sub_SlimeEntryButton(MenuPortItem* item, MenuParts* parent, short no, float x, float y);
   static void Sub_BattleUpStatus(MenuPortItem* item, short no, Transform* parent);
   static void Sub_BattleAction(MenuPortItem* item, short buttonId, int icon, Transform* parent, float x, float y, float z, int W = 136, float H = 20.f, int ix = 0);
   static Transform* Sub_BattleInfo(MenuPortItem* item, short buttonId, Transform* parent);
@@ -174,9 +165,9 @@ public:
   static MenuPortItem* Make_BankDraw(short port, short type);
   static MenuPortItem* Make_ChurchRoot(short port, short type);
   static MenuPortItem* Make_ChurchWork(short port, short type);
-  static MenuPortItem* Make_MessageStatus(short port, short type);
-  static MenuPortItem* Make_MuseumMemo(short port, short type);
-  static MenuPortItem* Make_MuseumInfo(short port, short type);
+  static MenuPortItem* Make_Chapter2Status(short port, short type);
+  static MenuPortItem* Make_TorunekoMiseban(short port, short type);
+  static MenuPortItem* Make_NENE_ItemView(short port, short type);
   static MenuPortItem* Make_FightStadiumAbort(short port, short type);
   static MenuPortItem* Make_ViewVolumeDecision(short port, short type);
   static MenuPortItem* Make_TitleTouch(short port, short type);
@@ -186,25 +177,4 @@ public:
   static MenuPortItem* Make_NetworkCODE(short port, short type);
   static MenuPortItem* Make_NetworkITEM(short port, short type);
   static MenuPortItem* Make_License(short port, short type);
-  static MenuPortItem* Make_MonG_Root(short port, short type);
-  static MenuPortItem* Make_MonG_Button(short port, short type);
-  static MenuPortItem* Make_MonsG_Name(short port, short type);
-  static MenuPortItem* Make_MonsG_MessageUpChar(short port, short type);
-  static MenuPortItem* Make_LuidaRoot(short port, short type);
-  static MenuPortItem* Make_SugorokuRoot(short port, short type);
-  static MenuPortItem* Make_Sugoroku_Arrow(short port, short type);
-  static MenuPortItem* Make_Sugoroku_Dice(short port, short type);
-  static MenuPortItem* Make_Sugoroku_Timer(short port, short type);
-  static MenuPortItem* Make_Sugoroku_Shop(short port, short type);
-  static MenuPortItem* Make_SugorokuDrop(short port, short type);
-  static MenuPortItem* Make_ScopeBack(short port, short type);
-  static MenuPortItem* Make_SlimeTouch_Root(short port, short type);
-  static MenuPortItem* Make_SlimeTouch_Score(short port, short type);
-  static MenuPortItem* Make_SlimeRace_BetA(short port, short type);
-  static MenuPortItem* Make_SlimeRace_BetB(short port, short type);
-  static MenuPortItem* Make_SlimeRace_Coin(short port, short type);
-  static MenuPortItem* Make_SlimeRace_MoneyCoin(short port, short type);
-  static MenuPortItem* Make_SlimeRace_Entry(short port, short type);
-  static MenuPortItem* Make_SlimeRace_Result(short port, short type);
-  static MenuPortItem* Make_SlimeRace_BetC(short port, short type);
 };

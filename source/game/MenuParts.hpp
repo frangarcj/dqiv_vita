@@ -27,7 +27,7 @@ class MenuParts : public Component {
 public:
   // ---- font / language parameters ----
   struct LangParam {
-    const char* fontName; float size, line, dif_y; int nameScale;
+    const char* fontName; float size, line, dif_y;
     void Apply() const;
   };
 
@@ -65,7 +65,7 @@ public:
     using StringChanger = std::function<void(const std::string&)>;
     static std::shared_ptr<IBase> s_dummy;
     IntChanger m_intChanger; StringChanger m_stringChanger;
-    bool m_bEnable = true; short m_sprm = 0;
+    bool m_bEnable = true;
     IBase();
     virtual ~IBase() {}
     void Change(int i) { m_intChanger(i); }
@@ -75,8 +75,7 @@ public:
 
   class IButton : public IBase {
   public:
-    static constexpr int c_textColorChange = 1, c_reversed = 2;
-    int m_flag = 0;
+    bool m_enableTextColorChange = false;
     IButton(MenuParts* parts, Material* material, Color baseColor);
     explicit IButton(Material* material);
     IButton();
@@ -106,21 +105,20 @@ public:
     void normalFunc(int value);
     void firstFunc(int value);
   };
-  class ITexture : public IBase { public: explicit ITexture(Material* material); };
-
+  
   using FuncIsHit = std::function<bool(Ray&)>;
 
   // ---- constants ----
-  static constexpr int ICON_ITEM = 0, ICON_CHAR = 1, ICON_MENU = 3, PARTS_WINDOW0 = 4, ICON_CURSOR = 5, ICON_FONT = 6, PARTS_BUTTON = 7, ICON_TRIANGLE = 8, ICON_BTL_BAR = 9,
-                       ICON_ALLOW = 10, ICON_HOPNUM = 11, ICON_ITEM_NUM = 12, ICON_STATUS = 13, ICON_SUGOROKU_ARROW = 14;
+  static constexpr int ICON_ITEM = 0, ICON_CHAR = 1, ICON_FACE = 2, ICON_MENU = 3, PARTS_WINDOW0 = 4, ICON_CURSOR = 5, ICON_FONT = 6, PARTS_BUTTON = 7, ICON_TRIANGLE = 8, ICON_BTL_BAR = 9,
+                       ICON_ALLOW = 10, ICON_HOPNUM = 11, ICON_ITEM_NUM = 12, ICON_STATUS = 13;
   static constexpr int TEXT_COLOR_WHITE = 0, TEXT_COLOR_YELLOW = 1, TEXT_COLOR_RED = 2, TEXT_COLOR_GRAY = 3, TEXT_COLOR_BLACK = 4, TEXT_COLOR_CYAN = 5, TEXT_COLOR_GREEN = 6;
-  static constexpr int BUTTON_STATE_NORMAL = 0, BUTTON_STATE_PUSHED = 1, BUTTON_STATE_UNVISIBLE = 2, BUTTON_STATE_GRAY = 3, BUTTON_STATE_REVERSE = 4, BUTTON_STATE_REVERSE2 = 5, BUTTON_STATE_UNREVERSE = 6;
+  static constexpr int BUTTON_STATE_NORMAL = 0, BUTTON_STATE_PUSHED = 1, BUTTON_STATE_UNVISIBLE = 2, BUTTON_STATE_GRAY = 3, BUTTON_STATE_REVERSE = 4;
 
   // ---- statics ----
   static std::string FONT_NAME;
-  static float BIAS_FONT_SIZE, BIAS_FONT_LINE, BIAS_FONT_Y, NAME_BASE_SCALE;
+  static float BIAS_FONT_SIZE, BIAS_FONT_LINE, BIAS_FONT_Y, HIRO_NAME_SCALE;
   static int APPLY_HERO;
-  static PartsInfo s_info[15];
+  static PartsInfo s_info[14];
   static Shader *l_fontShader, *l_grayShader, *l_reverseShader, *l_pictureShader, *l_partsShader;
   static Font* l_unityFont;
   static Color s_colorList[7];
@@ -132,7 +130,7 @@ public:
   FuncIsHit m_isHit;
   UnityOBJList m_uol;
   short m_buttonId = -1, m_gamepad = 0;
-  bool m_se = false, m_externalToggle = false;
+  bool m_externalToggle = false;
   uint32_t m_textColorTargetBits = 0;
   std::vector<IBasePtr> m_list;
   std::shared_ptr<IButton> m_button;
@@ -142,7 +140,7 @@ public:
   static void SystemInit();
   static void SetRiseupMaterial(Material* m, int partsNo, int no);
   static void SetTextColor(Renderer* a, int color);
-  void SetEnableButtonTextColorChange() { m_button->m_flag |= 1; }
+  void SetEnableButtonTextColorChange() { m_button->m_enableTextColorChange = true; }
   void SetTextColor(int color);
   bool defaultIsHit(Ray& ray);
   void Awake() override;
@@ -177,10 +175,8 @@ public:
   void Build(int indent, int screenIndent, float x, float y, float z, Transform* parent = nullptr);
   std::shared_ptr<IBar> AddBar(int no, int barNo, int backNo, float x, float y, float z, float w, float adjustX);
   void VariableWindow(int no, float sizeW, float sizeH, int indent);
-  void AddChangeIconTexture(int indent, float x, float y, float z, float size, bool bInBounds);
 
   // ---- factories ----
-  static MenuParts* CreateIconTexture(int indent, float x, float y, float z, float size);
   static MenuParts* CreateBuildVariableWindow(int no, float sizeW, float sizeH, int indent, bool bCloneMaterial);
   static Vector3 CalcSquareSize(int partsNo, float sizeW, float sizeH) { return s_info[partsNo].CalcSquareSize(sizeW, sizeH); }
   template <class T = MenuParts> static T* Create(int partsNo, bool bCloneMaterial = false) {

@@ -7,22 +7,22 @@
 
 // ------------------------------------------------------------------------------------------------ statics
 std::string MenuParts::FONT_NAME;
-float MenuParts::BIAS_FONT_SIZE = 0.f, MenuParts::BIAS_FONT_LINE = 0.f, MenuParts::BIAS_FONT_Y = 0.f, MenuParts::NAME_BASE_SCALE = 1.f;
+float MenuParts::BIAS_FONT_SIZE = 0.f, MenuParts::BIAS_FONT_LINE = 0.f, MenuParts::BIAS_FONT_Y = 0.f, MenuParts::HIRO_NAME_SCALE = 1.f;
 int MenuParts::APPLY_HERO = 0;
 
 MenuParts::LangParam MenuParts::s_langParam[5] = {
-  { "Menu/GMaruGoPro-M", 1.105f, 0.5f, 0.f, 0 },
-  { "Menu/SE-GARRIR", 1.105f, 0.8013f, 3.5f, 76 },
-  { "Menu/FOTK-YDHopeL", 1.105f, 1.f, 0.f, 76 },
-  { "Menu/FZHTK_TL", 1.105f, 0.895f, 0.f, 72 },
-  { "Menu/FZHTK_SL", 1.105f, 0.895f, 0.f, 72 },
+  { "Menu/GMaruGoPro-M", 1.105f, 0.5f, 0.f },
+  { "Menu/SE-GARRIR", 1.105f, 0.8013f, 2.5f },
+  { "Menu/FOTK-YDHopeL", 1.105f, 1.f, 0.f },
+  { "Menu/FZHTK_TL", 1.105f, 0.895f, 0.f },
+  { "Menu/FZHTK_SL", 1.105f, 0.895f, 0.f },
 };
 MenuParts::TexInfo MenuParts::l_texInfo[2] = { MenuParts::TexInfo("MenuTexture"), MenuParts::TexInfo("Button") };
 
-MenuParts::PartsInfo MenuParts::s_info[15] = {
-  PartsInfo(0, 0, 0, 32, 48),   PartsInfo(0, 0, 352, 32, 48), PartsInfo(0, 0, 768, 48, 96), PartsInfo(0, 0, 576, 32, 48), PartsInfo(0, 0, 480, 8, 12),
-  PartsInfo(0, 0, 640, 16, 18), PartsInfo(1, 192, 64, 32, 48), PartsInfo(1, 0, 0, 32, 16),   PartsInfo(1, 192, 0, 48, 64),  PartsInfo(1, 352, 104, 16, 8),
-  PartsInfo(0, 96, 640, 48, 64), PartsInfo(0, 576, 640, 16, 16), PartsInfo(1, 192, 192, 32, 48), PartsInfo(0, 0, 656, 16, 18), PartsInfo(0, 448, 608, 32, 32),
+MenuParts::PartsInfo MenuParts::s_info[14] = {
+  PartsInfo(0, 0, 0, 32, 48),   PartsInfo(0, 0, 192, 32, 48), PartsInfo(0, 0, 576, 96, 96), PartsInfo(0, 0, 224, 32, 48), PartsInfo(0, 0, 480, 8, 12),
+  PartsInfo(0, 0, 288, 16, 18), PartsInfo(1, 192, 64, 32, 48), PartsInfo(1, 0, 0, 32, 16),   PartsInfo(1, 192, 0, 48, 64),  PartsInfo(1, 352, 104, 16, 8),
+  PartsInfo(0, 96, 288, 48, 64), PartsInfo(0, 576, 288, 16, 16), PartsInfo(1, 192, 192, 32, 48), PartsInfo(0, 0, 304, 16, 18),
 };
 
 Shader *MenuParts::l_fontShader, *MenuParts::l_grayShader, *MenuParts::l_reverseShader, *MenuParts::l_pictureShader, *MenuParts::l_partsShader;
@@ -34,7 +34,7 @@ Material* MenuParts::l_colorFontList[7];
 std::shared_ptr<MenuParts::IBase> MenuParts::IBase::s_dummy = std::make_shared<MenuParts::IBase>();
 
 void MenuParts::LangParam::Apply() const {
-  FONT_NAME = fontName; BIAS_FONT_SIZE = size; BIAS_FONT_LINE = line; BIAS_FONT_Y = dif_y; NAME_BASE_SCALE = (float)nameScale;
+  FONT_NAME = fontName; BIAS_FONT_SIZE = size; BIAS_FONT_LINE = line; BIAS_FONT_Y = dif_y;
 }
 
 // ------------------------------------------------------------------------------------------------ TexInfo / PartsInfo
@@ -148,12 +148,11 @@ MenuParts::IButton::IButton(MenuParts* parts, Material* material, Color baseColo
     switch (value) {
       default:
         m_bEnable = true;
-        if ((m_flag & 2) != 0) { flag2 = true; shader = l_reverseShader; textColor = 4; }
         break;
       case 1:
         m_bEnable = true;
-        if ((m_flag & 2) != 0) { shader = l_reverseShader; textColor = 4; }
-        else flag2 = true;
+        flag2 = true;
+        flag2 = true;
         break;
       case 2:
         m_bEnable = false;
@@ -170,19 +169,8 @@ MenuParts::IButton::IButton(MenuParts* parts, Material* material, Color baseColo
         flag2 = true;
         textColor = 4;
         break;
-      case 5:
-        m_bEnable = true;
-        shader = l_reverseShader;
-        flag2 = true;
-        textColor = 4;
-        m_flag |= 2;
-        break;
-      case 6:
-        m_bEnable = true;
-        m_flag &= -3;
-        break;
     }
-    if ((m_flag & 1) != 0) parts->SetTextColor(textColor);
+    if (m_enableTextColorChange) parts->SetTextColor(textColor);
     Color color = !flag ? m_baseColor : Color::clear;
     for (Material* material2 : m_shaderMats) {
       material2->shader = shader;
@@ -222,23 +210,42 @@ MenuParts::IText::IText(TextMesh* textMesh) {
 
 MenuParts::IText::IText(TextMesh* textMesh, Transform* transform, float fsize) {
   if (APPLY_HERO == 1) {
-    APPLY_HERO = 0;
-    m_stringChanger = [this, textMesh, transform, fsize](const std::string& text2) {
-      switch (m_sprm & 0xF000) {
-        case 4096:
-          transform->localScale = Vector3(NAME_BASE_SCALE / (float)(m_sprm & 0xFFF), 1.f, 1.f);
-          textMesh->characterSize = fsize;
-          break;
-        case 8192: transform->localScale = Vector3::one; textMesh->characterSize = 8.f; break;
-        case 12288: transform->localScale = Vector3::one; textMesh->characterSize = 9.f; break;
-        case 16384: transform->localScale = Vector3::one; textMesh->characterSize = 6.25f; break;
-        default: transform->localScale = Vector3::one; textMesh->characterSize = fsize; break;
+    m_stringChanger = [textMesh, transform, fsize](const std::string& text0) {
+      std::string text = text0;
+      size_t num = text.find('^');
+      if (num != std::string::npos) {
+        switch (num + 1 < text.size() ? text[num + 1] : '\0') {
+          case '0':
+            transform->localScale = Vector3(HIRO_NAME_SCALE, 1.f, 1.f);
+            textMesh->characterSize = fsize;
+            break;
+          case '1': transform->localScale = Vector3::one; textMesh->characterSize = 8.f; break;
+          case '3': transform->localScale = Vector3::one; textMesh->characterSize = 9.f; break;
+          case '4': transform->localScale = Vector3::one; textMesh->characterSize = 6.25f; break;
+          case '5': {
+            float num2 = 1.4f * HIRO_NAME_SCALE;
+            if (num2 > 1.f) num2 = 1.f;
+            transform->localScale = Vector3(num2, 1.f, 1.f);
+            textMesh->characterSize = fsize;
+            break;
+          }
+        }
+        text.erase(num, 2);
+      } else {
+        transform->localScale = Vector3::one;
+        textMesh->characterSize = fsize;
       }
-      textMesh->text = text2;
+      textMesh->text = text;
     };
   } else {
-    m_stringChanger = [textMesh](const std::string& text2) { textMesh->text = text2; };
+    m_stringChanger = [textMesh](const std::string& text0) {
+      std::string text = text0;
+      size_t num = text.find('^');
+      if (num != std::string::npos) text.erase(num, 2);
+      textMesh->text = text;
+    };
   }
+  APPLY_HERO = 0;
   m_intChanger = [textMesh](int value) { textMesh->renderer()->setSharedMaterial(l_colorFontList[value]); };
 }
 
@@ -294,16 +301,6 @@ void MenuParts::IBar::firstFunc(int value) {
   m_width = mesh->vertices[m_vtxIndex + 1].x - m_zero;
   m_intChanger = [this](int v) { normalFunc(v); };      // C#: (m_intChanger = normalFunc)(value)
   normalFunc(value);
-}
-
-MenuParts::ITexture::ITexture(Material* material) {
-  material->color = Color::clear;
-  m_intChanger = [material](int value) {
-    char buf[32];
-    snprintf(buf, sizeof(buf), "Menu/face/f%02d", value);
-    material->mainTexture = Resources::Load<Texture>(buf);
-    material->color = material->mainTexture ? Color::white : Color::clear;
-  };
 }
 
 // ------------------------------------------------------------------------------------------------ MenuParts
@@ -392,7 +389,6 @@ void MenuParts::SetTouchScreenButton(short buttonId, short gamePad) {
   m_isHit = [](Ray&) { return true; };
   m_buttonId = buttonId;
   m_gamepad = gamePad;
-  m_se = (gamePad & 0xA10) != 0;
 }
 
 void MenuParts::ChangeParts(int partsNo, bool bCloneMaterial, bool bForceDivTriangles) {
@@ -466,17 +462,17 @@ void MenuParts::AddSquare(Vector3 pos, int no, bool bInBounds, float sizeW, floa
 }
 
 void MenuParts::SetButtonIcon(short buttonId, short gamepad) {
-  m_buttonId = buttonId; m_gamepad = gamepad; m_se = (gamepad & 0xA10) != 0;
+  m_buttonId = buttonId; m_gamepad = gamepad;
   m_button = std::make_shared<IButton>(m_maker->GetNowMaterial());
   m_list.push_back(m_button);
 }
 void MenuParts::SetButton(short buttonId, short gamepad) {
-  m_buttonId = buttonId; m_gamepad = gamepad; m_se = (gamepad & 0xA10) != 0;
+  m_buttonId = buttonId; m_gamepad = gamepad;
   m_button = std::make_shared<IButton>();
   m_list.push_back(m_button);
 }
 void MenuParts::SetButtonColliderOut(short buttonId, short gamepad) {
-  m_buttonId = buttonId; m_gamepad = gamepad; m_se = (gamepad & 0xA10) != 0;
+  m_buttonId = buttonId; m_gamepad = gamepad;
   m_button = std::make_shared<IButton>();
   m_isHit = [this](Ray& ray) {
     Collider* c = collider();
@@ -484,13 +480,13 @@ void MenuParts::SetButtonColliderOut(short buttonId, short gamepad) {
   };
 }
 void MenuParts::AddButton(Vector3 pos, float sizeW, float sizeH, short buttonId, short gamepad, short buttonType, Color color) {
-  m_buttonId = buttonId; m_gamepad = gamepad; m_se = (gamepad & 0xA10) != 0;
+  m_buttonId = buttonId; m_gamepad = gamepad;
   m_button = std::make_shared<IButton>(this, m_maker->GetNowMaterial(), color);
   m_list.push_back(m_button);
   s_info[m_nowParts].AddSquare(m_maker, pos, buttonType, true, sizeW, sizeH);
 }
 void MenuParts::AddButtonIcon(Vector3 pos, int no, float size, short buttonId, short gamepad) {
-  m_buttonId = buttonId; m_gamepad = gamepad; m_se = (gamepad & 0xA10) != 0;
+  m_buttonId = buttonId; m_gamepad = gamepad;
   m_button = std::make_shared<IButton>(m_maker->GetNowMaterial());
   m_list.push_back(m_button);
   s_info[m_nowParts].AddParts(m_maker, pos, no, true, size);
@@ -615,28 +611,6 @@ MeshMaker* MenuParts::NewMaker(int partsNo, bool bClone) {
   return mk;
 }
 
-MenuParts* MenuParts::CreateIconTexture(int indent, float x, float y, float z, float size) {
-  MenuParts* menuParts = (new GameObject())->AddComponent<MenuParts>();
-  Material* material = new Material(l_partsShader);
-  menuParts->m_list.push_back(std::make_shared<ITexture>(material));
-  menuParts->m_uol.Adds(menuParts, material);
-  menuParts->m_maker = new MeshMaker(material);
-  menuParts->m_maker->SetVertex(menuParts->CalcPartsPosition(indent, x, y, z, size, size), size, size);
-  menuParts->m_maker->SetUV(0.f, 0.f, 1.f, 1.f);
-  menuParts->m_maker->Apply(true);
-  return menuParts;
-}
-
-void MenuParts::AddChangeIconTexture(int indent, float x, float y, float z, float size, bool bInBounds) {
-  Material* material = new Material(l_partsShader);
-  m_list.push_back(std::make_shared<ITexture>(material));
-  m_maker->DivTriangles(material);
-  m_maker->m_owned.push_back(material);
-  m_maker->SetVertex(CalcPartsPosition(indent, x, y, z), size, size);
-  m_maker->SetUV(0.f, 0.f, 1.f, 1.f);
-  m_maker->Apply(bInBounds);
-}
-
 MenuParts* MenuParts::CreateBuildVariableWindow(int no, float sizeW, float sizeH, int indent, bool bCloneMaterial) {
   MenuParts* menuParts = (new GameObject())->AddComponent<MenuParts>();
   menuParts->m_maker = NewMaker(menuParts->m_nowParts = 4, bCloneMaterial);
@@ -734,7 +708,7 @@ MenuParts* MenuParts::CreateFromTexture(const std::string& filename, bool bFitWi
   menuParts->m_maker = meshMaker;
   menuParts->m_uol.Adds(gameObject, material);
   meshMaker->SetVertex(Vector3::zero, num, num2);
-  meshMaker->SetUV(0.f, 1.f - haspect, 1.f, haspect);
+  meshMaker->SetUV(0.f, 0.f, 1.f, 1.f);
   meshMaker->Apply(true);
   return menuParts;
 }

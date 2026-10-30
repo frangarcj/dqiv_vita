@@ -6,7 +6,7 @@ TapToStart* TapToStart::Create() { return (new GameObject())->AddComponent<TapTo
 
 TapToStart* TapToStart::Setup() {
   m_material = new Material(MenuParts::l_pictureShader);
-  m_material->mainTexture = Resources::Load<Texture2D>("boot/TapToStart");
+  m_material->mainTexture = Resources::Load<Texture2D>("Title/TapToStart");
   m_maker = new MeshMaker(m_material);
   m_maker->SetVertex(Vector3::zero, 223.04001f, 41.48f);
   m_maker->SetUV(0.f, 0.f, 1.f, 1.f);
@@ -16,10 +16,10 @@ TapToStart* TapToStart::Setup() {
   m_material->color = Color(1.f, 1.f, 1.f, m_alpha = 0.f);
   m_first = true;
   m_beginFrame = Time::frameCount;
-  m_waitTouch = 799;
+  m_waitTouch = 720;
   m_copyrightAlpha = 0.f;
   m_copyrightMaterial = new Material(MenuParts::l_pictureShader);
-  m_copyrightMaterial->mainTexture = Resources::Load<Texture2D>("boot/Retro5_copyright");
+  m_copyrightMaterial->mainTexture = Resources::Load<Texture2D>("Title/Retro4_copyright");
   m_copyright = MenuParts::CreateBuildDummy(7, 0.f, 0.f, 0.f);
   m_copyright->m_maker = new MeshMaker(m_copyrightMaterial);
   m_copyright->m_maker->SetVertex(Vector3::zero, 450.f, 40.0005f);
@@ -28,7 +28,7 @@ TapToStart* TapToStart::Setup() {
   m_copyright->Build(4, 7, 0.f, 0.f, 25.000313f);
   m_copyright->renderer()->enabled = false;
   if (UiCameras::BootPhase()) UiCameras::Retag(m_copyright->transform(), UiCameras::kBootLayer);     // landscape: the copyright line is a free-standing part, centre it with the rest of the start flow
-  m_waitCopyright = 767;
+  m_waitCopyright = 690;
   m_copyrightMaterial->color = Color(1.f, 1.f, 1.f, m_copyrightAlpha = 0.f);
   m_uol.Adds(gameObject, m_material, m_copyright, m_copyrightMaterial);
   return this;
@@ -61,14 +61,14 @@ void TapToStart::Update() {
   }
   m_copyright->renderer()->enabled = true;
   if (m_waitCopyright > num) return;
-  if (m_waitCopyright == 999999) {
+  if (m_waitCopyright == 2508) {
     if ((m_copyrightAlpha -= 0.0625f) < 0.f) {
       m_copyrightAlpha = 0.f;
       m_waitCopyright = 999999;
     }
   } else if ((m_copyrightAlpha += 0.0625f) > 1.f) {
     m_copyrightAlpha = 1.f;
-    m_waitCopyright = 999999;
+    m_waitCopyright = 2508;
   }
   m_copyrightMaterial->color = Color(1.f, 1.f, 1.f, m_copyrightAlpha);
 }
