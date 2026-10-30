@@ -1,9 +1,0 @@
-#shots 560,640,720
-#dur 90
-delay 150
-chapter 4
-raw 34 0 0
-monster 0
-monster 1
-monster 2
-battle btl_pl_d 30x2 70x1

@@ -1,0 +1,3 @@
+# Cross every 24 frames from frame 700: Fight -> Attack -> first target -> message advance (PadFocus)
+700-2500/24 tap cross
+3000 quit

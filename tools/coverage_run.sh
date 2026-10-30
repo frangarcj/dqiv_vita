@@ -16,7 +16,7 @@ for n in "${NAMES[@]}"; do
   grep -v '^#shots\|^#dur\|^#input' "$W" > "$FS/warp$SLOT.on"
   if [ -n "$INP" ]; then export INPUT_SCRIPT="$HERE/tools/coverage/$INP"; else unset INPUT_SCRIPT; fi
   rm -rf "$OUT/$n"; mkdir -p "$OUT/$n"
-  VITA3K_MUTE=1 timeout $((DUR+60)) "$HERE/tools/run_vita3k.sh" "$DUR" "$SHOTS" > "$OUT/$n/run.out" 2>&1
+  VITA3K_MUTE=1 timeout $((DUR+1800)) "$HERE/tools/run_vita3k.sh" "$DUR" "$SHOTS" > "$OUT/$n/run.out" 2>&1
   cp "$HERE"/build/shots/* "$OUT/$n/" 2>/dev/null
   L=$HERE/build/dqivn.log
   sed -n '/WarpTest/,$p' "$L" | grep -E "STUB|UNPORTED|\[ERR\]|\[FTL\]|\[WRN\]" | sort | uniq -c > "$OUT/$n/issues.txt"

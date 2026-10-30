@@ -1,0 +1,7 @@
+#shots 500,700
+delay 150
+eventinit 289
+town hcout
+wait 150
+coin 5000
+casino poker

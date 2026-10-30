@@ -1,7 +1,0 @@
-#shots 600,800,1000,1200
-#dur 110
-delay 150
-chapter 4
-town maout1
-wait 150
-slimetouch

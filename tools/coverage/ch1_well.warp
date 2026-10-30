@@ -1,0 +1,5 @@
+#shots 450,650
+delay 150
+chapter 1
+eventinit 11
+town dbb2b
