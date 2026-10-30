@@ -38,4 +38,5 @@ for name in zo.namelist():
     if m:
         with zo.open(name) as s, open(os.path.join(data, m.group(1)), "wb") as d: shutil.copyfileobj(s, d)
         n += 1
+if n < 17000: sys.exit("OBB holds only %d <guid> Unity files (expected 17769): wrong OBB?" % n)   # same check as make_data.py
 print("staged %d guid files + %d sharedassets0 parts in %s" % (n, len(parts), root))

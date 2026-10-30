@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 """make_data.py -- build the data directory of the native Dragon Quest IV port from YOUR OWN copy of the Android game.
 
-    python3 tools/make_data.py <DQ4.apk> <main.106....obb> <outdir>  [--lang en|ja|ko|zh-tw|zh-cn] [--jobs N] [--keep-work] [--skip-md5]
+    python3 tools/make_data.py <DQ4.apk> <main.106....obb> <outdir>  [--lang en|ko|zh-tw|zh-cn] [--jobs N] [--keep-work] [--skip-md5]
 
 <outdir> is then copied to the Vita as ux0:data/dqiv (FTP / USB / vitashell).  It receives:
 
     lib/libdq4core.so, lib/libsdlib_android.so   game logic + audio engine, taken unchanged from the APK
-    assets/filelist.bin, assets/ct.inf           AAssetManager root files (from the APK)
+    assets/ct.inf                                the APK's only root asset file (10 bytes, not read by the game code we run; DQ4 has no filelist.bin:
+                                                 libdq4core parses the OBB zip itself)
     main.obb                                     your OBB, copied unchanged (the native code reads it directly)
     pack/{index.bin,meta.pak,mesh.pak,tex.pak,blob.pak}   the converted Unity assets (tools/convert, ~200 MB)
     cg/*.bin                                     precompiled GPU programs of the screen-effect shaders (from extras/cg)
@@ -22,18 +23,20 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.dirname(HERE)
 
 KNOWN = {   # md5 of the supported files
-    "apk": ("", "Dragon Quest IV v1.0.5 APK (com.square_enix.android_googleplay.dq4)"),   # TODO: md5 of the original APK file (only the extracted tree was available when this was written)
+    "apk": ("2f0bcb22598a16ce50a038488696bc98", "Dragon Quest IV v1.0.5 APK (com.square_enix.android_googleplay.dq4)"),
     "obb": ("3d27a44d87f30f119fa4a7d73805c4b7", "Dragon Quest IV OBB main.106"),
 }
 PACK_SHA256 = {   # sha256 of the pack produced from the supported APK/OBB with tools/requirements.txt (the conversion is deterministic)
-    "index.bin": "f545c720de3fd605762e8f4b9368afac7a13109b6b2a1e5473e049975e38271d",
-    "meta.pak": "56cac028071c9146217ba60d3e64899beb553d0e3a364c932798e4d410143a64",
-    "mesh.pak": "c467d7f28000a0dc1e5c497826adcd3bcdbdf0eee3b6109d45f88ed3fc704449",
-    "tex.pak": "9becf4f626f50408bbe66cf4379ad81d5a5e6a62f169cee75b820e1fab33c189",
-    "blob.pak": "5fd6ae21586b87d8ae65ad7f41da03e0253bcec6b6fa92d49d6b120ad4b51cc8",
+    "index.bin": "e09f13f2c90ebbe010d6b96a531a481ea3cf27159aeca1a736b342699c6d2ab6",
+    "meta.pak": "9e21a1a6770ada363aa11a389377e918c4426bbbdfd8bcb44fbd183e11fcd176",
+    "mesh.pak": "0f27a607a7e6c76d487d82410dd7afff7f9a038481ad8fa4ddde936906cce29a",
+    "tex.pak": "a593dfd60e1548ac9d9d3d305fb2ccc102c0041e385de5d28842a7412f9a02cd",
+    "blob.pak": "2301d6a60b0c59b175756e66b02ef572fd87645381f870518769212acafa0a48",
 }
 LIBS = ["libdq4core.so", "libsdlib_android.so"]
-LANGS = ["en", "ja", "ko", "zh-tw", "zh-cn"]
+LANGS = ["en", "ko", "zh-tw", "zh-cn"]   # the OBB carries no Japanese game text
+OBB_GUID_FILES = 17769        # <32 hex> Unity serialized files in the supported OBB (plus level0 and sharedassets1.assets)
+OBB_GUID_MIN = 17000
 HEX32 = re.compile(r"^assets/bin/Data/([0-9a-f]{32})$")
 
 def log(msg): print(msg, flush=True)
@@ -76,15 +79,24 @@ def check_inputs(apk, obb, skip_md5):
             msg = "%s md5 mismatch: %s\n  expected %s (%s)\n  got      %s" % (k.upper(), p, want, what, got)
             if skip_md5: log("WARNING: " + msg + "\n  (--skip-md5: continuing, results are not guaranteed)")
             else: die(msg + "\n  This port supports exactly that version (Google Play v1.0.5, OBB main.106).")
+    za, zo = zipfile.ZipFile(apk), zipfile.ZipFile(obb)
+    for what, z, need in (("APK", za, ("lib/armeabi-v7a/libdq4core.so", "lib/armeabi-v7a/libsdlib_android.so", "assets/bin/Data/mainData")),
+                          ("OBB", zo, ("assets/bin/Data/level0", "assets/bin/Data/sharedassets1.assets"))):
+        names = set(z.namelist())
+        miss = [n for n in need if n not in names]
+        if miss: die("this %s does not look like Dragon Quest IV (missing %s)" % (what, ", ".join(miss)))
 
 def extract_libs_and_assets(apk, out):
     z = zipfile.ZipFile(apk)
     os.makedirs(os.path.join(out, "lib"), exist_ok=True); os.makedirs(os.path.join(out, "assets"), exist_ok=True)
     for lib in LIBS:
         with z.open("lib/armeabi-v7a/" + lib) as s, open(os.path.join(out, "lib", lib), "wb") as d: shutil.copyfileobj(s, d)
-    for a in ("filelist.bin", "ct.inf"):
-        with z.open("assets/" + a) as s, open(os.path.join(out, "assets", a), "wb") as d: shutil.copyfileobj(s, d)
-    log("[apk] lib/%s, assets/filelist.bin, assets/ct.inf" % ", lib/".join(LIBS))
+    names = set(z.namelist()); got = []
+    for a in ("ct.inf",):          # DQ4 has no assets/filelist.bin; only copy what the APK really holds
+        if "assets/" + a in names:
+            with z.open("assets/" + a) as s, open(os.path.join(out, "assets", a), "wb") as d: shutil.copyfileobj(s, d)
+            got.append("assets/" + a)
+    log("[apk] lib/%s%s" % (", lib/".join(LIBS), "".join(", " + g for g in got)))
 
 def copy_obb(obb, out):
     dst = os.path.join(out, "main.obb")
@@ -119,7 +131,8 @@ def stage_unity(apk, obb, work):
     # the converter expects these two also under obb_data (they are listed there in the reference run)
     for top in ("level0", "sharedassets1.assets"): shutil.copyfile(os.path.join(root, top), os.path.join(data, top))
     log("[obb] %d asset files staged in %s" % (n, root))
-    if n < 17000: die("OBB holds only %d Unity asset files (expected ~17769): wrong OBB?" % n)
+    if n < OBB_GUID_MIN: die("OBB holds only %d Unity asset files (expected %d): wrong OBB?" % (n, OBB_GUID_FILES))
+    if n != OBB_GUID_FILES: log("WARNING: OBB holds %d Unity asset files, the supported OBB has %d" % (n, OBB_GUID_FILES))
     return root
 
 def run_converter(unity_root, out, work, jobs):
@@ -154,7 +167,7 @@ def write_config(out, lang):
     if os.path.exists(p): log("[config] config.txt exists, kept"); return
     with open(p, "w") as f:
         f.write("# Dragon Quest IV (native port) -- ux0:data/dqiv/config.txt, one key=value per line\n")
-        f.write("# lang: en (default) | ja | ko | zh-tw | zh-cn\nlang=%s\n" % lang)
+        f.write("# lang: en (default) | ko | zh-tw | zh-cn   (the OBB has no Japanese game text)\nlang=%s\n" % lang)
         f.write("# confirm=circle   swap Cross/Circle (Japanese layout)\n# layout=landscape|split|portrait   screen layout (default landscape)\n")
     log("[config] config.txt (lang=%s)" % lang)
 
