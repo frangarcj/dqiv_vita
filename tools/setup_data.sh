@@ -18,7 +18,7 @@ BASE=/Users/frangar/Fun/dqiv/work
 ROOT="${DQIV_ROOT:-/Users/frangar/Fun/vita3k/build/macos/bin/portable/fs/ux0/data/dqiv}"
 LIBS="${DQIV_LIBS:-$BASE/re/bin}"
 APK_ASSETS="${DQIV_APK_ASSETS:-$BASE/extract/apk/assets}"
-OBB="${DQIV_OBB:-$BASE/extract/cache/com.square_enix.android_googleplay.dq4/main.105.com.square_enix.android_googleplay.dq4.obb}"
+OBB="${DQIV_OBB:-$BASE/extract/cache/com.square_enix.android_googleplay.dq4/main.106.com.square_enix.android_googleplay.dq4.obb}"
 PACK="${DQIV_PACK:-$BASE/extract/pack}"
 
 mkdir -p "$ROOT/lib" "$ROOT/assets" "$ROOT/saves"

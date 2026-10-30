@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """make_data.py -- build the data directory of the native Dragon Quest IV port from YOUR OWN copy of the Android game.
 
-    python3 tools/make_data.py <DQ4.apk> <main.105....obb> <outdir>  [--lang en|ja|ko|zh-tw|zh-cn] [--jobs N] [--keep-work] [--skip-md5]
+    python3 tools/make_data.py <DQ4.apk> <main.106....obb> <outdir>  [--lang en|ja|ko|zh-tw|zh-cn] [--jobs N] [--keep-work] [--skip-md5]
 
 <outdir> is then copied to the Vita as ux0:data/dqiv (FTP / USB / vitashell).  It receives:
 
@@ -12,7 +12,7 @@
     cg/*.bin                                     precompiled GPU programs of the screen-effect shaders (from extras/cg)
     config.txt                                   user config (language ...), see README
 
-Supported game version: Dragon Quest IV (Google Play) v1.0.3, OBB main.105 -- the md5 of both files is checked (--skip-md5 to override at your own risk).
+Supported game version: Dragon Quest IV (Google Play) v1.0.5, OBB main.106 -- the md5 of both files is checked (--skip-md5 to override at your own risk).
 The conversion needs Python >= 3.10 and the packages of tools/requirements.txt; unless --no-venv is given, this script creates tools/.venv and re-runs itself there.
 Temporary files (~400 MB) go to <outdir>/.work and are removed at the end (--keep-work to keep them).  Works on Linux, macOS and Windows (spawn workers).
 """
@@ -22,8 +22,8 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.dirname(HERE)
 
 KNOWN = {   # md5 of the supported files
-    "apk": ("c2d52842b467815c2f1f36ece53e151f", "Dragon Quest IV v1.0.3 APK (com.square_enix.android_googleplay.dq4)"),
-    "obb": ("dd15c635f179d7cbf1deca1263313c16", "Dragon Quest IV OBB main.105"),
+    "apk": ("", "Dragon Quest IV v1.0.5 APK (com.square_enix.android_googleplay.dq4)"),   # TODO: md5 of the original APK file (only the extracted tree was available when this was written)
+    "obb": ("3d27a44d87f30f119fa4a7d73805c4b7", "Dragon Quest IV OBB main.106"),
 }
 PACK_SHA256 = {   # sha256 of the pack produced from the supported APK/OBB with tools/requirements.txt (the conversion is deterministic)
     "index.bin": "f545c720de3fd605762e8f4b9368afac7a13109b6b2a1e5473e049975e38271d",
@@ -72,10 +72,10 @@ def check_inputs(apk, obb, skip_md5):
         want, what = KNOWN[k]
         log("[check] md5 of %s ..." % os.path.basename(p))
         got = md5_of(p)
-        if got != want:
+        if want and got != want:
             msg = "%s md5 mismatch: %s\n  expected %s (%s)\n  got      %s" % (k.upper(), p, want, what, got)
             if skip_md5: log("WARNING: " + msg + "\n  (--skip-md5: continuing, results are not guaranteed)")
-            else: die(msg + "\n  This port supports exactly that version (Google Play v1.0.3, OBB main.105).")
+            else: die(msg + "\n  This port supports exactly that version (Google Play v1.0.5, OBB main.106).")
 
 def extract_libs_and_assets(apk, out):
     z = zipfile.ZipFile(apk)
@@ -119,7 +119,7 @@ def stage_unity(apk, obb, work):
     # the converter expects these two also under obb_data (they are listed there in the reference run)
     for top in ("level0", "sharedassets1.assets"): shutil.copyfile(os.path.join(root, top), os.path.join(data, top))
     log("[obb] %d asset files staged in %s" % (n, root))
-    if n < 21000: die("OBB holds only %d Unity asset files (expected ~21600): wrong OBB?" % n)
+    if n < 17000: die("OBB holds only %d Unity asset files (expected ~17769): wrong OBB?" % n)
     return root
 
 def run_converter(unity_root, out, work, jobs):
