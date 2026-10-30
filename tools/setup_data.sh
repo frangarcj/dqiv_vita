@@ -1,10 +1,9 @@
 #!/bin/bash
 # Populate Vita3K's emulated memory card (ux0:data/dqiv) for the native port. Idempotent.
 #
-# ux0:data/dqiv/ is SHARED with the Unity+Mono experiment (port/): lib/, main.obb, assets/ are the same files and
-# are normally already there (re/tools_setup_data.sh). This script (re)creates what is missing and ADDS pack/:
-#   lib/libdq4core.so lib/libsdlib_android.so   from the APK (re/bin)
-#   assets/filelist.bin                         from the extracted APK
+# Creates what the port needs in ux0:data/dqiv/ (paths below default to the work/ tree of this repo):
+#   lib/libdq4core.so lib/libsdlib_android.so   from the APK (work/re/bin)
+#   assets/ct.inf                               from the extracted APK, if present (DQ4 has no filelist.bin)
 #   main.obb                                    symlink (Vita3K follows file symlinks)
 #   pack/                                       the converted asset pack (tools/convert output): symlink or --copy
 #   saves/ trace/                               created by the app itself
@@ -29,8 +28,8 @@ for f in libdq4core.so libsdlib_android.so; do
   cmp -s "$LIBS/$f" "$ROOT/lib/$f" 2>/dev/null || cp -f "$LIBS/$f" "$ROOT/lib/$f"
 done
 
-echo "[2] assets/filelist.bin"
-[ -f "$APK_ASSETS/filelist.bin" ] && { cmp -s "$APK_ASSETS/filelist.bin" "$ROOT/assets/filelist.bin" 2>/dev/null || cp -f "$APK_ASSETS/filelist.bin" "$ROOT/assets/filelist.bin"; }
+echo "[2] assets/ct.inf (only if the APK has it)"
+if [ -f "$APK_ASSETS/ct.inf" ]; then cmp -s "$APK_ASSETS/ct.inf" "$ROOT/assets/ct.inf" 2>/dev/null || cp -f "$APK_ASSETS/ct.inf" "$ROOT/assets/ct.inf"; fi
 
 put() {  # put <src> <dst>
   local src="$1" dst="$2"

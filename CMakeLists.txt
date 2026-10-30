@@ -15,7 +15,7 @@ set(VITA_APP_NAME "Dragon Quest IV")
 # DQIVN_SLOT (1-9): parallel work trees build/run side by side in Vita3K with their own TITLEID (DQIVN000<slot>),
 # log (dqivn<slot>.log), run cfg, saves and screenshot names. Slot 1 is main.
 set(DQIVN_SLOT "1" CACHE STRING "Parallel install slot 1-9")
-set(VITA_TITLEID "DQIVN000${DQIVN_SLOT}")   # the Unity+Mono experiment (port/) is DQIVV00001
+set(VITA_TITLEID "DQIVN000${DQIVN_SLOT}")
 add_definitions(-DDQIVN_SLOT=${DQIVN_SLOT})
 set(VITA_VPKNAME "dqivn")
 set(VITA_VERSION "01.00")
@@ -23,7 +23,7 @@ set(VITA_MKSFOEX_FLAGS "-d ATTRIBUTE2=12")
 
 set(PSVITAIP "192.168.0.25" CACHE STRING "PSVita IP (for FTP access)")
 
-# DATA_PATH: root of everything read/written at run time (see source/config.h). Shared with port/.
+# DATA_PATH: root of everything read/written at run time (see source/config.h).
 set(DATA_PATH "ux0:data/dqiv/" CACHE STRING "Data root on the Vita (trailing /)")
 add_definitions(-DDATA_PATH="${DATA_PATH}")
 
