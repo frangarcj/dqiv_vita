@@ -74,7 +74,7 @@ Work packages are the ones of `re/arch/05_PORTING_MAP.md` §3. **One owner per d
 | `source/native/` (`native_bridge`, `sdlib_bridge`, `packet_recorder`, `asset_manager`) | **WP3** | typed `so_symbol` bindings of libdq4core/libsdlib, trace recorder, NDK asset shim |
 | `source/platform/vita_input.*` | **WP3** | SceCtrl/touch -> pad bits, Unity touches, logical coordinates (06) |
 | `source/game/{GameMain,GameLoop,Global,Boot,MainLoop,NativeManager,TouchPad,Levels,Sound,Cleaner,ApplicationQuit}.*` | **WP3** | boot orchestration, frame loop, the C# glue classes (Sound and ApplicationQuit are mostly stubs) |
-| `source/game/{MenuPortSystem,MenuParts,MenuMessage}.*` (+ future MenuPort*, MeshMaker, eIndent, TapToStart, InputName, MenuPortItemTable...) | **WP4** UI | MenuPort mailbox, UI framework, 68 screens |
+| `source/game/{MenuPortSystem,MenuParts,MenuMessage}.*` (+ future MenuPort*, MeshMaker, eIndent, TapToStart, InputName, MenuPortItemTable...) | **WP4** UI | MenuPort mailbox, UI framework, 81 screens (DQ4 table, ids 0..80) |
 | `source/game/{SceneCamera,BackColor,Fade,BillboardObject,Chara,Riseup,MeshChara,ParticleSystem}.*` | **WP5a** sprites/camera | |
 | `source/game/{FldObject,FbxObject}.*` (+ ChunkFile) | **WP5b** map models | |
 | `source/game/Field.*` (+ FieldSymbol, Volcano, BlinkMapSymbol) | **WP5c** world map | |
@@ -114,7 +114,7 @@ Level builders (`game/Levels.cpp`) stand in for scene loading ("mainData": Main 
 `game/MenuPortSystem` (LateUpdate = `internalUpdate`: `UnityRenderEvent(1)` first, then port-0 commands, push-state machine, per-port `NoticeReceive`/`Update`) -> `MenuPort` (`Param` view of one
 native->host message, `Send/SendInts/SendBytes` variadic like the C# `params`) -> `MenuPortItem` (category 1: parts list + id tables) / `MenuMessage` (category 2) / WP6 ports (weak factories in `ui_weak_stubs.cpp`).
 `MenuParts` + `MeshMaker` + `MeshList` + `eIndent` + `FRAME_ENUM` are line ports of the C#; `IBase` changers are `std::shared_ptr`, delegates are `std::function`; `new GameObject().AddComponent<T>()` -> `(new GameObject())->AddComponent<T>()`.
-**WP4b**: open `game/MenuPortItemTable.hpp` (recipe at the top). Screens not yet ported are one-liners in `MenuPortItemTable_unported.cpp` (`UNPORTED(Make_X)`); port one into a new file, delete its line.
+**WP4b (DQ4)**: the DQ4 `makeFuncList` has 81 entries (ids 0..80) and every one is ported; open `game/MenuPortItemTable.hpp` for the file layout and translation rules. The DQ5 minigame screens (Sugoroku, Luida, MonsterGame, SlimeTouch, SlimeRace, ScopeBack) do not exist in DQ4 and were removed; ids 68..70 are `Chapter2Status`, `TorunekoMiseban`, `NENE_ItemView`. DQ4 differs from DQ5 in the pad bits of arrow/+- buttons (`MenuPortItem::PAD_D=1, PAD_U=2, PAD_R=4, PAD_L=8`; `PadFocus` L/R use them), in `FRAME_ENUM` (294 frames, no NAME_ENTRY_U2/U3), in the `MeshMaker.SetUV` v convention and `MenuParts.s_info` (14 parts, no sugoroku arrow), and has no `m_se`/`ITexture`/default-name keyboard.
 Test without playing through the game: `CFG_EXTRA='ui_open=150:53\nui_press=450:16,520:16\nui_tap=640:13002' tools/run_vita3k.sh 100 "700,900"` (`game/UiSelfTest.hpp`: scripted pad presses, screens built on spare ports, simulated button taps).
 
 ### Map models (WP5b)
