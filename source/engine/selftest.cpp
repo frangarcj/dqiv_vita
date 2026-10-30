@@ -184,8 +184,8 @@ void DescribeRenderers(GameObject* root, const char* tag) {
 }
 
 void TestResources() {
-  Texture* t = Resources::Load<Texture>("boot/sqex");
-  Check(t && t->width > 0 && dynamic_cast<Texture2D*>(t)->glId == 0, "Texture 'boot/sqex' %dx%d loaded lazily (no GL yet)", t ? t->width : 0, t ? t->height : 0);
+  Texture* t = Resources::Load<Texture>("title/sqex");
+  Check(t && t->width > 0 && dynamic_cast<Texture2D*>(t)->glId == 0, "Texture 'title/sqex' %dx%d loaded lazily (no GL yet)", t ? t->width : 0, t ? t->height : 0);
   if (t) { unsigned id = t->GetNativeTextureID(); Check(id != 0 && dynamic_cast<Texture2D*>(t)->glId == id, "GetNativeTextureID uploads on demand (gl=%u)", id); }
   Check(Resources::Load<Texture>("BOOT/SQEX") == t, "case-insensitive + cached");
   TextAsset* ta = Resources::Load<TextAsset>("menu/license_list_a");
@@ -195,8 +195,8 @@ void TestResources() {
   if (f) { Font::CharInfo ci; Check(f->GetCharacterInfo(0x3042, ci) && ci.width > 0, "Font glyph U+3042 advance %.1f uv(%.3f,%.3f,%.3f,%.3f)", ci.width, ci.uv.x, ci.uv.y, ci.uv.width, ci.uv.height); }
   Font* fe = Resources::Load<Font>("menu/se-garrir");
   Check(fe && fe->chars.size() == 218, "Font SE-GARRIR: %lu glyphs (expect 218), lineSpacing %.3f ascent %.3f size %.1f", fe ? fe->chars.size() : 0, fe ? fe->lineSpacing : 0.f, fe ? fe->ascent : 0.f, fe ? fe->fontSize : 0.f);
-  Material* mat = Resources::Load<Material>("boot/button");
-  Check(mat != nullptr, "Material boot/button: shader %s tex %s color(%.2f %.2f %.2f %.2f) queue %d", mat && mat->shader ? mat->shader->name.c_str() : "-", mat && mat->mainTexture ? mat->mainTexture->name.c_str() : "-",
+  Material* mat = Resources::Load<Material>("menu/boot/button");
+  Check(mat != nullptr, "Material menu/boot/button: shader %s tex %s color(%.2f %.2f %.2f %.2f) queue %d", mat && mat->shader ? mat->shader->name.c_str() : "-", mat && mat->mainTexture ? mat->mainTexture->name.c_str() : "-",
         mat ? mat->color.r : 0, mat ? mat->color.g : 0, mat ? mat->color.b : 0, mat ? mat->color.a : 0, mat ? mat->renderQueue : 0);
   Check(Resources::Load<Texture>("nonexistent/path") == nullptr, "missing asset -> nullptr");
   Check(Resources::Load<Texture>("menu/fotk-ydhopel") != nullptr && Resources::Load<Material>("menu/fotk-ydhopel") != nullptr && Resources::Load<Font>("menu/fotk-ydhopel") != nullptr, "one path, three kinds (Texture/Material/Font) resolved by type");

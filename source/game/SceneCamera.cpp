@@ -102,7 +102,7 @@ static void CalcProjection() {
     }
     identity(0, 3) = l_shiftApplied = Layout::ShiftNdc();       // landscape: world slid left while a menu covers the panel (identity otherwise)
     // DQ4: the whole matrix is scaled by s_scaleW (C#: [0,0],[1,1],[2,2],[2,3] *= scaleW and [3,2] = -scaleW); the projected NDC is unchanged (precision hack of the old engine)
-    for (int r = 0; r < 4; r++) for (int c = 0; c < 4; c++) matrix4x(r, c) *= SceneCamera::s_scaleW;
+    if (Cfg::GetInt("scalew", 1)) for (int r = 0; r < 4; r++) for (int c = 0; c < 4; c++) matrix4x(r, c) *= SceneCamera::s_scaleW;
     l_camera->setProjectionMatrix(identity * matrix4x);
     l_bCalcProjection = false;
   }

@@ -2,9 +2,8 @@
  * jni_impl.c -- FalsoJNI tables for the native port.
  *
  * libdq4core's and libsdlib's JNI_OnLoad(vm, NULL) never call into the VM (dq4core stores a flag that
- * IsLoadNativeCode() returns, sdlib stores the VM pointer), and the single Java-facing entry we call
- * (Java_..._LoadFileList) only forwards its AssetManager argument to AAssetManager_fromJava. So no Java
- * method / field is needed: empty tables.  Add entries here if a later feature (dialogs, locale) needs one.
+ * IsLoadNativeCode() returns, sdlib stores the VM pointer). DQ4's libdq4core has no Java_* export at all (DQ5's LoadFileList is gone:
+ * the library parses the OBB zip itself). So no Java method / field is needed: empty tables.  Add entries here if a later feature (dialogs, locale) needs one.
  */
 #include <falso_jni/FalsoJNI.h>
 #include <falso_jni/FalsoJNI_Impl.h>

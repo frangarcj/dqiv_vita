@@ -130,7 +130,7 @@ void Create() {
   }
   FxQuad("chk", 0, 0, 0, W, H, "Custom/Picture", chk, Color::white);
   FxQuad("grad", 0, -W * 0.2f, H * 0.2f, W * 0.4f, W * 0.4f, "Custom/DssaNormal", nullptr, Color::white, true);
-  FxQuad("logo", 0, 0, -H * 0.25f, W * 0.8f, W * 0.8f * 0.33f, "Custom/Picture", Resources::Load<Texture>("boot/sqex"), Color::white);
+  FxQuad("logo", 0, 0, -H * 0.25f, W * 0.8f, W * 0.8f * 0.33f, "Custom/Picture", Resources::Load<Texture>("title/sqex"), Color::white);
 
   SceneCamera::SystemInit();                             
   MenuParts::SystemInit();                               // shader/font statics (Endroll uses l_fontShader)

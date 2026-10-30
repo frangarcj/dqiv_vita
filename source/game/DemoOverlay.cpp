@@ -101,7 +101,7 @@ class RTDriver : public Component { public:
 };
 
 void CreateRenderTest() {
-  Texture* logo = Resources::Load<Texture>("boot/sqex");
+  Texture* logo = Resources::Load<Texture>("title/sqex");
   Texture2D* disc = MakeAlphaDisc();
   Font* font = MakeTestFont();
 
@@ -187,7 +187,7 @@ void Create() {
   cam->depth = -100.f; cam->cullingMask = 1 << 12;
   Object::DontDestroyOnLoad(camGo);
 
-  Texture* tex = Resources::Load<Texture>("boot/retro5_copyright");
+  Texture* tex = Resources::Load<Texture>("title/retro4_copyright");
   GameObject* q = GameObject::CreatePrimitive(PrimitiveType::Quad);
   q->name = "DemoCopyright";
   q->layer = 12;

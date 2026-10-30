@@ -7,7 +7,6 @@
  *
  *   lib/libdq4core.so lib/libsdlib_android.so   ARMv7 NEON libs of the APK (flat, original names)
  *   main.obb                                    the untouched OBB (libdq4core fopen()s + fseek()s it)
- *   assets/filelist.bin                         AAssetManager root: the table LoadFileList() consumes
  *   pack/                                       index.bin + {meta,mesh,tex,blob}.pak   (tools/convert output)
  *   saves<slot>/                                DevInit savePath (data1..9.dat)
  *   dqivn<slot>.log, dqivn<slot>.cfg              this port's log (truncated every boot) and run cfg (slot = DQIVN_SLOT)
@@ -72,8 +71,7 @@
 #define DQIV_VIEW_X0   ((DQIV_DISPLAY_W - DQIV_LOGICAL_W) / 2)
 #define DQIV_VIEW_Y0   ((DQIV_DISPLAY_H - DQIV_LOGICAL_H) / 2)
 
-/* Boot parameters of libdq4core (REPORT_JNI_DATA §3.1, §4): language ENGLISH, device info bit0 = PowerVR/SGX. */
+/* Boot parameters of libdq4core: language ENGLISH (DQ4's DevInit has no deviceInfo argument; the PowerVR/SGX bias is Boot.s_gpuName -> Field.SystemInit). */
 #define DQIV_LANG         1
-#define DQIV_DEVICE_INFO  1
 
 #endif

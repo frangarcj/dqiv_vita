@@ -2,6 +2,7 @@
 #include "game/MenuPortSystem.hpp"
 #include "game/ApplicationQuit.hpp"
 #include "game/Boot.hpp"
+#include "game/MenuParts.hpp"
 #include "game/Global.hpp"
 #include "game/SceneCamera.hpp"
 #include "game/UiCameras.hpp"

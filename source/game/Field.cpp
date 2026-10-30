@@ -35,7 +35,7 @@ void Field::SystemInit() {
     }
   }
   if (textAsset) Resources::UnloadAsset(textAsset);
-  l_info("Field::SystemInit: c_uvAdjustZero=%g (gpu \"%s\")", c_uvAdjustZero, Boot::s_gpuName.c_str());
+  l_info("Field::SystemInit: c_uvAdjustZero=%f (gpu \"%s\")", c_uvAdjustZero, Boot::s_gpuName.c_str());
 }
 
 namespace {
