@@ -1,0 +1,13 @@
+# BUTTONS ONLY (no touch): DQ4 boot -> TapToStart -> "Create a new adventure log" -> name -> Chapter 1 intro.  (exploration version)
+0 log padonly_dq4
+150 tap cross
+210 tap cross
+270 tap cross
+330 tap cross
+520 tap cross
+560 tap right
+580 tap cross
+620 tap start
+700 tap cross
+760 tap cross
+800-3000/40 tap cross

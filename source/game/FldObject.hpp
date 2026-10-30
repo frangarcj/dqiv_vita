@@ -13,6 +13,7 @@ class ChunkFile;
 
 class FldObject {
 public:
+  static float s_skyStretch;                 // landscape: horizontal stretch of the title sky plane (map ev01 object 0) so that its 3-unit wide cloud grid still covers the 0.75-aspect-derived view (1 = off)
   // ---------------------------------------------------------------------------------------------------- data (public nested types of the C#)
   struct FLD_KEY { int frame = 0; virtual ~FLD_KEY() {} };
   struct FLD_EMV_KEY : FLD_KEY { Vector3 pos, tag, vec; };

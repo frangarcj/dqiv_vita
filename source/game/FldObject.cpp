@@ -35,6 +35,8 @@ void SetSampler(Texture* t, FilterMode f, TextureWrapMode w, bool setWrap) {
 bool TexNameHas(Texture* t, const char* s) { return t && t->name.find(s) != std::string::npos; }
 }  // namespace
 
+float FldObject::s_skyStretch = 1.f;
+
 // ------------------------------------------------------------------------------------------------ small data types
 std::shared_ptr<FldObject::FLD_MOTION> FldObject::FLD_MOTION::Clone() const {
   auto m = std::make_shared<FLD_MOTION>();
@@ -440,6 +442,10 @@ void FldObject::init_fld() {
     bset(m_map_objs[4]->flag, 134217728);
     bset(m_map_objs[37]->flag, 134217728);
     set_priority2(m_map_objs[4].get(), 2999);
+  }
+  if (s_skyStretch != 1.f && m_data_path.find("ev/ev01/") != std::string::npos && !m_map_objs.empty() && m_map_objs[0]->model) {   // landscape title: the cloud plane is only 34 units wide
+    m_map_objs[0]->scl.x *= s_skyStretch;
+    m_map_objs[0]->model->localScale = m_map_objs[0]->scl;
   }
   if (m_sra_mot) for (size_t l = 0; l < m_sra_mot->size(); l++) (*m_sra_mot)[l]->mtl_list = get_material_list((*m_sra_mot)[l]->mtl_name);
   for (size_t i = 0; i < m_map_objs.size(); i++) {
@@ -1026,6 +1032,7 @@ bool FldObject::Load(const std::string& fname) {
           l_info("TMPDBG obj %d go=%s mesh=%d verts shader=%s tex=%s %dx%d wrap=%d q=%d lpos=%f,%f,%f lscale=%f,%f,%f", (int)oi, r->gameObject->name.c_str(), m ? (int)m->vertices.size() : -1, mt && mt->shader ? mt->shader->name.c_str() : "?", tx ? tx->name.c_str() : "-", tx ? tx->width : 0, tx ? tx->height : 0, tx ? (int)tx->wrapMode : -1, mt ? mt->renderQueue : -9, r->gameObject->transform->localPosition.x, r->gameObject->transform->localPosition.y, r->gameObject->transform->localPosition.z, r->gameObject->transform->localScale.x, r->gameObject->transform->localScale.y, r->gameObject->transform->localScale.z);
         }
         if (m && !m->uv.empty() && !m->vertices.empty()) { float u0=1e9,u1=-1e9,v0=1e9,v1=-1e9,x0=1e9,x1=-1e9,y0=1e9,y1=-1e9,z0=1e9,z1=-1e9; for (size_t k=0;k<m->uv.size();k++){u0=fminf(u0,m->uv[k].x);u1=fmaxf(u1,m->uv[k].x);v0=fminf(v0,m->uv[k].y);v1=fmaxf(v1,m->uv[k].y);} for (auto& q: m->vertices){x0=fminf(x0,q.x);x1=fmaxf(x1,q.x);y0=fminf(y0,q.y);y1=fmaxf(y1,q.y);z0=fminf(z0,q.z);z1=fmaxf(z1,q.z);}
+          if (getenv("FLD_DUMP2") && oi == 0) for (size_t k = 0; k < m->vertices.size(); k++) l_info("TMPDBG2 v%d (%f,%f,%f) uv (%f,%f)", (int)k, m->vertices[k].x, m->vertices[k].y, m->vertices[k].z, m->uv[k].x, m->uv[k].y);
           l_info("TMPDBG   uv u[%f,%f] v[%f,%f] bb x[%f,%f] y[%f,%f] z[%f,%f] tris=%d", u0,u1,v0,v1,x0,x1,y0,y1,z0,z1, m->subMeshCount() ? (int)m->subTriangles[0].size() : 0); }
       }
     }

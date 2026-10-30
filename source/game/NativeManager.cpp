@@ -4,6 +4,7 @@
 //   * `chara.Foo(GetFloat())` on a null slot would NRE in C#; here the operands are consumed and the call skipped.
 //   * per-frame statistics + packet recorder hooks (native/packet_recorder.*) + opcode range guard (an unknown opcode ends the frame and flags `desync`).
 #include "game/NativeManager.hpp"
+#include "game/Layout.hpp"
 
 #include <cstring>
 
@@ -83,6 +84,7 @@ void NativeManager::cmd_fld_load() {
     m_fld.Term();
   }
   m_anim_list.clear();
+  FldObject::s_skyStretch = Layout::Wide() ? (float)Layout::SurfaceW() / (float)Layout::SurfaceH() / Layout::kDesignAspect : 1.f;   // landscape: widen the ev01 title sky
   m_fld.Load(text);
   m_fld_load = true;
   if (num2 == 1) m_fld.SetDispScale(6.f, 6.f, 6.f);

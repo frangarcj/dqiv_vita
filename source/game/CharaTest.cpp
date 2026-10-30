@@ -33,7 +33,7 @@ public:
     Chara::SetSleepNear(0, 0);
     const int cols = 4;
     for (int i = 0; i < g_count; i++) {
-      int tex = (g_first + i) | (4 << 16);                       // CharaTex/hNNN, 4 pattern rows, size type 0 (32x64 sprite)
+      int tex = g_first + i;                                      // CharaTex/hNNN (DQ4: the pattern rows come from the texture size)
       Chara* c = new Chara(tex);
       int cx = i % cols, cz = i / cols;
       Vector3 p((cx - (cols - 1) * 0.5f) * 1.6f, 0.f, (1.f - cz) * 1.6f);
