@@ -5,7 +5,7 @@ import re, sys, os
 here = os.path.dirname(os.path.abspath(__file__))
 tbl = open(os.path.join(here, "..", "source", "loader", "dynlib_table.inc")).read()
 names = set(re.findall(r'\{ "([^"]+)"', tbl))
-refs = os.environ.get("DQIV_REFS", "/Users/frangar/Fun/dqiv/work/refs")
+refs = os.environ.get("DQIV_REFS", os.path.join(here, "..", "work", "refs"))
 need = set()
 for f in ("imports_libdq4core.txt", "imports_libsdlib_android.txt"):
     need |= set(open(os.path.join(refs, f)).read().split())

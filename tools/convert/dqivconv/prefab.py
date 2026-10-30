@@ -83,9 +83,11 @@ MB_SCHEMAS = {
     "MainLoop": [],
     "TouchPad": [("m_siColDebug", "pptr"), ("m_siColMove", "pptr"), ("m_siMovePad", "pptr"),
                  ("m_siMoveCurNormal", "pptr"), ("m_siMoveCurBS", "pptr"), ("m_siMoveCurLight", "pptr"),
-                 ("m_siMoveDirs", "pptr"), ("m_siMoveDirLight", "pptr"), ("m_siMoveDirNormal", "pptr")],
-    "Boot": [("m_logoTexture", "pptr[]"), ("m_logoShader", "pptr"), ("m_obbMenuParts", "pptr"),
-             ("m_obbFont", "pptr[]"), ("m_obbMat", "pptr[]"), ("m_obbmsg", "pptr"), ("m_quitmsg", "pptr")],
+                 ("m_siMoveDirs", "pptr"), ("m_siMoveDirLight", "pptr"), ("m_siMoveDirNormal", "pptr"),
+                 ("l_state", "int")],        # public ePadState l_state (DQ4 serializes it; DQ5's data had no such field)
+    # DQ4 declaration order (DQ5 had m_quitmsg last)
+    "Boot": [("m_logoTexture", "pptr[]"), ("m_logoShader", "pptr"), ("m_quitmsg", "pptr"), ("m_obbMenuParts", "pptr"),
+             ("m_obbFont", "pptr[]"), ("m_obbMat", "pptr[]"), ("m_obbmsg", "pptr")],
 }
 
 def parse_mb_fields(raw, schema):
@@ -100,6 +102,8 @@ def parse_mb_fields(raw, schema):
     for name, kind in schema:
         if kind == "pptr":
             v, p = pptr(p); out.append((name, v))
+        elif kind == "int":
+            out.append((name, struct.unpack_from("<i", raw, p)[0])); p += 4
         elif kind == "pptr[]":
             cnt = struct.unpack_from("<i", raw, p)[0]; p += 4
             arr = []
@@ -240,7 +244,9 @@ class Builder:
                 self.ctx.warn("MonoBehaviour %s: %d leftover bytes" % (cname, left))
                 props.add("raw_hex", P_STR, [raw.hex()])
             for name, v in fields:
-                if isinstance(v, list):
+                if isinstance(v, int):
+                    props.add(name, P_INT, [v])
+                elif isinstance(v, list):
                     props.add(name + ".size", P_INT, [len(v)])
                     for i, e in enumerate(v): props.pptr("%s[%d]" % (name, i), e)
                 else:
