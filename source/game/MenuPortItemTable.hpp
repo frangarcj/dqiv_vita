@@ -1,16 +1,14 @@
-// game/MenuPortItemTable.hpp -- OWNER: WP4b (framework + a few proof screens by WP4a).  Port of MenuPortItemTable.cs: the 68 screens (category-1 ports).
+// game/MenuPortItemTable.hpp -- OWNER: WP4b (framework + a few proof screens by WP4a).  Port of the DQ4 MenuPortItemTable.cs: the 81 screens (ids 0..80, category-1 ports).
 //
-// WP4b RECIPE (mechanical):
-//   1. Pick a Make_X still listed in MenuPortItemTable_unported.cpp (one UNPORTED(Make_X) line each; the stub logs "UNPORTED screen" and returns an empty MenuPortItem).
-//   2. Translate the C# body into a new file game/MenuPortItemTable_<Group>.cpp as `MenuPortItem* MenuPortItemTable::Make_X(short port, short type) { ... }`
-//      (declarations of all Make_*/Sub_* already live in this class; add the Sub_ helpers you need below), then DELETE its UNPORTED line.
-//   3. Translation rules: `new MenuPortItem(port, type)` -> `MenuPortItem* item = new ...`, `.`->`->` on pointers, `item.SetTableForCode(id, (short code) => {..})` ->
+// DQ4 status: every screen of the DQ4 table is ported (no UNPORTED stubs).  Files: MenuPortItemTable.cpp (table, start/title/root/YesNo/Money/Chapter/Pageing),
+// _Main (lists, status, items, members), _Battle, _Casino (casino + coliseum), _Maps, _WorldMap, _Shop (shop/bank/church/Toruneko/NENE), _Network, _License, _NewGame, _helpers.
+// The table index order (makeFuncList) is the native screen id: do not reorder.  To port another C# screen: translate it into the matching file as
+// `MenuPortItem* MenuPortItemTable::Make_X(short port, short type) { ... }` (tools/menu_cs2cpp.py does a first pass), declare it below, add it to makeFuncList.
+//   Translation rules: `new MenuPortItem(port, type)` -> `MenuPortItem* item = new ...`, `.`->`->` on pointers, `item.SetTableForCode(id, (short code) => {..})` ->
 //      `item->SetTableForCode(id, [=](short code) {..})` (capture the C# locals by value: they are pointers), `gameObject.active = b` -> `gameObject->setActive(b)`,
-//      `menuPortItem.Send(2, a, b)` -> `item->Send(2, a, b)`, `item.Receive().ConvertString()` -> `item->Receive().ConvertString()` (UTF-8 std::string),
-//      enums `TextAlignment.Center` -> `TextAlignment::Center`, `TextAnchor.UpperLeft` -> `TextAnchor::UpperLeft`, `FRAME_ENUM.X` -> `FRAME_ENUM::X`,
-//      `MenuParts.s_info[n]` -> `MenuParts::s_info[n]`, `new Vector3(..)` -> `Vector3(..)`, `eIndent.CalcScreenPosition` -> `eIndent::CalcScreenPosition`.
-//      The table index order (makeFuncList) is the native screen id: do not reorder.
-//   See the ported examples in MenuPortItemTable.cpp (TitleTouch, StartMenuFirst/Second, RootMenu, YesNo, Money, Chapter, ScopeBack, Pageing).
+//      `item.Receive().ConvertString()` -> `item->Receive().ConvertString()` (UTF-8 std::string), enums `TextAlignment.Center` -> `TextAlignment::Center`,
+//      `FRAME_ENUM.X` -> `FRAME_ENUM::X`, `MenuParts.s_info[n]` -> `MenuParts::s_info[n]`, `new Vector3(..)` -> `Vector3(..)`, `eIndent.CalcScreenPosition` -> `eIndent::CalcScreenPosition`.
+//   Pad bits of the arrow / +- buttons are the DQ4 ones (MenuPortItem::PAD_D=1, PAD_U=2, PAD_R=4, PAD_L=8): copy them from the C#, they differ from DQ5.
 #pragma once
 #include "game/MenuMessage.hpp"
 #include "game/MenuParts.hpp"
