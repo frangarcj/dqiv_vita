@@ -4,9 +4,8 @@
 #include "game/Field.hpp"
 #include "utils/logger.h"
 
-static const char* s_shaderList[8] = { "Custom/DssaChara", "Custom/DssaMonster0", "Custom/DssaMonster1", "Custom/DssaCharaTransparent", "Custom/DssaNormal",
-                                       "Custom/Chara", "Custom/BssaCharaTransparent", "Custom/BssaEffectTransparent" };
-static Shader* s_shaders[8];
+static const char* s_shaderList[4] = { "Custom/DssaChara", "Custom/DssaMonster0", "Custom/DssaMonster1", "Custom/DssaCharaTransparent" };
+static Shader* s_shaders[4];
 
 MeshChara::MeshChara(int no, int shader0) {
   GameObject* gameObject = new GameObject();
@@ -14,8 +13,6 @@ MeshChara::MeshChara(int no, int shader0) {
   m_renderer = gameObject->AddComponent<MeshRenderer>();
   m_mesh2 = new Mesh();
   m_material = new Material(s_shaders[shader0] ? s_shaders[shader0] : Shader::Find(s_shaderList[shader0]));
-  m_material->SetTextureScale("_MainTex", Vector2(1.f, -1.f));
-  m_material->SetTextureOffset("_MainTex", Vector2(0.f, 1.f));
   m_renderer->setMaterial(m_material);
   m_chara = gameObject;
   SetTexture(no);
@@ -41,5 +38,5 @@ void MeshChara::SetFieldMode() {
 }
 void MeshChara::SetFieldPosition(Vector3 pos) { m_chara->transform->setPosition(Vector3(pos.x, pos.z, 0.f - pos.y)); }
 void MeshChara::SystemInit() {
-  for (int i = 0; i < 8; i++) { s_shaders[i] = Shader::Find(s_shaderList[i]); Object::DontDestroyOnLoad(s_shaders[i]); }
+  for (int i = 0; i < 4; i++) { s_shaders[i] = Shader::Find(s_shaderList[i]); Object::DontDestroyOnLoad(s_shaders[i]); }
 }

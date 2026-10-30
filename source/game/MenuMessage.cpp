@@ -133,7 +133,6 @@ void MenuMessage::NoticeReceive(Param prm) {
       break;
     case 2:
       m_shake = 8;
-      m_shakeCount = prm[1];
       break;
     case 3: {
       float y = (float)((uint16_t)prm[1] % 512) / 512.f;
@@ -172,10 +171,8 @@ void MenuMessage::Update(int pushState, Ray& ray) {
     else if (m_count == 31) m_count = -1;
     m_count++;
   }
-  if (m_shakeCount > 0) {
+  if (m_shake > 0) {
     m_shake--;
     m_window->transform()->Translate((float)s_shakeTable[m_shake][0], 0.f, (float)s_shakeTable[m_shake][1]);
-    if (m_shake <= 0 && --m_shakeCount > 0) m_shake = 8;
-    if (m_shakeCount <= 0) Global::Flag &= -65;
   }
 }

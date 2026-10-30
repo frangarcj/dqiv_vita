@@ -35,6 +35,8 @@ void SetSampler(Texture* t, FilterMode f, TextureWrapMode w, bool setWrap) {
 bool TexNameHas(Texture* t, const char* s) { return t && t->name.find(s) != std::string::npos; }
 }  // namespace
 
+float FldObject::s_skyStretch = 1.f;
+
 // ------------------------------------------------------------------------------------------------ small data types
 std::shared_ptr<FldObject::FLD_MOTION> FldObject::FLD_MOTION::Clone() const {
   auto m = std::make_shared<FLD_MOTION>();
@@ -50,7 +52,7 @@ Quaternion FldObject::rotateXZY(Vector3 rot) {
   Quaternion quaternion = Quaternion::AngleAxis(0.f - rot.x, Vector3::right);
   Quaternion quaternion2 = Quaternion::AngleAxis(rot.y, Vector3::up);
   Quaternion quaternion3 = Quaternion::AngleAxis(0.f - rot.z, Vector3::forward);
-  return quaternion2 * quaternion * quaternion3;
+  return quaternion2 * quaternion3 * quaternion;
 }
 
 // ------------------------------------------------------------------------------------------------ cameras
@@ -103,7 +105,6 @@ void FldObject::set_obj_material_alpha(FLD_MAP_OBJ* obj, float alpha) {
     }
     material->SetColor("_OrgColor", color);
   }
-  m_updateColor = true;
 }
 
 void FldObject::SetMapObjAlpha(int obj_id, int alpha, int keep_priority) {
@@ -264,7 +265,7 @@ int FldObject::SetCommonAnimation(int obj_id, int no) {
     o->dirty = 7;
     fld_set_obj_matrix(o);
     if (o->alpha != 31) set_obj_material_alpha(o, (float)o->alpha / 31.f);
-    update_obj_material_color(o);
+    update_material_color(o->model->gameObject);
     m_seq_obj[o->seq_obj_id].seq_id = o->org_seq_id;
   } else {
     if (o->canim_id < 0 || o->canim_id >= (int)m_canim.size()) return 0;
@@ -279,7 +280,7 @@ int FldObject::SetCommonAnimation(int obj_id, int no) {
     o->mdl_id = cad.mdl_id;
     o->pmv_id = cad.pmv_id;
     if (o->alpha != 31) set_obj_material_alpha(o, (float)o->alpha / 31.f);
-    update_obj_material_color(o);
+    update_material_color(o->model->gameObject);
     if (o->pmv_id != -1 && m_pmv_mot && o->pmv_id < (int)m_pmv_mot->size()) o->m_motion = (*m_pmv_mot)[o->pmv_id]->Clone();
     FLD_SEQ_OBJ& so = m_seq_obj[o->seq_obj_id];
     if (cad.seq_obj_id == -1 || cad.seq_obj_id >= (int)m_seq_obj.size()) {
@@ -329,21 +330,6 @@ void FldObject::Pause(int sw) { if (sw != 0) m_flags |= 4; else m_flags &= -5; }
 void FldObject::SetDispScale(float sx, float sy, float sz) { m_scale.x = sx; m_scale.y = sy; m_scale.z = sz; }
 
 // ------------------------------------------------------------------------------------------------ materials
-void FldObject::update_obj_material_color(FLD_MAP_OBJ* obj) {
-  std::vector<Material*> list, list2;
-  obj->mat_normal.clear(); obj->mat_transz.clear();
-  if (!obj->model) return;
-  std::vector<Renderer*> rs; obj->model->GetComponentsInChildren<Renderer>(rs);
-  for (Renderer* renderer : rs) {
-    for (Material* material : renderer->materials()) {
-      Color color = material->GetColor("_OrgColor");
-      if (material->mainTexture && !TexNameHas(material->mainTexture, "tz_")) { list.push_back(material); material->color = color * m_color; }
-      else { list2.push_back(material); material->color = color; }
-    }
-  }
-  obj->mat_normal = list; obj->mat_transz = list2;
-}
-
 void FldObject::set_priority(FLD_MAP_OBJ* obj, int priority) {
   for (Material* material : MaterialsOf(obj->model)) if (EffectiveQueue(material) == 3000) material->renderQueue = 3000 + priority;
 }
@@ -451,58 +437,27 @@ void FldObject::init_fld() {
       }
     }
   }
+  if (m_data_path.find("ev02") != std::string::npos && m_map_objs.size() > 37) {
+    bset(m_map_objs[1]->flag, 134217728);
+    bset(m_map_objs[4]->flag, 134217728);
+    bset(m_map_objs[37]->flag, 134217728);
+    set_priority2(m_map_objs[4].get(), 2999);
+  }
+  if (s_skyStretch != 1.f && m_data_path.find("ev/ev01/") != std::string::npos && !m_map_objs.empty() && m_map_objs[0]->model) {   // landscape title: the cloud plane is only 34 units wide
+    m_map_objs[0]->scl.x *= s_skyStretch;
+    m_map_objs[0]->model->localScale = m_map_objs[0]->scl;
+  }
   if (m_sra_mot) for (size_t l = 0; l < m_sra_mot->size(); l++) (*m_sra_mot)[l]->mtl_list = get_material_list((*m_sra_mot)[l]->mtl_name);
   for (size_t i = 0; i < m_map_objs.size(); i++) {
     FLD_MAP_OBJ* o = m_map_objs[i].get();
     if (!o->model) continue;
     set_priority(o, o->priority);
-    std::vector<Material*> list, list2;
-    std::vector<Renderer*> rs; o->model->GetComponentsInChildren<Renderer>(rs);
-    for (Renderer* renderer : rs)
-      for (Material* material : renderer->materials()) {
-        if (material->mainTexture && !TexNameHas(material->mainTexture, "tz_")) list.push_back(material); else list2.push_back(material);
-      }
-    o->mat_normal = list; o->mat_transz = list2;
   }
-  m_updateColor = true;
   save_org_color();
   init_seq();
 }
 
-void FldObject::ReplaseShader(FLD_MAP_OBJ* obj, Shader* src, Shader* dst) {
-  if (!obj || !obj->model) return;
-  for (Material* material : MaterialsOf(obj->model)) if (material->shader == src) material->shader = dst;
-}
-
-void FldObject::FixProblems(int mapId) {
-  if (!m_root_obj) return;
-  auto obj = [&](int i) -> FLD_MAP_OBJ* { return i >= 0 && i < (int)m_map_objs.size() ? m_map_objs[i].get() : nullptr; };
-  switch (mapId) {
-  case 714: {
-    Shader* src = Shader::Find("Custom/fld_trans"); Shader* dst = Shader::Find("Custom/fld_transz");
-    for (int i : { 23, 24, 36, 39, 40, 53, 54, 55 }) ReplaseShader(obj(i), src, dst);
-    break;
-  }
-  case 339: ReplaseShader(obj(2), Shader::Find("Custom/fld_trans"), Shader::Find("Custom/fld_transz")); break;
-  case 91: {
-    Color color = Color(248.f / 255.f, 248.f / 255.f, 248.f / 255.f, 1.f);
-    for (int i : { 6, 7 }) {
-      FLD_MAP_OBJ* o = obj(i); if (!o || !o->model) continue;
-      std::vector<Material*> ms = MaterialsOf(o->model);
-      if (ms.size() > 1) { ms[1]->SetColor("_OrgColor", color); ms[1]->color = color; }
-    }
-    break;
-  }
-  case 707: case 708: case 709: {
-    Camera* cam = Camera::main();
-    if (cam) m_root_obj->transform->Translate(0.f, -10.24f * (Layout::Aspect(cam->aspect()) - 0.5625f), 0.f);
-    break;
-  }
-  }
-}
-
 void FldObject::Term() {
-  if (GetCameraNo() > 0) SetCameraNo(0, 0);
   if (m_fld_model) { Object::Destroy(m_fld_model->gameObject); m_fld_model = nullptr; }
   if (m_root_obj) { Object::Destroy(m_root_obj); m_root_obj = nullptr; }
   for (auto& o : m_map_objs) if (o) DestroySeqMeshes(o.get());
@@ -644,10 +599,9 @@ int FldObject::sra_func(FLD_KEY* _k1, FLD_KEY* _k2, float t, FLD_MOTION* mot) {
   Color color2 = color * m_color;
   for (Material* material : mot->mtl_list) {
     if (!Live(material)) continue;
-    if (material->mainTexture && !TexNameHas(material->mainTexture, "tz_")) { material->color = color2; material->SetColor("_OrgColor", color2); }
-    else { material->color = color; material->SetColor("_OrgColor", color); }
+    if (material->mainTexture && !TexNameHas(material->mainTexture, "tz_")) material->color = color2;
+    else material->color = color;
   }
-  m_updateColor = true;
   return 0;
 }
 
@@ -807,13 +761,15 @@ void FldObject::update_sra() {
   }
 }
 
-void FldObject::update_material_color_force() { if (m_root_obj) update_material_color(); }
-
-void FldObject::update_material_color() {
-  for (auto& op : m_map_objs) {
-    FLD_MAP_OBJ* o = op.get();
-    for (Material* material : o->mat_normal) if (Live(material)) material->color = material->GetColor("_OrgColor") * m_color;
-    for (Material* material : o->mat_transz) if (Live(material)) material->color = material->GetColor("_OrgColor");
+void FldObject::update_material_color(GameObject* obj) {
+  if (!Live(obj)) return;
+  std::vector<Renderer*> rs; obj->GetComponentsInChildren<Renderer>(rs);
+  for (Renderer* renderer : rs) {
+    for (Material* material : renderer->materials()) {
+      Color color = material->GetColor("_OrgColor");
+      if (material->mainTexture && !TexNameHas(material->mainTexture, "tz_")) material->color = color * m_color;
+      else material->color = color;
+    }
   }
 }
 
@@ -851,7 +807,7 @@ void FldObject::Update() {
       o->model->localRotation = Quaternion::AngleAxis(main->transform()->eulerAngles().y, Vector3::up);
     }
   }
-  if (m_updateColor) { update_material_color(); m_updateColor = false; }
+  update_material_color(m_root_obj);
   update_plp();
   update_sra();
 }
@@ -1084,7 +1040,7 @@ void FldObject::fld_set_obj_matrix(FLD_MAP_OBJ* obj) {
   obj->dirty = 0;
 }
 
-void FldObject::SetMaterialColor(Color color) { m_color = color; m_updateColor = true; }
+void FldObject::SetMaterialColor(Color color) { m_color = color; }
 
 void FldObject::SetVertexColor(Color color) {
   if (!m_root_obj) return;

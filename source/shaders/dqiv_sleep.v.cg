@@ -1,0 +1,22 @@
+// dqiv_sleep.v.cg -- CharaSleep / CharaSleepEx vertex program (DQ4 pack):
+//   clip.xy = (mvp * v).xy ; clip.zw = (VP * (_sleepMatrix * v)).zw ; uv = uv0 * ST.xy + ST.zw
+// (the sprite is projected like a normal billboard, but its depth/w come from the "lying" matrix so it sorts against the map like a body on the floor).
+// mvp, slp (= _sleepMatrix) and vp (= projection * view) are passed as 4 row vectors each.
+void main(float3 position,
+          float2 texcoord,
+          float4 color,
+          uniform float4 mvp0, uniform float4 mvp1,
+          uniform float4 slp0, uniform float4 slp1, uniform float4 slp2, uniform float4 slp3,
+          uniform float4 vp2, uniform float4 vp3,
+          uniform float4 st,
+          uniform float4 tint,
+          float4 out gl_Position : POSITION,
+          float2 out vTex : TEXCOORD0,
+          float4 out vColor : COLOR0)
+{
+  float4 p = float4(position, 1.0);
+  float4 b = float4(dot(slp0, p), dot(slp1, p), dot(slp2, p), dot(slp3, p));
+  gl_Position = float4(dot(mvp0, p), dot(mvp1, p), dot(vp2, b), dot(vp3, b));
+  vTex = texcoord * st.xy + st.zw;
+  vColor = color * tint;
+}

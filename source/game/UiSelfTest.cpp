@@ -75,8 +75,7 @@ void Tick(int frame) {
       l_info("UiSelfTest: name entry answer sent on port %d at frame %d", e.value, frame);
     }
   if (!s_soak.empty() && frame >= s_soak[0].frame) {   // soak: endless loop over every screen of the table: build + fill, 3 frames shown, close, next
-    static const int ids[] = { 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,
-                               56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71,72,73,75,76,77,78,79,80,81,82,83,84,85,86,87,88,89,90,91,92,93,94,95,96,97,98,99,100,101 };
+    static const int ids[] = { 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71,72,73,75,76,77,78,79,80 };
     const int n = (int)(sizeof(ids) / sizeof(ids[0]));
     if (s_soakT < 0) s_soakT = 0;
     int id = ids[s_soakIdx % n];

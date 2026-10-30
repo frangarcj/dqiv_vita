@@ -35,7 +35,6 @@ private:
   MenuParts::IBasePtr m_frame;
   bool m_bCursor = false;
   int m_count = 0, m_shake = 0;
-  short m_shakeCount = 0;
   short m_nowType = -1;
   TextMesh* m_who = nullptr;
   bool m_bWho = false;

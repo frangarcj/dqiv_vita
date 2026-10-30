@@ -50,6 +50,7 @@ class Material : public Object { public:
   struct TexEnv { Texture* tex = nullptr; Vector2 scale = Vector2(1,1), offset; };
   std::unordered_map<std::string, Color> colors;                   // SetColor("_OrgColor", c) ...
   std::unordered_map<std::string, float> floats;                   // SetFloat("_Brightness", f) ...
+  std::unordered_map<std::string, Matrix4x4> matrices;             // SetMatrix("_sleepMatrix", m) (DQ4 Chara sleep shaders)
   std::unordered_map<std::string, Color> vectors;                  // SetVector("_LDir", x,y,z,w): the 4 floats are stored as r,g,b,a
   std::unordered_map<std::string, TexEnv> textures;                // non-_MainTex texture slots
   std::vector<std::string> keywords;
@@ -59,6 +60,7 @@ class Material : public Object { public:
   void SetColor(const char* prop, Color); Color GetColor(const char* prop) const;
   void SetFloat(const char* prop, float); float GetFloat(const char* prop) const;
   void SetVector(const char* prop, float x, float y, float z, float w); Color GetVector(const char* prop) const;
+  void SetMatrix(const char* prop, const Matrix4x4& m) { matrices[prop] = m; } Matrix4x4 GetMatrix(const char* prop) const { auto it = matrices.find(prop); return it == matrices.end() ? Matrix4x4::identity() : it->second; }
   void SetTexture(const char* prop, Texture* t); Texture* GetTexture(const char* prop) const;
   bool HasProperty(const char* prop) const; };
 struct SkinWeight { uint8_t bone[4]; float weight[4]; };            // pack DqvSkinVertex: indices into Mesh::bindposes / SkinnedMeshRenderer::bones

@@ -1,6 +1,6 @@
 // game/MenuPortItemTable.cpp -- OWNER: WP4b (framework + proof screens by WP4a).  C# source: re/cs_out/Assembly-CSharp/MenuPortItemTable.cs
-// Ported here: the table itself + CreateMenuPortItem, and screens TitleTouch, StartMenuFirst, StartMenuSecond, RootMenu, YesNo, Money, Chapter, ScopeBack, Pageing
-// (StartMenuSelect, SaveOverwrite, + Sub_BackButton / Sub_RootMenuButton / Sub_StartMenuButtonLong). Everything else: MenuPortItemTable_unported.cpp.
+// Ported here: the table itself + CreateMenuPortItem, and screens TitleTouch, StartMenuFirst, StartMenuSecond, RootMenu, YesNo, Money, Chapter, Pageing
+// (StartMenuSelect, SaveOverwrite, + Sub_BackButton / Sub_RootMenuButton / Sub_StartMenuButtonLong).
 #include "game/MenuPortItemTable.hpp"
 #include <algorithm>
 #include "utils/logger.h"
@@ -8,7 +8,7 @@
 short MenuPortItemTable::s_yesNoPort = 0;
 
 // the native screen id (MenuPort::Open type) indexes this table; ids that share a function differ by their offset from the first occurrence (the `type` argument)
-static const MenuPortItemTable::Make_FUNC makeFuncList[102] = {
+static const MenuPortItemTable::Make_FUNC makeFuncList[81] = {
   MenuPortItemTable::Make_Debug, // 0
   MenuPortItemTable::Make_YesNo,
   MenuPortItemTable::Make_Money,
@@ -77,9 +77,9 @@ static const MenuPortItemTable::Make_FUNC makeFuncList[102] = {
   MenuPortItemTable::Make_BankDraw,
   MenuPortItemTable::Make_ChurchRoot,
   MenuPortItemTable::Make_ChurchWork,
-  MenuPortItemTable::Make_MessageStatus,
-  MenuPortItemTable::Make_MuseumMemo,
-  MenuPortItemTable::Make_MuseumInfo, // 70
+  MenuPortItemTable::Make_Chapter2Status,
+  MenuPortItemTable::Make_TorunekoMiseban,
+  MenuPortItemTable::Make_NENE_ItemView, // 70
   MenuPortItemTable::Make_FightStadiumAbort,
   MenuPortItemTable::Make_ViewVolumeDecision,
   MenuPortItemTable::Make_TitleTouch,
@@ -90,35 +90,14 @@ static const MenuPortItemTable::Make_FUNC makeFuncList[102] = {
   MenuPortItemTable::Make_NetworkCODE,
   MenuPortItemTable::Make_NetworkITEM,
   MenuPortItemTable::Make_License, // 80
-  MenuPortItemTable::Make_MonG_Root,
-  MenuPortItemTable::Make_MonG_Button,
-  MenuPortItemTable::Make_MonsG_Name,
-  MenuPortItemTable::Make_MonsG_MessageUpChar,
-  MenuPortItemTable::Make_LuidaRoot,
-  MenuPortItemTable::Make_SugorokuRoot,
-  MenuPortItemTable::Make_Sugoroku_Arrow,
-  MenuPortItemTable::Make_Sugoroku_Dice,
-  MenuPortItemTable::Make_Sugoroku_Timer,
-  MenuPortItemTable::Make_Sugoroku_Shop, // 90
-  MenuPortItemTable::Make_SugorokuDrop,
-  MenuPortItemTable::Make_ScopeBack,
-  MenuPortItemTable::Make_SlimeTouch_Root,
-  MenuPortItemTable::Make_SlimeTouch_Score,
-  MenuPortItemTable::Make_SlimeRace_BetA,
-  MenuPortItemTable::Make_SlimeRace_BetB,
-  MenuPortItemTable::Make_SlimeRace_Coin,
-  MenuPortItemTable::Make_SlimeRace_MoneyCoin,
-  MenuPortItemTable::Make_SlimeRace_Entry,
-  MenuPortItemTable::Make_SlimeRace_Result, // 100
-  MenuPortItemTable::Make_SlimeRace_BetC,
 };
 
 MenuPortItem* MenuPortItemTable::CreateMenuPortItem(short port, short type) {
-  if (102 <= type || type < 0) {
+  if (81 <= type || type < 0) {
     Debug::Log("No Menu Type : %d", (int)type);
     type = 0;
   }
-  int first = (int)(std::find(makeFuncList, makeFuncList + 102, makeFuncList[type]) - makeFuncList);
+  int first = (int)(std::find(makeFuncList, makeFuncList + 81, makeFuncList[type]) - makeFuncList);
   l_info("MenuPortItemTable: port %d screen id %d -> table slot %d (subtype %d)", (int)port, (int)type, first, (int)(type - first));
   return makeFuncList[type](port, (short)(type - first));
 }
@@ -202,20 +181,6 @@ MenuPortItem* MenuPortItemTable::Make_TitleTouch(short port, short type) {
   return menuPortItem;
 }
 
-MenuPortItem* MenuPortItemTable::Make_ScopeBack(short port, short type) {
-  MenuPortItem* menuPortItem = new MenuPortItem(port, type);
-  MenuParts* menuParts = MenuParts::CreateWindow0(121.25f, 44.f);
-  MenuParts* menuParts2 = MenuParts::CreateButton(100.f, 24.f, 0, 512);
-  menuParts2->m_externalToggle = true;
-  menuParts->Build(8, 8, 0.f, 0.f, 41.f);
-  menuPortItem->AddParts(menuParts);
-  menuParts2->Build(4, 7, 152.5f, 4.f, 75.f, menuParts->transform());
-  menuParts2->AddTextMesh(Vector3(0.f, 4.f, 0.f), 9.5f, TextAlignment::Center, TextAnchor::MiddleCenter);
-  short partsNo = menuPortItem->AddParts(menuParts2);
-  menuPortItem->SetTableForItemParam(0, 0, partsNo, 1);
-  return menuPortItem;
-}
-
 void MenuPortItemTable::Sub_RootMenuButton(MenuPortItem* item, short id, short buttonId, int icon, Transform* parent, float x, float y, float z, bool bFix) {
   float size = !bFix ? 0.86f : 1.2f;
   int num = bFix ? 8 : 0;
@@ -247,10 +212,10 @@ MenuPortItem* MenuPortItemTable::Make_Pageing(short port, short type) {
   menuPortItem->AddParts(text);
   menuPortItem->SetTableForCode(0, [text](short code) { text->gameObject->SetActiveRecursively(code != 0); });
   menuPortItem->SetTableForItemParam(0, 0, 0, 0);
-  MenuParts* menuParts = MenuParts::CreateButtonIcon(10, 0, 1.f, -1, 4);
+  MenuParts* menuParts = MenuParts::CreateButtonIcon(10, 0, 1.f, -1, 8);
   menuParts->Build(4, 8, -235.5f, 4.f, 99.f, text->transform());
   menuPortItem->AddParts(menuParts);
-  menuParts = MenuParts::CreateButtonIcon(10, 1, 1.f, -1, 8);
+  menuParts = MenuParts::CreateButtonIcon(10, 1, 1.f, -1, 4);
   menuParts->Build(4, 8, -56.2f, 4.f, 99.f, text->transform());
   menuPortItem->AddParts(menuParts);
   return menuPortItem;
@@ -307,38 +272,19 @@ MenuPortItem* MenuPortItemTable::Make_StartMenuSecond(short port, short type) {
 }
 
 static void Sub_StartSelectButton(MenuPortItem* item, Transform* parent, short i, float y) {
-  MenuParts* p = MenuParts::CreateButton(390.f, 18.f, i, 16);
-  GameObject* go[2];
-  p->Build(4, 7, 0.f, 4.f, y, parent);
-  go[0] = p->AddTextMesh(Vector3(-205.5f, 4.f, -1.f), 9.f, TextAlignment::Left, TextAnchor::MiddleLeft);
+  MenuParts* menuParts = MenuParts::CreateButton(390.f, 18.f, i, 16);
+  menuParts->Build(4, 7, 0.f, 4.f, y, parent);
+  menuParts->AddTextMesh(Vector3(-205.5f, 4.f, 0.5f), 9.f, TextAlignment::Left, TextAnchor::MiddleLeft);
   switch (GetLangages::m_langagesNumber) {
-    case 1: go[1] = p->AddTextMesh(Vector3(-6.f, 4.f, -1.f), 8.5f, TextAlignment::Left, TextAnchor::MiddleLeft, 1.1f); break;
-    case 2: go[1] = p->AddTextMesh(Vector3(-6.f, 4.f, -1.f), 7.5f, TextAlignment::Left, TextAnchor::MiddleLeft, 1.1f); break;
-    default: go[1] = p->AddTextMesh(Vector3(-14.f, 4.f, -1.f), 7.5f, TextAlignment::Left, TextAnchor::MiddleLeft, 1.1f); break;
+    case 1: menuParts->AddTextMesh(Vector3(-6.f, 4.f, 0.5f), 8.5f, TextAlignment::Left, TextAnchor::MiddleLeft, 1.1f); break;
+    case 2: menuParts->AddTextMesh(Vector3(-6.f, 4.f, 0.5f), 7.5f, TextAlignment::Left, TextAnchor::MiddleLeft, 1.1f); break;
+    default: menuParts->AddTextMesh(Vector3(-14.f, 4.f, 0.5f), 7.5f, TextAlignment::Left, TextAnchor::MiddleLeft, 1.1f); break;
   }
-  short partsNo = item->AddParts(p);
+  short partsNo = item->AddParts(menuParts);
   item->SetTableForItemParam(i, 0, partsNo, 0);
   item->SetTableForItemParam(i, 1, partsNo, 1);
   item->SetTableForItemParam(i, 2, partsNo, 2);
-  GameObject* g0 = go[0]; GameObject* g1 = go[1];
-  item->SetTableForCode(i, [p, g0, g1](short code) {
-    switch (code) {
-      case 30:
-        p->transform()->localScale = Vector3::one;
-        g0->transform->localScale = Vector3::one;
-        g1->transform->localScale = Vector3::one;
-        break;
-      case 31: {
-        Vector3 localScale(1.f, 0.6896551f, 1.f);
-        p->transform()->localScale = Vector3(1.f, 1.f, 1.45f);
-        g0->transform->localScale = localScale;
-        g1->transform->localScale = localScale;
-        break;
-      }
-      default: p->m_button->m_intChanger(0 + code); break;
-    }
-  });
-  p->SetEnableButtonTextColorChange();
+  menuParts->SetEnableButtonTextColorChange();
 }
 
 MenuPortItem* MenuPortItemTable::Make_SaveOverwrite(short port, short type) {

@@ -60,6 +60,7 @@ static GLuint MakeTexture(int w, int h, int fmt, const void* px) {
   return id;
 }
 
+static const int kCgCount = 3;           // OP_GRAY, OP_SEPIA_FLD, OP_SLEEP
 static bool LoadCg(int i);
 static void FreeMeshBuffers(unsigned vbo, const std::vector<unsigned>& ibo);
 
@@ -101,7 +102,7 @@ bool Init(int viewW, int viewH, int viewX0, int viewY0, bool rotated90) {
   { const uint8_t w4[4] = {255,255,255,255}; s_white = MakeTexture(1, 1, DQIV_TF_RGBA8888, w4); }
   g_inited = true;
   g_meshGpuFree = FreeMeshBuffers;
-  for (int i = 0; i < 3; i++) LoadCg(i);                // compile or load the CG programs now (a first-use compile mid-frame would hitch)
+  for (int i = 0; i < kCgCount; i++) LoadCg(i);                // compile or load the CG programs now (a first-use compile mid-frame would hitch)
   return true;
 }
 
@@ -210,17 +211,18 @@ static void SetupTexEnv(int op) {
 // ux0:data/dqiv/cg/<name>.bin (glGetProgramBinary): with the blobs in place libshacccg is not needed at run time; without them the sources compiled into
 // the executable are built with the runtime compiler (needs libshacccg.suprx; Vita3K has it) and the blob is written. If neither works the op falls back to the
 // fixed-function approximation (MODULATE).
-struct CgProg { GLuint prog = 0; bool tried = false; GLint uMvp[4] = {-1,-1,-1,-1}, uSt = -1, uTint = -1, uBright = -1, uAtest = -1; };
-static CgProg g_cg[3];                                   // OP_GRAY, OP_SEPIA_SCR, OP_SEPIA_FLD
-static const char* const kCgName[3] = { "dqiv_gray", "dqiv_sepia_scr", "dqiv_sepia_fld" };
-static const char* const* const kCgFrag[3] = { &kCg_dqiv_gray_f, &kCg_dqiv_sepia_scr_f, &kCg_dqiv_sepia_fld_f };
+struct CgProg { GLuint prog = 0; bool tried = false; GLint uMvp[4] = {-1,-1,-1,-1}, uSlp[4] = {-1,-1,-1,-1}, uVp[4] = {-1,-1,-1,-1}, uSt = -1, uTint = -1, uBright = -1, uAtest = -1; };
+static CgProg g_cg[kCgCount];                            // OP_GRAY, OP_SEPIA_FLD, OP_SLEEP
+static const char* const kCgName[kCgCount] = { "dqiv_gray", "dqiv_sepia_fld", "dqiv_sleep" };
+static const char* const* const kCgFrag[kCgCount] = { &kCg_dqiv_gray_f, &kCg_dqiv_sepia_fld_f, &kCg_dqiv_sleep_f };
+static const char* const* const kCgVert[kCgCount] = { &kCg_dqiv_v, &kCg_dqiv_v, &kCg_dqiv_sleep_v };
 
 static bool LinkedOk(GLuint p) { GLint ok = 0; glGetProgramiv(p, GL_LINK_STATUS, &ok); return ok != 0; }
 static void BindCgAttribs(GLuint p) { glBindAttribLocation(p, 0, "position"); glBindAttribLocation(p, 1, "texcoord"); glBindAttribLocation(p, 2, "color"); }
 
 static GLuint CompileCg(int i) {
   GLuint vs = glCreateShader(GL_CG_VERTEX_SHADER_EXT), fs = glCreateShader(GL_CG_FRAGMENT_SHADER_EXT);
-  const char* vsrc = kCg_dqiv_v; const char* fsrc = *kCgFrag[i];
+  const char* vsrc = *kCgVert[i]; const char* fsrc = *kCgFrag[i];
   glShaderSource(vs, 1, &vsrc, nullptr); glCompileShader(vs);
   glShaderSource(fs, 1, &fsrc, nullptr); glCompileShader(fs);
   GLuint p = glCreateProgram();
@@ -266,7 +268,9 @@ static bool LoadCg(int i) {
   }
   c.prog = p;
   static const char* mvpn[4] = { "mvp0", "mvp1", "mvp2", "mvp3" };
-  for (int k = 0; k < 4; k++) c.uMvp[k] = glGetUniformLocation(p, mvpn[k]);
+  static const char* slpn[4] = { "slp0", "slp1", "slp2", "slp3" };
+  static const char* vpn[4] = { "vp0", "vp1", "vp2", "vp3" };
+  for (int k = 0; k < 4; k++) { c.uMvp[k] = glGetUniformLocation(p, mvpn[k]); c.uSlp[k] = glGetUniformLocation(p, slpn[k]); c.uVp[k] = glGetUniformLocation(p, vpn[k]); }
   c.uSt = glGetUniformLocation(p, "st"); c.uTint = glGetUniformLocation(p, "tint");
   c.uBright = glGetUniformLocation(p, "brightness"); c.uAtest = glGetUniformLocation(p, "atest");
   return true;
@@ -287,7 +291,16 @@ static bool DrawCg(const DrawCall& dc, const PassDesc& ps, const ShaderDesc& s, 
   Color tint = s.useTint ? dc.tint : Color::white;
   if (c.uTint >= 0) { float t[4] = { tint.r, tint.g, tint.b, tint.a }; glUniform4fv(c.uTint, 1, t); }
   if (c.uBright >= 0) glUniform1f(c.uBright, dc.brightness);
-  if (c.uAtest >= 0) glUniform1f(c.uAtest, ps.atest != AT_NONE ? 1.f : 0.f);
+  if (c.uAtest >= 0) glUniform1f(c.uAtest, ps.atest == AT_EQUAL1 && ps.op == OP_SLEEP ? 2.f : ps.atest != AT_NONE ? 1.f : 0.f);
+  if (ps.op == OP_SLEEP) {                               // _sleepMatrix and the view-projection rows that give z/w
+    Matrix4x4 vp = g_proj * g_view;
+    for (int k = 0; k < 4; k++) {
+      const float* m = dc.sleepMatrix.m; float row[4] = { m[k], m[4 + k], m[8 + k], m[12 + k] };
+      if (c.uSlp[k] >= 0) glUniform4fv(c.uSlp[k], 1, row);
+      const float* v = vp.m; float rv[4] = { v[k], v[4 + k], v[8 + k], v[12 + k] };
+      if (c.uVp[k] >= 0) glUniform4fv(c.uVp[k], 1, rv);
+    }
+  }
 
   glEnable(GL_TEXTURE_2D);
   BindTex(dc.texture ? dc.texture : s_white);
@@ -379,8 +392,8 @@ void Draw(const DrawCall& dc) {
 
   ApplyPassState(ps);
 
-  if (ps.op == OP_GRAY || ps.op == OP_SEPIA_SCR || ps.op == OP_SEPIA_FLD) {
-    if (DrawCg(dc, ps, s, ps.op == OP_GRAY ? 0 : ps.op == OP_SEPIA_SCR ? 1 : 2)) return;
+  if (ps.op == OP_GRAY || ps.op == OP_SEPIA_FLD || ps.op == OP_SLEEP) {
+    if (DrawCg(dc, ps, s, ps.op == OP_GRAY ? 0 : ps.op == OP_SEPIA_FLD ? 1 : 2)) return;
   }
   // ---- matrices (model; view/projection were loaded by BeginCamera). Clip-space shaders ignore all of them.
   glMatrixMode(GL_MODELVIEW);

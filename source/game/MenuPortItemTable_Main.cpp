@@ -13,12 +13,12 @@ MenuPortItem* MenuPortItemTable::Make_LeftCharaList(short port, short type) {
 	{
 		Sub_CharaButton(menuPortItem, num, menuParts->transform(), 6, 5.f, 4.f, 429 - 92 * num);
 	}
-	MenuParts* up = MenuParts::CreateButton(120.f, 24.f, -1, 1);
+	MenuParts* up = MenuParts::CreateButton(120.f, 24.f, -1, 2);
 	up->ChangeParts(8, false, true);
 	up->AddIcon(4, 0.f, 4.f, 0.f, 0, false, 0.5f);
 	up->Build(4, 6, 80.f, 4.f, 462.5f, menuParts->transform());
 	menuPortItem->AddParts(up);
-	MenuParts* dn = MenuParts::CreateButton(120.f, 24.f, -1, 2);
+	MenuParts* dn = MenuParts::CreateButton(120.f, 24.f, -1, 1);
 	dn->ChangeParts(8, false, true);
 	dn->AddIcon(4, 0.f, 4.f, 0.f, 1, false, 0.5f);
 	dn->Build(4, 6, 80.f, 4.f, 34.f, menuParts->transform());
@@ -130,14 +130,6 @@ MenuPortItem* MenuPortItemTable::Make_NameButton(short port, short type) {
 			}
 		}
 	});
-	item->SetTableForCode(8, [=](short code) mutable
-	{
-		bool se = code != 0;
-		for (int i = 1; i < 7; i++)
-		{
-			item->m_partsList[i]->m_se = se;
-		}
-	});
 	return item;
 }
 
@@ -164,7 +156,14 @@ Renderer* MenuPortItemTable::Sub_NameButton(MenuPortItem* item, short no, Transf
 	{
 		if (code != 0)
 		{
-			text->transform->localPosition = Vector3(0.35f, 4.f, MenuParts::BIAS_FONT_Y + ((code != 2) ? (-0.15f) : 5.f));
+			if (GetLangages::m_langagesNumber == 1)
+			{
+				text->transform->localPosition = Vector3(0.35f, 4.f, (code != 2) ? (-0.15f) : 9.f);
+			}
+			else
+			{
+				text->transform->localPosition = Vector3(0.35f, 4.f, (code != 2) ? (-0.15f) : 5.f);
+			}
 		}
 		p->gameObject->SetActiveRecursively(code != 0);
 	});
@@ -211,7 +210,7 @@ void MenuPortItemTable::Sub_ItemButton(MenuPortItem* item, short no, Transform* 
 	p->AddIcon(6, 0.f, 6.f, 0.f, 1, false, 0.6f);
 	p->AddIcon(6, 10.f, 6.f, 0.f, 1, false, 0.6f);
 	p->Build(4, 8, -146.f, 4.f, 382 - 67 * no, parent);
-	Transform* txtrns = p->AddTextMesh(Vector3(-38.f, 4.f, 0.f), 9.f, TextAlignment::Left, TextAnchor::MiddleLeft, 1.05f)->transform;
+	p->AddTextMesh(Vector3(-38.f, 4.f, 0.f), 9.f, TextAlignment::Left, TextAnchor::MiddleLeft, 1.05f);
 	p->SetEnableButtonTextColorChange();
 	short partsNo = item->AddParts(p);
 	item->SetTableForCode(no, [=](short code) mutable
@@ -223,20 +222,7 @@ void MenuPortItemTable::Sub_ItemButton(MenuPortItem* item, short no, Transform* 
 		}
 		else
 		{
-			switch (code)
-			{
-			case -2:
-				txtrns->localPosition = Vector3(-38.f, 4.f, MenuParts::BIAS_FONT_Y);
-				txtrns->GetComponent<TextMesh>()->anchor = (int)TextAnchor::MiddleLeft;
-				break;
-			case -3:
-				txtrns->localPosition = Vector3(0.f, 4.f, MenuParts::BIAS_FONT_Y);
-				txtrns->GetComponent<TextMesh>()->anchor = (int)TextAnchor::MiddleCenter;
-				break;
-			default:
-				p->gameObject->SetActiveRecursively(false);
-				break;
-			}
+			p->gameObject->SetActiveRecursively(false);
 		}
 	});
 	item->SetTableForItemParam(no, 0, partsNo, 1);
@@ -254,7 +240,14 @@ MenuPortItem* MenuPortItemTable::Make_ItemInfo(short port, short type) {
 	MenuParts::APPLY_HERO = 2;
 	menuParts->AddTextMesh(Vector3(62.75f, 0.f, 500.f - num), 9.f, TextAlignment::Center, TextAnchor::MiddleCenter);
 	menuParts->AddTextMesh(Vector3(21.f, 0.f, 457.5f - num), 9.f, TextAlignment::Left, TextAnchor::MiddleLeft, 1.15f);
-	menuParts->AddTextMesh(Vector3(240.5f, 0.f, 471.5f - num), 8.75f, TextAlignment::Left, TextAnchor::MiddleLeft, 1.25f);
+	if (GetLangages::m_langagesNumber == 1)
+	{
+		menuParts->AddTextMesh(Vector3(238.f, 0.f, 471.5f - num), 5.42986f, TextAlignment::Left, TextAnchor::MiddleLeft, 1.25f);
+	}
+	else
+	{
+		menuParts->AddTextMesh(Vector3(240.5f, 0.f, 471.5f - num), 8.75f, TextAlignment::Left, TextAnchor::MiddleLeft, 1.25f);
+	}
 	menuParts->AddTextMesh(Vector3(-12.f, 0.f, 56.f - num), 9.f, TextAlignment::Left, TextAnchor::UpperLeft, 1.2f);
 	GameObject* useText = menuParts->AddTextMesh(Vector3(190.f, 0.f, 471.5f - num), 8.75f, TextAlignment::Center, TextAnchor::MiddleCenter);
 	menuPortItem->AddParts(menuParts);
@@ -290,22 +283,14 @@ MenuPortItem* MenuPortItemTable::Make_Status(short port, short type) {
 	switch (type)
 	{
 	case 0:
-		if (GetLangages::m_langagesNumber == 2)
-		{
-			MenuParts::APPLY_HERO = 1;
-			modoru->AddTextMesh(Vector3(-236.f, 4.f, 466.f), 9.5f, TextAlignment::Left, TextAnchor::MiddleLeft);
-		}
-		else
-		{
-			modoru->AddTextMesh(Vector3(-236.f, 4.f, 476.f), 9.5f);
-		}
+		modoru->AddTextMesh(Vector3(-236.f, 4.f, 476.f), 9.5f);
 		modoru->AddTextMesh(Vector3(19.f, 4.f, 476.f), 9.5f, TextAlignment::Right, TextAnchor::UpperRight);
 		modoru->AddTextMesh(Vector3(-236.f, 4.f, 435.f), 9.f, TextAlignment::Left, TextAnchor::UpperLeft, 1.51f);
 		modoru->AddTextMesh(Vector3(-141.f, 4.f, 435.f), 9.f, TextAlignment::Left, TextAnchor::UpperLeft, 1.51f);
 		break;
 	case 1:
 		modoru->AddTextMesh(Vector3(-108.5f, 4.f, 476.f), 9.5f, TextAlignment::Center, TextAnchor::UpperCenter);
-		modoru->AddTextMesh(Vector3(-236.f, 4.f, 435.f), 9.f, TextAlignment::Left, TextAnchor::UpperLeft, 1.13f);
+		modoru->AddTextMesh(Vector3(-236.f, 4.f, 435.f), 9.f, TextAlignment::Left, TextAnchor::UpperLeft, 1.3f);
 		break;
 	case 2:
 		modoru->AddTextMesh(Vector3(-108.5f, 4.f, 476.f), 9.5f, TextAlignment::Center, TextAnchor::UpperCenter);
@@ -368,10 +353,10 @@ MenuPortItem* MenuPortItemTable::Make_Senreki(short port, short type) {
 	{
 		page->SetActiveRecursively(code != 0);
 	});
-	MenuParts* menuParts2 = MenuParts::CreateButtonIcon(10, 0, 1.f, -1, 4);
+	MenuParts* menuParts2 = MenuParts::CreateButtonIcon(10, 0, 1.f, -1, 8);
 	menuParts2->Build(4, 7, -176.f, 4.f, 95.f, page->transform);
 	menuPortItem->AddParts(menuParts2);
-	menuParts2 = MenuParts::CreateButtonIcon(10, 1, 1.f, -1, 8);
+	menuParts2 = MenuParts::CreateButtonIcon(10, 1, 1.f, -1, 4);
 	menuParts2->Build(4, 7, 176.f, 4.f, 95.f, page->transform);
 	menuPortItem->AddParts(menuParts2);
 	menuPortItem->SetTableForItemParam(0, 0, 0, 0);
@@ -449,7 +434,7 @@ MenuPortItem* MenuPortItemTable::Make_MemberShift(short port, short type) {
 		MenuParts::APPLY_HERO = 1;
 		menuParts2->AddTextMesh(Vector3(63.f, 0.f, -2.f), 9.5f);
 		menuParts2->AddTextMesh(Vector3(14.f, 0.f, -24.f), 9.f, TextAlignment::Left, TextAnchor::UpperLeft, 1.02f)->GetComponent<TextMesh>()->tabSize = ((GetLangages::m_langagesNumber != 2) ? 8 : 5);
-		menuParts2->AddTextMesh(Vector3(1.f, 4.f, -1.f), 8.5f);
+		menuParts2->AddTextMesh(Vector3(1.f, 0.f, -1.f), 8.5f);
 		short partsNo = menuPortItem->AddParts(menuParts2);
 		menuPortItem->SetTableForCode(num, partsNo);
 		menuPortItem->SetTableForItemParam(num, 0, partsNo, 0);
@@ -470,7 +455,7 @@ MenuPortItem* MenuPortItemTable::Make_MapButton(short port, short type) {
 	Sub_BackButton(menuPortItem, true)->transform()->SetParent(menuParts->transform());
 	if (type == 0)
 	{
-		MenuParts* menuParts2 = MenuParts::CreateButton(32.f, 23.5f, -1, 1);
+		MenuParts* menuParts2 = MenuParts::CreateButton(32.f, 23.5f, -1, 2);
 		menuParts2->ChangeParts(3);
 		menuParts2->AddIcon(4, 0.f, 4.f, 0.f, 2, false, 1.2f);
 		menuParts2->Build(4, 6, 412.5f, 4.f, 100.f, menuParts->transform());
@@ -479,7 +464,7 @@ MenuPortItem* MenuPortItemTable::Make_MapButton(short port, short type) {
 	return menuPortItem;
 }
 
-MenuPortItem* MenuPortItemTable::Make_MessageStatus(short port, short type) {
+MenuPortItem* MenuPortItemTable::Make_Chapter2Status(short port, short type) {
 	MenuPortItem* menuPortItem = new MenuPortItem(port, type);
 	MenuParts* menuParts = MenuParts::Create(4);
 	menuParts->AddSquare(Vector3::zero, 0, true, 140.f, 72.f);

@@ -4,6 +4,7 @@
 //   * `chara.Foo(GetFloat())` on a null slot would NRE in C#; here the operands are consumed and the call skipped.
 //   * per-frame statistics + packet recorder hooks (native/packet_recorder.*) + opcode range guard (an unknown opcode ends the frame and flags `desync`).
 #include "game/NativeManager.hpp"
+#include "game/Layout.hpp"
 
 #include <cstring>
 
@@ -16,9 +17,7 @@
 #include "game/PadFocus.hpp"
 #include "game/DevCheats.hpp"
 #include "game/SceneCamera.hpp"
-#include "game/Sepia.hpp"
 #include "game/Sound.hpp"
-#include "game/Spotlight.hpp"
 #include "game/TouchPad.hpp"
 #include "native/native_bridge.hpp"
 #include "native/packet_recorder.hpp"
@@ -85,6 +84,7 @@ void NativeManager::cmd_fld_load() {
     m_fld.Term();
   }
   m_anim_list.clear();
+  FldObject::s_skyStretch = Layout::Wide() ? (float)Layout::SurfaceW() / (float)Layout::SurfaceH() / Layout::kDesignAspect : 1.f;   // landscape: widen the ev01 title sky
   m_fld.Load(text);
   m_fld_load = true;
   if (num2 == 1) m_fld.SetDispScale(6.f, 6.f, 6.f);
@@ -432,7 +432,7 @@ void NativeManager::Update(int padPress, int padToggle) {
   } else {
     Field::UpdatePattern();
   }
-  if (Sound::s_bgmState != 0) Sound::SystemUpdate();
+  if (Sound::s_state != 0) Sound::SystemUpdate();
 }
 
 const char* DqvCurrentScene() { return NativeManager::s_sceneName.c_str(); }       // input script `sync` command (platform/vita_input.cpp)

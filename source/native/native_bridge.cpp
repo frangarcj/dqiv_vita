@@ -64,7 +64,7 @@ bool Bind() {
     DebugSetValue = reinterpret_cast<void (*)(int, unsigned, unsigned)>(loader_symbol("dq4core", "DebugSetValue"));
     DebugGetValue = reinterpret_cast<void (*)(int, unsigned*)>(loader_symbol("dq4core", "DebugGetValue"));
     g_bound = ok;
-    // TODO(dq4): field_patch (wider world-map tile block) is DQ5-only: fld::FieldData::drawBlock / FieldSet do not exist in libdq4core. PatchFieldBlock() refuses to patch and logs why.
+    // field_patch: widens FieldData::drawBlock of libdq4core (re-derived for DQ4, see native/field_patch.cpp).
     if (ok && Layout::Wide() && Cfg::GetInt("field_patch", 1)) g_fieldPatched = PatchFieldBlock();
     if (ok) l_success("libdq4core: all required entry points bound (DevInit/GameInit/GameUpdate/MenuPortInit/UnityRenderEvent/FileReadAllBytes/FreeFileMemory/IsLoadNativeCode)");
     return ok;

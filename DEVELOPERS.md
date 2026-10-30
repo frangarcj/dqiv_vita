@@ -74,7 +74,7 @@ Work packages are the ones of `re/arch/05_PORTING_MAP.md` §3. **One owner per d
 | `source/native/` (`native_bridge`, `sdlib_bridge`, `packet_recorder`, `asset_manager`) | **WP3** | typed `so_symbol` bindings of libdq4core/libsdlib, trace recorder, NDK asset shim |
 | `source/platform/vita_input.*` | **WP3** | SceCtrl/touch -> pad bits, Unity touches, logical coordinates (06) |
 | `source/game/{GameMain,GameLoop,Global,Boot,MainLoop,NativeManager,TouchPad,Levels,Sound,Cleaner,ApplicationQuit}.*` | **WP3** | boot orchestration, frame loop, the C# glue classes (Sound and ApplicationQuit are mostly stubs) |
-| `source/game/{MenuPortSystem,MenuParts,MenuMessage}.*` (+ future MenuPort*, MeshMaker, eIndent, TapToStart, InputName, MenuPortItemTable...) | **WP4** UI | MenuPort mailbox, UI framework, 68 screens |
+| `source/game/{MenuPortSystem,MenuParts,MenuMessage}.*` (+ future MenuPort*, MeshMaker, eIndent, TapToStart, InputName, MenuPortItemTable...) | **WP4** UI | MenuPort mailbox, UI framework, 81 screens (DQ4 table, ids 0..80) |
 | `source/game/{SceneCamera,BackColor,Fade,BillboardObject,Chara,Riseup,MeshChara,ParticleSystem}.*` | **WP5a** sprites/camera | |
 | `source/game/{FldObject,FbxObject}.*` (+ ChunkFile) | **WP5b** map models | |
 | `source/game/Field.*` (+ FieldSymbol, Volcano, BlinkMapSymbol) | **WP5c** world map | |
@@ -114,7 +114,7 @@ Level builders (`game/Levels.cpp`) stand in for scene loading ("mainData": Main 
 `game/MenuPortSystem` (LateUpdate = `internalUpdate`: `UnityRenderEvent(1)` first, then port-0 commands, push-state machine, per-port `NoticeReceive`/`Update`) -> `MenuPort` (`Param` view of one
 native->host message, `Send/SendInts/SendBytes` variadic like the C# `params`) -> `MenuPortItem` (category 1: parts list + id tables) / `MenuMessage` (category 2) / WP6 ports (weak factories in `ui_weak_stubs.cpp`).
 `MenuParts` + `MeshMaker` + `MeshList` + `eIndent` + `FRAME_ENUM` are line ports of the C#; `IBase` changers are `std::shared_ptr`, delegates are `std::function`; `new GameObject().AddComponent<T>()` -> `(new GameObject())->AddComponent<T>()`.
-**WP4b**: open `game/MenuPortItemTable.hpp` (recipe at the top). Screens not yet ported are one-liners in `MenuPortItemTable_unported.cpp` (`UNPORTED(Make_X)`); port one into a new file, delete its line.
+**WP4b (DQ4)**: the DQ4 `makeFuncList` has 81 entries (ids 0..80) and every one is ported; open `game/MenuPortItemTable.hpp` for the file layout and translation rules. The DQ5 minigame screens (Sugoroku, Luida, MonsterGame, SlimeTouch, SlimeRace, ScopeBack) do not exist in DQ4 and were removed; ids 68..70 are `Chapter2Status`, `TorunekoMiseban`, `NENE_ItemView`. DQ4 differs from DQ5 in the pad bits of arrow/+- buttons (`MenuPortItem::PAD_D=1, PAD_U=2, PAD_R=4, PAD_L=8`; `PadFocus` L/R use them), in `FRAME_ENUM` (294 frames, no NAME_ENTRY_U2/U3), in the `MeshMaker.SetUV` v convention and `MenuParts.s_info` (14 parts, no sugoroku arrow), and has no `m_se`/`ITexture`/default-name keyboard.
 Test without playing through the game: `CFG_EXTRA='ui_open=150:53\nui_press=450:16,520:16\nui_tap=640:13002' tools/run_vita3k.sh 100 "700,900"` (`game/UiSelfTest.hpp`: scripted pad presses, screens built on spare ports, simulated button taps).
 
 ### Map models (WP5b)
@@ -127,19 +127,20 @@ Viewer without the game: create `ux0:data/dqiv/fldtest<slot>.on` with one line p
 `game/Field` (Field.cs): `Field::Init` (op 29) builds the 25 x 40 quad grid + an orthographic `FieldCamera` (layer 9, mask 512, disables MainLoop's camera); `SetIndexList` (op 30) calls the native `FieldSet` (needs `DevInit`: PowerVR half-texel bias comes from deviceInfo) to fill the tile UVs; `FieldSymbol` = the 42 atlas icons (picid 19 = volcano: plain quad until WP2's `game/Volcano.hpp` exists, picked up automatically via `__has_include`); `BlinkMapSymbol` is the red blinking dots of the city map (MenuPortItemTable ICityMap code 3).
 Viewer: `ux0:data/dqiv/fieldtest<slot>.on` with lines `"<col0> <row0> [scale] [frames]"` (atlas block shown in the grid, all 42 symbols beside it) boots normally but holds NativeManager paused; `tools/run_vita3k.sh 40 "150,270,390"`.
 
-**UI visual checklist (WP4, Vita3K, `ui_tour`, 2026-10-27)** - every screen was built, filled by `MenuPortItem::DebugFill` (sample text, visibility codes) and screenshotted; result = layout/atlas/text sane unless noted.
-Run: `CFG_EXTRA='ui_tour=150:57,150:58,...' tools/run_vita3k.sh 75 ""` -> `build/shots/dqivn<slot>_ui<ID>.jpg`.
+**UI visual checklist (DQ4, Vita3K, `ui_tour`, 2026-10-30)** - every screen id 1..80 (except 55 name entry, which needs the native's message, and 74 PortalButton, an empty port) was built, filled by `MenuPortItem::DebugFill` (sample text, visibility codes) and screenshotted over the real DQ4 title background; result = layout/atlas/text sane unless noted.
+Run (3 runs of ~27 ids, ~150 s each): `CFG_EXTRA='ui_tour=150:1,150:2,...' tools/run_vita3k.sh 150 ""` -> `build/shots/dqivn<slot>_ui<ID>.jpg`.
 | family | ids | result |
 |---|---|---|
-| title / start | 52 53 54 (+55 74 WP3) | OK (real flow verified with native: labels, grey disabled entries, back button) |
-| main menu | 1 2 3 4 5 6 7 8 9 10 11 13 14 18-23 | OK; 12 Chapter shows a grey 450x450 box: `Menu/map/hyodai1` does not exist in the original resources (C# would NRE) |
-| shop / inn / church / bank / museum | 57-72 | OK (frames, +/- buttons, paging arrows, item panels) |
-| battle menus | 29-43 | OK (status bars, command icons, target frames, battle-IM tabs); 38/42 partially empty until native fills codes |
-| maps | 24 ShopMap, 25 CityMap, 26 WorldLargeMap, 28 Encyclopedia | 24 shows the shop interior picture, 28 the parchment + 12 buttons; 25/26 empty until native sends the map name/flags (not exercised) |
-| casino / minigames | 44-51 78-79 81-91 93-101 | OK; ids 87 89 90 91 97 98 show nothing without native codes (invisible by design) |
-| network (offline) / license | 75-77 / 80 | OK; license text scrolls, privacy button reacts to the touch ray |
-| not exercised | 26/25 with real data, 85/86/92 content, touch hit-testing on real hardware | |
-Contact sheets: `build/ui_sheets/sheet1..6.png` (not committed); per-screen shots `build/ui_sheets/dqivn5_ui<ID>.jpg`.
+| title / start | 52 53 54 56 (73 TitleTouch is invisible by design) | OK (buttons, grey/red back icon) |
+| main menu | 1-11 13-23 27 | OK; atlas icons (items, arrows, status gems, back button, +/- triangles) render upright; windows without a frame code only show their text (the native sends the frame) |
+| 12 Chapter | `Menu/map/hyodai1` exists in DQ4: banner shown on its black card | OK |
+| battle | 29-43 | OK: faces (DQ4 `Create(2)` + AddIcon 0.3), tactics buttons with the 3 icon layers (id 30), spell/item lists, target frames; 38/42 partly empty until native fills codes |
+| maps | 24 ShopMap (picture + frame), 25 CityMap, 26 WorldLargeMap, 28 Encyclopedia | 24/28 OK; 25/26 empty until native sends the map name / flags (not exercised with real data) |
+| casino / coliseum | 44-51 | OK (+/- buttons with up/down triangles, frames) |
+| shop / bank / church | 57-67, 68 Chapter2Status, 69 TorunekoMiseban, 70 NENE_ItemView | OK; 70 is a dynamic frame (-1) that stays empty until native sends the frame/text |
+| network / license | 75-80 | OK (license text and scroll knob, Privacy Policy button) |
+| not exercised | pad navigation on real native screens, 25/26 with data, 55 InputName, 74 | |
+
 ### Battle (forced through the native debug hooks)
 
 Decoded from `DebugSetValue` / `DebugSetMapName` of libdq4core (not the DQ5 numbers): the game must have a state (the title has an empty party), so `DebugSetValue(1, event, female)` loads a story checkpoint first (`status::Status::setEventParty`: party, levels, gold, items, flags, chapter; table `param::Event`, 347 rows, `dumpevents` logs it). Then `DebugSetValue(8, g, monster << 16 | count)` fills monster group g = 0..3 (`Encount` +0x34/+0x44), and `DebugSetValue(8, 4, 0)` sets Encount type 0, `StageStatus::setBtlMapName("btl_pl_d")` and calls `Global::startBattle()` (`NonBattleActionManager::setAction(4)`, handled by the running town/field part). The harness then overwrites the stage name in the `StageStatus` instance (`g_Global - 0x1dcfa8 + 0x1dff70`, +0x28; the native reads it in `BattleStage::initialize` through `getBtlMapName`, which swaps the 7th/8th characters for the time-of-day letters `_d/_e/_n` when the time zone is enabled). `DebugSetMapName("<count>-<monster>")` is the native shortcut for the same fight on `btl_pl_d` (ignored while the map is the title `ev01`); `0-890` no encounters, `0-801` no damage, `0-802` level 99, `0-899` chapter 9 (staff roll), `1-701`/`1-702` shop/inn fights: the debug lists `BT/..`, `FS/..` at the end of `map/map_list` (`tools/coverage/maps.txt`) are these codes.
@@ -149,7 +150,7 @@ Battle layout: `Global.CameraInitParams[1]` view rect (0,0.275,1,0.42) scaled by
 
 ### Config, language, saves (WP4)
 
-* **Config file**: `ux0:data/dqiv/config.txt` (`key=value`, `#` comments; read first by `platform/cfg.cpp`, then the per-slot `dqivn<slot>.cfg` overrides). Keys: `lang=en|ja|ko|zh-tw|zh-cn` (or 0..4; default `en`) -> `GetLangages::Init()` (Boot) -> `DevInit(lang)`, the quit dialog text, MenuParts font (`Menu/SE-GARRIR`, `GMaruGoPro-M`, `FOTK-YDHopeL`, `FZHTK_TL`, `FZHTK_SL`) and every `m_langagesNumber` branch of the screens. Verified in Vita3K: start menu in EN, JA, KO, zh-TW, zh-CN (fonts + native canvas text); the EN atlas' rotated ("flipped") glyphs (star, down-triangle, N) render upright.
+* **Config file**: `ux0:data/dqiv/config.txt` (`key=value`, `#` comments; read first by `platform/cfg.cpp`, then the per-slot `dqivn<slot>.cfg` overrides). Keys: `lang=en|ko|zh-tw|zh-cn` (or 1..4; default `en`; Japanese text is not in the DQ4 OBB) -> `GetLangages::Init()` (Boot) -> `DevInit(lang)`, the quit dialog text, MenuParts font (`Menu/SE-GARRIR`, `GMaruGoPro-M`, `FOTK-YDHopeL`, `FZHTK_TL`, `FZHTK_SL`) and every `m_langagesNumber` branch of the screens. Verified in Vita3K: start menu in EN, JA, KO, zh-TW, zh-CN (fonts + native canvas text); the EN atlas' rotated ("flipped") glyphs (star, down-triangle, N) render upright.
 * **Saves**: written by libdq4core itself (`Backup_Write` -> `ux0:data/dqiv/saves<slot>/data1..5.dat` = 15360 bytes each (the 5 adventure logs / autosave), `data9.dat` = 512 bytes (system/options)); the host only provides the directory. Verified end to end: New Game ("Tester") in one boot -> next boot "Continue your adventure" shows `1: Tester LV 1 000:00 Prologue`. "Continue a suspended adventure" is enabled by the native suspend data; the C# never triggers it (`OnApplicationPause` only pauses sound, `ApplicationQuit` only shows the quit dialog): the native writes it from its own menu and then asks the host to quit with port-0 cmd 999 (`ApplicationQuit::Create`), so nothing extra is needed on the Vita beyond that dialog and the PS-button pause (`Sound::SystemPause`).
 * **Cloud Save / Google Drive**: `game/NetConnectionStub` = category-4 port in the C#'s "NotReachable" behaviour (status bit1 off, cloud ops answer 408, SQMK auth silently fails, present codes 801); the native shows "Connection failed. Please check your signal and try again." and returns to the menu (verified, no hang).
 

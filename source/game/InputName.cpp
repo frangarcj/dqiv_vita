@@ -116,7 +116,6 @@ void InputName::ApplyAction(int state, MenuParts* hit) {
         }
         case 8: m_status = -1; break;
         case 11:
-          if (m_bDefName) { m_bDefName = false; m_result.clear(); }
           if ((int)m_result.size() < m_max) {
             m_mojiModes[m_result.size()] = m_mode;
             m_pushedIds[m_result.size()] = hit->m_buttonId;
@@ -146,7 +145,7 @@ void InputName::PadUpdate() {
   int num = m_mojisLen >> m_shiftNum;
   auto valid = [&](int i) { return i >= 0 && i < num && i < (int)m_chars.size() && m_chars[i] != nullptr && m_mojis[i] != C_NA; };
   if (!valid(m_padFocus)) { m_padFocus = 0; while (m_padFocus < num && !valid(m_padFocus)) m_padFocus++; }
-  auto etcOk = [&](int id) { return id >= 1 && id <= 8 && id != 4 && id != 5 && (int)m_etc.size() >= id && m_etc[id - 1] && (id != 8 || !m_bDisableBack); };
+  auto etcOk = [&](int id) { return id >= 1 && id <= 8 && id != 4 && id != 5 && (int)m_etc.size() >= id && m_etc[id - 1]; };
   if (m_padZone && !etcOk(m_padZone)) m_padZone = 0;
   if (dx || dy) {
     const int cols = 5, rows = (num + cols - 1) / cols;
@@ -189,7 +188,7 @@ void InputName::PadUpdate() {
   if (t & 0x10) ApplyAction(1, nullptr);                                              // L: alphabet page
   if (t & 0x20) ApplyAction(2, nullptr);                                              // R: accent page
   if (TouchPad::m_bToggleESC) { TouchPad::m_bToggleESC = false; ApplyAction(7, nullptr); }   // Start (= Escape key in vita_input): enter
-  if ((t & 0x400) && !m_bDisableBack) { m_status = -1; Sound::PlaySE(300); }          // Circle: back
+  if (t & 0x400) { m_status = -1; Sound::PlaySE(300); }          // Circle: back
   if (m_status == 9) PadFocus::ShowMarker(nullptr);
   else if (m_padZone) PadFocus::ShowMarker(m_etc[m_padZone - 1]);                      // function buttons: MenuCamera
   else PadFocus::ShowMarker(valid(m_padFocus) ? m_chars[m_padFocus] : nullptr, m_cam);   // grid keys are drawn by the keyboard camera (layer 10), clipped to its viewport
@@ -199,8 +198,9 @@ void InputName::Update() {
   if (m_status == 9) return;
   if (!m_chars.empty() && m_nobu) PadUpdate();
   RawPads& pad = TouchPad::m_pad;
-  if (!m_bDisableBack && TouchPad::m_bToggleESC) { m_status = -1; Sound::PlaySE(300); }
+  if (TouchPad::m_bToggleESC) { m_status = -1; Sound::PlaySE(300); }
   if (m_status == -1) {
+    m_port->Send(1, 32, 0);
     m_status = 9;
   } else if (m_status == 1) {
     std::string utf8 = ToUtf8(m_result);
@@ -261,7 +261,6 @@ void InputName::Update() {
 
 void InputName::SetLanguage(int lng, int resultMax) {
   m_etcText[0] = "Alphabet"; m_etcText[1] = "\xC3\xA0 \xC3\x80"; m_etcText[2] = "Shift"; m_etcText[3] = ""; m_etcText[4] = ""; m_etcText[5] = "Delete"; m_etcText[6] = "Enter";
-  if (GetLangages::m_langagesNumber == 2) { m_etcText[2] = "시프트"; m_etcText[5] = "지우기"; m_etcText[6] = "결정"; }
   m_mojis = MojiSet(m_mode); m_mojisLen = 70;
   m_shiftNum = 1;
   int num = m_mojisLen >> m_shiftNum;
@@ -270,18 +269,6 @@ void InputName::SetLanguage(int lng, int resultMax) {
   m_max = resultMax;
   m_pushedIds.assign(m_max, -1);
   m_mojiModes.assign(m_max, 0);
-  for (int j = 0; j < (int)m_result.size(); j++) {
-    bool flag = false; char16_t c = m_result[j];
-    for (int num2 = 0; !flag && num2 < 2; num2++) {
-      const char16_t* array2 = C_LOCALIZE[num2];
-      for (int num3 = 0; !flag && num3 < 70; num3++) {
-        if ((flag = array2[num3] == c)) {
-          if (num3 >= (70 >> 1)) num3 -= 70 >> 1;
-          m_mojiModes[j] = num2; m_pushedIds[j] = num3;
-        }
-      }
-    }
-  }
   MenuParts* menuParts;
   for (int k = 0; k < num; k++) {
     menuParts = nullptr;
@@ -300,9 +287,9 @@ void InputName::SetLanguage(int lng, int resultMax) {
   m_parts.push_back(menuParts);
   m_tail = 82.f * (float)(num / 5) - m_cam->orthographicSize * 2.f;
   m_text = m_upframe->AddTextMesh(Vector3(225.f, 4.f, 709.f), 9.5f, TextAlignment::Center, TextAnchor::MiddleCenter)->GetComponent<TextMesh>();
-  if (GetLangages::m_langagesNumber == 2) { m_text->transform()->localPosition = Vector3(226.f, 4.f, 709.f); m_text->characterSize = 9.f; m_text->tabSize = 4.f; }
+  if (GetLangages::m_langagesNumber == 2) { m_text->transform()->localPosition = Vector3(214.f, 4.f, 709.f); m_text->tabSize = 4.f; }
   else { m_text->transform()->localPosition = Vector3(222.f, 4.f, 709.f); m_text->tabSize = 6.f; }
-  m_text->text = MakeDispName(m_result);
+  m_text->text = MakeDispName(std::u16string());
 
   auto makeEtc = [&](float w, float h, short id) { MenuParts* p = MenuParts::CreateButton(w, h, id, 0); return p; };
   menuParts = makeEtc(166.f, 29.f, 1);
@@ -342,7 +329,7 @@ void InputName::SetLanguage(int lng, int resultMax) {
   menuParts->Build(4, 6, 412.5f, 4.f, 34.f);
   menuParts->m_button->AddChangeGrayMaterials({ nowMaterial });
   m_etc.push_back(menuParts);
-  if (lng == 1) { menuParts->m_list[0]->m_intChanger(3); m_bDisableBack = true; }
+  if (lng == 1) menuParts->m_list[0]->m_intChanger(3);
   for (MenuParts* item : m_etc) { item->transform()->SetParent(transform()); m_uol->Add(item); m_uol->Add(item->gameObject); }
   for (MenuParts* part : m_parts) { m_uol->Add(part); m_uol->Add(part->gameObject); }
   m_uol->Add(m_root->gameObject);
@@ -365,7 +352,7 @@ void InputName::SetMode(int mode) {
   if (GetLangages::m_langagesNumber != 1) { m_etc[0]->m_list[0]->m_intChanger(2); m_etc[1]->m_list[0]->m_intChanger(2); }
   m_etc[3]->m_list[0]->m_intChanger(2);
   m_etc[4]->m_list[0]->m_intChanger(2);
-  m_upframe->m_list[0]->m_intChanger(m_baseUFrame + mode);
+  m_upframe->m_list[0]->m_intChanger(287 + mode);
   int num = m_mojisLen >> m_shiftNum;
   int num2 = m_bShift ? num : 0;
   for (int i = 0; i < num; i++) {
@@ -410,12 +397,8 @@ void InputName::Setup(UnityOBJList& uol) {
   m_bpos.z += num5;
   m_scrD = 0.f - num5 + 10.f;
   m_areaM = num5 - 5.f;
-  MenuParts* menuParts = (m_upframe = MenuParts::CreateBuildFrameParts(m_baseUFrame, 6, 0.f, 0.f, -2.f + num3));
+  MenuParts* menuParts = (m_upframe = MenuParts::CreateBuildFrameParts(287, 6, 0.f, 0.f, -2.f + num3));
   menuParts->transform()->SetParent(transform());
-  m_parts.push_back(menuParts);
-  menuParts = MenuParts::Create(1);
-  menuParts->AddIcon(Vector3::zero, 0, true, 1.f);
-  menuParts->Build(4, Vector3(45.f, 4.f, 716.f), m_upframe->transform());
   m_parts.push_back(menuParts);
   menuParts = MenuParts::CreateBuildFrameParts(286, 6, 0.f, 0.f, -2.f + num4);
   menuParts->transform()->localScale = Vector3(1.f, 1.f, m_invScale);
@@ -432,16 +415,6 @@ void InputName::Setup(UnityOBJList& uol) {
     prm = (prm == 0) ? (short)1 : (short)0;
     m_port->SetItemCode(3, prm);
     m_port->SetItemCode(4, prm);
-  });
-  m_port->SetTableForCode(2, [this](short code) {
-    if (code == 0) {
-      m_result = FromUtf8(m_port->Receive().ConvertString());
-      m_bDefName = GetLangages::m_langagesNumber != 1 && !m_result.empty() && (m_result[0] & 0xFF00) != 0;
-    } else {
-      m_baseUFrame = 289;
-      m_upframe->m_list[0]->m_intChanger(m_baseUFrame);
-      m_parts[1]->m_list[0]->m_intChanger(code);
-    }
   });
   if (m_boot) UiCameras::RetagFrom(transform(), 8, UiCameras::kBootLayer);     // landscape start flow: layer-8 parts (back/OK buttons...) follow the centred camera
 }

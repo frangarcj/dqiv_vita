@@ -1,16 +1,14 @@
-// game/MenuPortItemTable.hpp -- OWNER: WP4b (framework + a few proof screens by WP4a).  Port of MenuPortItemTable.cs: the 68 screens (category-1 ports).
+// game/MenuPortItemTable.hpp -- OWNER: WP4b (framework + a few proof screens by WP4a).  Port of the DQ4 MenuPortItemTable.cs: the 81 screens (ids 0..80, category-1 ports).
 //
-// WP4b RECIPE (mechanical):
-//   1. Pick a Make_X still listed in MenuPortItemTable_unported.cpp (one UNPORTED(Make_X) line each; the stub logs "UNPORTED screen" and returns an empty MenuPortItem).
-//   2. Translate the C# body into a new file game/MenuPortItemTable_<Group>.cpp as `MenuPortItem* MenuPortItemTable::Make_X(short port, short type) { ... }`
-//      (declarations of all Make_*/Sub_* already live in this class; add the Sub_ helpers you need below), then DELETE its UNPORTED line.
-//   3. Translation rules: `new MenuPortItem(port, type)` -> `MenuPortItem* item = new ...`, `.`->`->` on pointers, `item.SetTableForCode(id, (short code) => {..})` ->
+// DQ4 status: every screen of the DQ4 table is ported (no UNPORTED stubs).  Files: MenuPortItemTable.cpp (table, start/title/root/YesNo/Money/Chapter/Pageing),
+// _Main (lists, status, items, members), _Battle, _Casino (casino + coliseum), _Maps, _WorldMap, _Shop (shop/bank/church/Toruneko/NENE), _Network, _License, _NewGame, _helpers.
+// The table index order (makeFuncList) is the native screen id: do not reorder.  To port another C# screen: translate it into the matching file as
+// `MenuPortItem* MenuPortItemTable::Make_X(short port, short type) { ... }` (tools/menu_cs2cpp.py does a first pass), declare it below, add it to makeFuncList.
+//   Translation rules: `new MenuPortItem(port, type)` -> `MenuPortItem* item = new ...`, `.`->`->` on pointers, `item.SetTableForCode(id, (short code) => {..})` ->
 //      `item->SetTableForCode(id, [=](short code) {..})` (capture the C# locals by value: they are pointers), `gameObject.active = b` -> `gameObject->setActive(b)`,
-//      `menuPortItem.Send(2, a, b)` -> `item->Send(2, a, b)`, `item.Receive().ConvertString()` -> `item->Receive().ConvertString()` (UTF-8 std::string),
-//      enums `TextAlignment.Center` -> `TextAlignment::Center`, `TextAnchor.UpperLeft` -> `TextAnchor::UpperLeft`, `FRAME_ENUM.X` -> `FRAME_ENUM::X`,
-//      `MenuParts.s_info[n]` -> `MenuParts::s_info[n]`, `new Vector3(..)` -> `Vector3(..)`, `eIndent.CalcScreenPosition` -> `eIndent::CalcScreenPosition`.
-//      The table index order (makeFuncList) is the native screen id: do not reorder.
-//   See the ported examples in MenuPortItemTable.cpp (TitleTouch, StartMenuFirst/Second, RootMenu, YesNo, Money, Chapter, ScopeBack, Pageing).
+//      `item.Receive().ConvertString()` -> `item->Receive().ConvertString()` (UTF-8 std::string), enums `TextAlignment.Center` -> `TextAlignment::Center`,
+//      `FRAME_ENUM.X` -> `FRAME_ENUM::X`, `MenuParts.s_info[n]` -> `MenuParts::s_info[n]`, `new Vector3(..)` -> `Vector3(..)`, `eIndent.CalcScreenPosition` -> `eIndent::CalcScreenPosition`.
+//   Pad bits of the arrow / +- buttons are the DQ4 ones (MenuPortItem::PAD_D=1, PAD_U=2, PAD_R=4, PAD_L=8): copy them from the C#, they differ from DQ5.
 #pragma once
 #include "game/MenuMessage.hpp"
 #include "game/MenuParts.hpp"
@@ -43,12 +41,9 @@ public:
   };
   class ICityMap : public MenuParts::IBase {
   public:
-    Transform* m_self = nullptr;
-    ICityMap(MenuPortItem* item, MenuParts* posf, Transform* root);
-  };
-  class IBetText : public MenuParts::IBase {
-  public:
-    explicit IBetText(TextMesh* textMesh);
+    ICityMap(MenuPortItem* item, MenuParts* posf);
+  private:
+    MenuParts* m_map = nullptr;
   };
 
 
@@ -62,14 +57,12 @@ public:
   };
   class MonsterMarkList {
   public:
+    Vector3 m_pos = Vector3::zero;
     uint32_t m_used = 0;
     MenuParts* m_list[12];
     explicit MonsterMarkList(MenuPortItem* item);
-    static void CalcMarkY();
     void Reset();
-    void SetMark(int id, float x, float y);
-  private:
-    static float s_posY;
+    void SetMark(int id, float x);
   };
   class MonsterNamePlate {
   public:
@@ -101,10 +94,6 @@ public:
   static void Sub_CasinoBuyUD(MenuPortItem* item, short pos, short bid, MenuParts* parent, int parentIndex);
   static MenuParts* Sub_CasinoEnter(MenuPortItem* item, short bid, short pad, Transform* parent, short cid, short did);
   static MenuParts* Sub_CasinoStart(MenuPortItem* item, short bid, short pad, Transform* parent, short cid, short did);
-  static void Sub_MonsNameButton(MenuPortItem* item, MenuParts* parent, short no, float x, float y);
-  static Transform* Sub_SlimeTButton(MenuPortItem* item, MenuParts* parent, short bid, float x, float y);
-  static MenuParts* Sub_SlimeRace_Bet(MenuPortItem* item, MenuParts* frame, short bid, short xx, short yy);
-  static void Sub_SlimeEntryButton(MenuPortItem* item, MenuParts* parent, short no, float x, float y);
   static void Sub_BattleUpStatus(MenuPortItem* item, short no, Transform* parent);
   static void Sub_BattleAction(MenuPortItem* item, short buttonId, int icon, Transform* parent, float x, float y, float z, int W = 136, float H = 20.f, int ix = 0);
   static Transform* Sub_BattleInfo(MenuPortItem* item, short buttonId, Transform* parent);
@@ -174,9 +163,9 @@ public:
   static MenuPortItem* Make_BankDraw(short port, short type);
   static MenuPortItem* Make_ChurchRoot(short port, short type);
   static MenuPortItem* Make_ChurchWork(short port, short type);
-  static MenuPortItem* Make_MessageStatus(short port, short type);
-  static MenuPortItem* Make_MuseumMemo(short port, short type);
-  static MenuPortItem* Make_MuseumInfo(short port, short type);
+  static MenuPortItem* Make_Chapter2Status(short port, short type);
+  static MenuPortItem* Make_TorunekoMiseban(short port, short type);
+  static MenuPortItem* Make_NENE_ItemView(short port, short type);
   static MenuPortItem* Make_FightStadiumAbort(short port, short type);
   static MenuPortItem* Make_ViewVolumeDecision(short port, short type);
   static MenuPortItem* Make_TitleTouch(short port, short type);
@@ -186,25 +175,4 @@ public:
   static MenuPortItem* Make_NetworkCODE(short port, short type);
   static MenuPortItem* Make_NetworkITEM(short port, short type);
   static MenuPortItem* Make_License(short port, short type);
-  static MenuPortItem* Make_MonG_Root(short port, short type);
-  static MenuPortItem* Make_MonG_Button(short port, short type);
-  static MenuPortItem* Make_MonsG_Name(short port, short type);
-  static MenuPortItem* Make_MonsG_MessageUpChar(short port, short type);
-  static MenuPortItem* Make_LuidaRoot(short port, short type);
-  static MenuPortItem* Make_SugorokuRoot(short port, short type);
-  static MenuPortItem* Make_Sugoroku_Arrow(short port, short type);
-  static MenuPortItem* Make_Sugoroku_Dice(short port, short type);
-  static MenuPortItem* Make_Sugoroku_Timer(short port, short type);
-  static MenuPortItem* Make_Sugoroku_Shop(short port, short type);
-  static MenuPortItem* Make_SugorokuDrop(short port, short type);
-  static MenuPortItem* Make_ScopeBack(short port, short type);
-  static MenuPortItem* Make_SlimeTouch_Root(short port, short type);
-  static MenuPortItem* Make_SlimeTouch_Score(short port, short type);
-  static MenuPortItem* Make_SlimeRace_BetA(short port, short type);
-  static MenuPortItem* Make_SlimeRace_BetB(short port, short type);
-  static MenuPortItem* Make_SlimeRace_Coin(short port, short type);
-  static MenuPortItem* Make_SlimeRace_MoneyCoin(short port, short type);
-  static MenuPortItem* Make_SlimeRace_Entry(short port, short type);
-  static MenuPortItem* Make_SlimeRace_Result(short port, short type);
-  static MenuPortItem* Make_SlimeRace_BetC(short port, short type);
 };

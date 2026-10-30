@@ -5,7 +5,7 @@
 ## Disabled DQ5-only features (each logs a message at start-up)
 | item | why | what to do |
 |---|---|---|
-| `field_patch` (`native/field_patch.cpp`) | DQ5 offsets of `fld::FieldData::drawBlock` / `FieldSet`; libdq4core exports neither (older codebase) | re-derive the DQ4 world-map tile block with `tools/re/decomp.sh`, then re-enable. `g_fieldPatched` stays false: 25 columns. |
+| `field_patch` (`native/field_patch.cpp`) | **DONE** (see "World map" below): `FieldData::drawBlock` of libdq4core re-derived, 3 ARM immediates, 59 columns | - |
 | `DevCheats`, `WarpTest`, `BattleTest` | **Done (harness branch)**: re-derived from `DebugSetValue` / `DebugSetMapName` / `Global::start*` / `Status::setEventParty` of libdq4core (event table `param::Event`: `DebugSetValue(1, id, female)`; battle `DebugSetValue(8, ...)`; `PartyStatus::setNoDamageEnable`; `DebugSetValue(10, 0, 2)` for no encounters), verified in Vita3K, see README "Warp harness and Coverage" and DEVELOPERS "Battle" / "Tester cheats". `NativeCall::kDevHooksVerified` is now true. | not reachable: monster arena, shops, bank, vehicles (script driven), `loadGame` (no exported equivalent; use `chapter N`) |
 | `ResetNativePacket`, `MenuPortResetNativePacket`, `ParticleSystemInit/ResetNativePacket`, `FieldSet`, `LoadFileList_JNI` | exports absent in libdq4core (DQ5-only) | bound as optional (null); all callers guarded. DQ4 `Field.cs` fills the tile UVs itself: Field port must do it. |
 | `ParticleSystem` class | no such class in DQ4 | files deleted; ops 40 (`particle`) gone |
@@ -38,3 +38,14 @@ world maps `Menu/map/DSDQ4WMap01(m)` + `DSDQ4LMap0_1024` instead of `Menu/map/DQ
 
 ## Gotchas learned
 * Vita3K's `sceClibVsnprintf` crashes on `%g` (strlen of garbage): use `%f`/`%d` in `l_info`.
+
+
+## World map (done, DQ4 re-derivation)
+`FieldData::drawBlock()` (`_ZN9FieldData9drawBlockEv`, .so 0x14178c) is the DQ5 `fld::FieldData::drawBlock` of the older codebase: it writes packet op 28 (`field`: startX, startY, width = tiles of the first row, count, tile ids) for tile offsets -4..+20 x -5..+32 around the view's base tile (25 x 38 tiles). There is **no native `FieldSet`**: DQ4 `Field.cs` fills the tile UVs itself (`SetIndexList`, row stride 25 quads) and animates sea/river tiles in `UpdatePattern` (`m_patternInfo/m_patternCheck`), so the host owns the mesh and UV layout (`Field.cpp` ports both; the stride is the mesh width).
+`field_patch.cpp` patches three words, each checked before it is written: `+0x1417ec sub r4,r4,#4 -> #18` (first column / packet startX), `+0x1418c4 cmp r2,#20 -> #40` (last column), `+0x1418e0 sub r4,r3,#4 -> #18` (column reset per row): 59 columns x 38 rows = 944 x 608 units, the host mesh is 59 x 40 quads (`NativeCall::FieldCols`). Same numbers as DQ5 (back 18 / forward 40). `Field/field` is the 1024 x 1024 atlas (`c_oneGridSize` 0.0156 = 16 px / 1024).
+
+## Pad word (checked against libdq4core)
+`window::NormalControl::checkCamera` (0x1791a0 in Ghidra) reads `Global+0xd4 & 0x30` (the `press` argument of `GameUpdate(press, toggle)`): 0x20 -> `TownPlayerManager::setCameraRotType(1)` (rotate R), 0x10 -> type 2 (rotate L), 0x30 -> `setCameraRotToNorth`. These are exactly the host bits of `vita_input` (L = 0x10, R = 0x20, L+R / R3 = 0x30; the touch ROT_OR_FLICK `0x70/0xB0` flick words also contain 0x30). The DQ4 `TouchPad.cs` constants are the DQ5 ones (A 0x200, B 0x400, X 0x800, Y 0x1000, ANY 0x100); there is no field rotation in DQ4 (`FieldPlayerManager` has none), rotation only exists in towns/dungeons.
+
+## Shaders (DQ4 pack: 45 shader objects)
+Not in DQ4: Sepia, Pre/Post-Spotlight, Particle, FieldVolcano, DssaNormal, Bssa*, ImdShadeChara(2), Field_iOS (table entries and the `dqiv_sepia_scr` CG program removed). New in DQ4: `Custom/CharaSleep`, `Custom/CharaSleepEx` (Chara lying pose): vertex `clip.xy = (mvp*v).xy`, `clip.zw = (VP * _sleepMatrix * v).zw`; implemented as `OP_SLEEP` with the CG programs `source/shaders/dqiv_sleep.{v,f}.cg` (blob `extras/cg/dqiv_sleep.bin`, same mechanism as gray / sepia_fld; fixed-function MODULATE fallback if the blob is missing and libshacccg is absent).

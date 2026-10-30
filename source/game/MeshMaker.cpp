@@ -36,10 +36,10 @@ void MeshMaker::SetVertex(Vector3 basePoint, float sizeW, float sizeH) {
 void MeshMaker::SetUV(float u, float v, float uSize, float vSize) {
   uSize += u;
   vSize += v;
-  s_uv[0].Set(u, vSize);
-  s_uv[1].Set(uSize, vSize);
-  s_uv[2].Set(uSize, v);
-  s_uv[3].Set(u, v);
+  s_uv[0].Set(u, 0.f - v);
+  s_uv[1].Set(uSize, 0.f - v);
+  s_uv[2].Set(uSize, 0.f - vSize);
+  s_uv[3].Set(u, 0.f - vSize);
 }
 
 void MeshMaker::Apply(bool bInBounds, int insert) {
