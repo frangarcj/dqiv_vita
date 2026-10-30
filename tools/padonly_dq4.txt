@@ -1,4 +1,4 @@
-# BUTTONS ONLY (no touch): DQ4 boot -> TapToStart -> "Create a new adventure log" -> name -> Chapter 1 intro.  (exploration version)
+# BUTTONS ONLY (no touch): DQ4 boot -> TapToStart -> "Create a new adventure log" -> gender / name -> Chapter 1 intro in Burland castle (mlb1a) -> walk.  (exploration version)
 0 log padonly_dq4
 150 tap cross
 210 tap cross
@@ -10,4 +10,20 @@
 620 tap start
 700 tap cross
 760 tap cross
-800-3000/40 tap cross
+800-1650/40 tap cross
+1700 log free walking
+1700 down left
+1708 up left
+1712 down up
+1920 up up
+1925 down right
+1990 up right
+1995 down up
+2010 up up
+2020 log arrived outside the castle (mlout1)
+2150 down down
+2200 up down
+2200 down left
+2380 up left
+2380 down down
+2500 up down
