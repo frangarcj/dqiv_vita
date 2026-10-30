@@ -1,0 +1,22 @@
+# New Game flow (title -> start menu -> name entry -> opening cutscene in the throne room -> walk). Touch coordinates are UI-panel pixels (work in any layout).
+# New Game -> name -> skip story with cross until the ship cabin (snb1a) -> walk / camera / menu / talk
+0 log script8
+100-140/20 touch 204 272
+300 touch 204 144
+600 touch 204 144
+900 touch 204 144
+1200 touch 204 144
+1400 touch 57 344
+1440 touch 119 344
+1480 touch 181 344
+1560 touch 291 31
+1700 tap cross 15
+1700 log in the ship cabin
+1700-1990/15 tap cross
+2000-3500/40 tap cross
+3600 log MENU triangle
+3600 tap triangle 3
+3760 tap circle 3
+3800 log TALK cross
+3800 tap cross 3
+3850-3950/30 tap cross

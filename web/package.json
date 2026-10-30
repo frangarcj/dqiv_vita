@@ -1,0 +1,17 @@
+{
+  "name": "dqiv-web-data-builder",
+  "version": "1.0.0",
+  "description": "Browser-based data builder for the native PS Vita port of Dragon Quest IV (TypeScript port of tools/make_data.py + tools/convert)",
+  "scripts": {
+    "build": "node build.mjs",
+    "check": "node build.mjs --check",
+    "test": "node test/convert_node.mjs"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.5",
+    "esbuild": "^0.28.2",
+    "typescript": "^5.9.3"
+  },
+  "private": true,
+  "type": "module"
+}

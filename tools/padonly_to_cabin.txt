@@ -1,0 +1,33 @@
+# BUTTONS ONLY (no touch): boot -> TapToStart -> new game -> slot -> name "abc" -> story (cross) -> ship cabin -> walk, camera, command menu
+0 log padonly11
+100-300/40 tap cross
+420 tap cross
+460 tap down
+480 tap down
+500 tap cross
+620 tap cross
+660 tap right
+700 tap cross
+740 tap right
+780 tap cross
+840 tap start
+880 tap cross
+1150 sync snb1a tap cross 15
+1150 log in the ship cabin
+1150-1440/15 tap cross
+1450 log WALK right
+1450 down right
+1510 up right
+1530 log CAMERA r
+1530 tap r 3
+1590 tap r 3
+1630 log WALK up
+1630 down up
+1690 up up
+1730 log COMMAND MENU triangle
+1730 tap triangle 3
+1810 tap down 3
+1850 tap right 3
+1890 tap down 3
+1950 tap circle 3
+2010 tap circle 3

@@ -1,0 +1,9 @@
+#input newgame_cabin.txt
+#shots 1300,1450,1600
+#dur 120
+delay 1150
+raw 30 0 20
+wait 20
+monster 0
+wait 60
+battle btl_pl_d 30x2

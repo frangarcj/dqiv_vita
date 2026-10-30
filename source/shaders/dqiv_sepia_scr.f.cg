@@ -1,0 +1,7 @@
+// Sepia (Custom/Sepia) screen post-process: l = (r+g+b)/3; (l + 0.109375, l - 0.0546875, l, a)
+float4 main(float2 vTex : TEXCOORD0, float4 vColor : COLOR0, uniform sampler2D tex : TEXUNIT0) : COLOR
+{
+  float4 t = tex2D(tex, vTex);
+  float l = (t.x + t.y + t.z) * 0.333333;
+  return float4(l + 0.109375, l - 0.0546875, l, t.w);
+}

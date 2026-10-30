@@ -1,0 +1,7 @@
+// ButtonGray (Custom/ButtonGray): (sqrt(dot(t.rgb,t.rgb)) * _Brightness).xxx, t.a   -- disabled button images
+float4 main(float2 vTex : TEXCOORD0, float4 vColor : COLOR0, uniform sampler2D tex : TEXUNIT0, uniform float brightness) : COLOR
+{
+  float4 t = tex2D(tex, vTex);
+  float g = sqrt(dot(t.xyz, t.xyz)) * brightness;
+  return float4(g, g, g, t.w);
+}

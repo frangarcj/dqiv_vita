@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dragon Quest IV for PS Vita: game data builder</title>
+<meta name="description" content="Converts your own Dragon Quest IV Android files into the data folder of the native PS Vita port. Runs entirely in your browser.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%232563eb'/%3E%3Cpath d='M9 8h8a7 7 0 0 1 0 16H9z' fill='none' stroke='white' stroke-width='3' stroke-linejoin='round'/%3E%3C/svg%3E">
+<style>
+:root {
+  --bg: #f6f7f9; --card: #ffffff; --ink: #1c2230; --mute: #5b6577; --line: #d9dde5; --accent: #2563eb; --accent-ink: #ffffff;
+  --ok: #0f7b3f; --ok-bg: #e6f5ec; --warn: #8a5a00; --warn-bg: #fff4d6; --err: #b3261e; --err-bg: #fdecea; --bar: #e3e7ee; --code: #eef1f6;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #12151c; --card: #1b2029; --ink: #e6e9ef; --mute: #98a2b3; --line: #2e3542; --accent: #6ea0ff; --accent-ink: #0b1220;
+    --ok: #5fd08b; --ok-bg: #12301f; --warn: #f0c35a; --warn-bg: #33290d; --err: #ff8a80; --err-bg: #3a1815; --bar: #2a303c; --code: #262c38;
+  }
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+main { max-width: 760px; margin: 0 auto; padding: 24px 16px 64px; }
+h1 { font-size: 1.6rem; line-height: 1.2; margin: 0 0 8px; }
+h2 { font-size: 1.05rem; margin: 0 0 10px; }
+p { margin: 0 0 10px; }
+code { background: var(--code); padding: 1px 5px; border-radius: 4px; font-size: .9em; }
+.lead { color: var(--mute); }
+.privacy { background: var(--ok-bg); color: var(--ok); border-radius: 8px; padding: 10px 12px; margin: 14px 0; }
+section.card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 16px; margin: 14px 0; }
+.help { color: var(--mute); font-size: .9rem; }
+.row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin: 8px 0; }
+.row > label.k { width: 190px; font-weight: 600; }
+select { max-width: 100%; }
+code { overflow-wrap: anywhere; }
+button, select { font: inherit; color: var(--ink); background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 8px 12px; }
+button { cursor: pointer; }
+button.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); font-weight: 600; padding: 10px 22px; }
+button:disabled { opacity: .5; cursor: not-allowed; }
+button:focus-visible, select:focus-visible, input:focus-visible + .opt, .drop:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.file { flex: 1; min-width: 220px; }
+.file .name { font-size: .9rem; color: var(--mute); word-break: break-all; }
+.badge { font-size: .85rem; padding: 1px 8px; border-radius: 99px; background: var(--code); color: var(--mute); }
+.badge.ok { background: var(--ok-bg); color: var(--ok); }
+.badge.bad { background: var(--err-bg); color: var(--err); }
+.opt { display: block; border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; margin: 8px 0; cursor: pointer; }
+.opt input { margin-right: 8px; }
+.opt.disabled { opacity: .55; cursor: not-allowed; }
+.opt .help { margin: 2px 0 0 24px; }
+ol.phases { list-style: none; padding: 0; margin: 14px 0 6px; }
+ol.phases li { display: flex; gap: 10px; align-items: baseline; padding: 3px 0; color: var(--mute); }
+ol.phases li .mark { width: 1.2em; text-align: center; }
+ol.phases li.active { color: var(--ink); font-weight: 600; }
+ol.phases li.done { color: var(--ink); }
+ol.phases li.done .mark::before { content: "\2713"; color: var(--ok); }
+ol.phases li.active .mark::before { content: "\25B6"; color: var(--accent); }
+ol.phases li.pending .mark::before { content: "\00B7"; }
+ol.phases li .pct { margin-left: auto; font-variant-numeric: tabular-nums; }
+.bar { height: 10px; background: var(--bar); border-radius: 99px; overflow: hidden; }
+.bar > i { display: block; height: 100%; width: 0; background: var(--accent); transition: width .15s linear; }
+.msg { border-radius: 8px; padding: 10px 12px; margin: 10px 0; white-space: pre-wrap; }
+.msg.ok { background: var(--ok-bg); color: var(--ok); }
+.msg.warn { background: var(--warn-bg); color: var(--warn); }
+.msg.err { background: var(--err-bg); color: var(--err); }
+details { margin: 8px 0; } summary { cursor: pointer; }
+pre { background: var(--code); padding: 10px; border-radius: 8px; overflow-x: auto; font-size: .8rem; }
+.top { display: flex; justify-content: space-between; align-items: start; gap: 12px; }
+[hidden] { display: none !important; }
+footer { color: var(--mute); font-size: .9rem; margin-top: 24px; }
+a { color: var(--accent); }
+@media (max-width: 520px) { .row > label.k { width: 100%; } }
+</style>
+</head>
+<body>
+<main>
+  <div class="top">
+    <h1 data-i18n="title">Dragon Quest IV for PS Vita: game data builder</h1>
+    <label class="help"><span data-i18n="lang_ui">Language</span>
+      <select id="ui-lang" aria-label="Language"><option value="en">English</option><option value="es">Español</option></select></label>
+  </div>
+  <p class="lead" data-i18n="lead"></p>
+  <p class="privacy" data-i18n="privacy"></p>
+
+  <section class="card">
+    <h2 data-i18n="s1"></h2>
+    <p class="help" data-i18n="s1help"></p>
+    <div class="row"><label class="k" for="apk-btn" data-i18n="apk"></label>
+      <div class="file"><button id="apk-btn" type="button" data-i18n="choose"></button> <span class="badge" id="apk-badge" hidden></span><div class="name" id="apk-name"></div></div></div>
+    <div class="row"><label class="k" for="obb-btn" data-i18n="obb"></label>
+      <div class="file"><button id="obb-btn" type="button" data-i18n="choose"></button> <span class="badge" id="obb-badge" hidden></span><div class="name" id="obb-name"></div></div></div>
+    <input type="file" id="apk-in" accept=".apk,.zip" hidden>
+    <input type="file" id="obb-in" accept=".obb" hidden>
+  </section>
+
+  <section class="card">
+    <h2 data-i18n="s2"></h2>
+    <div class="row"><label class="k" for="lang" data-i18n="lang"></label>
+      <select id="lang"><option value="en">English</option><option value="ja">日本語 (ja)</option><option value="ko">한국어 (ko)</option><option value="zh-tw">繁體中文 (zh-tw)</option><option value="zh-cn">简体中文 (zh-cn)</option></select></div>
+    <div class="row"><label class="k" for="layout" data-i18n="layout"></label>
+      <select id="layout"><option value="landscape" data-i18n="layout_landscape"></option><option value="split" data-i18n="layout_split"></option><option value="portrait" data-i18n="layout_portrait"></option></select></div>
+  </section>
+
+  <section class="card">
+    <h2 data-i18n="s3"></h2>
+    <label class="opt" id="opt-dir"><input type="radio" name="out" value="dir"><strong data-i18n="out_dir"></strong>
+      <div class="help" data-i18n="out_dir_help"></div></label>
+    <div class="row" id="dir-row" hidden><button id="dir-btn" type="button" data-i18n="pick_dir"></button> <span class="name help" id="dir-name"></span></div>
+    <label class="opt" id="opt-zip"><input type="radio" name="out" value="zip"><strong data-i18n="out_zip"></strong>
+      <div class="help" data-i18n="out_zip_help"></div></label>
+    <p class="help" id="support"></p>
+  </section>
+
+  <section class="card">
+    <h2 data-i18n="s4"></h2>
+    <div class="row"><button id="go" class="primary" type="button" data-i18n="convert"></button> <span class="help" id="hint"></span></div>
+    <div id="progress" hidden aria-live="polite">
+      <ol class="phases" id="phases"></ol>
+      <div class="bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" id="bar"><i id="bar-i"></i></div>
+      <p class="help" id="elapsed"></p>
+    </div>
+    <div id="result"></div>
+  </section>
+
+  <footer><span data-i18n="support_mem"></span></footer>
+</main>
+<script src="dist/app.js"></script>
+</body>
+</html>

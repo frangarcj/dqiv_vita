@@ -1,0 +1,16 @@
+#shots 350,430,510,590,670
+#dur 120
+delay 150
+chapter 4
+field
+wait 40
+fieldpos 124 117
+wait 70
+fieldpos 52 76
+wait 70
+fieldpos 210 110
+wait 70
+fieldpos 104 185
+wait 70
+fieldpos 8 125
+wait 70
