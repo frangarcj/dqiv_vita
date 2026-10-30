@@ -37,10 +37,10 @@ MenuPortItem* MenuPortItemTable::Make_ShopMap(short port, short type) {
 	menuPortItem->SetTableForItemParam(0, 1, partsNo, 2);
 	menuPortItem->SetTableForItemParam(0, 2, partsNo, 3);
 	menuPortItem->SetTableForItemParam(0, 3, partsNo, 4);
-	menuParts2 = MenuParts::CreateButtonIcon(10, 0, 1.f, -1, 4);
+	menuParts2 = MenuParts::CreateButtonIcon(10, 0, 1.f, -1, 8);
 	menuParts2->Build(4, 1, -190.f, 9.f, -311.5f, page->transform);
 	menuPortItem->AddParts(menuParts2);
-	menuParts2 = MenuParts::CreateButtonIcon(10, 1, 1.f, -1, 8);
+	menuParts2 = MenuParts::CreateButtonIcon(10, 1, 1.f, -1, 4);
 	menuParts2->Build(4, 1, 190.f, 9.f, -311.5f, page->transform);
 	menuPortItem->AddParts(menuParts2);
 	return menuPortItem;
@@ -50,15 +50,14 @@ MenuPortItem* MenuPortItemTable::Make_CityMap(short port, short type) {
 	MenuPortItem* item = new MenuPortItem(port, type);
 	MenuParts* root = MenuParts::CreateWindow0(430.f, 319.5f);
 	MenuParts* posf = MenuParts::Create(3);
-	std::shared_ptr<ICityMap> imap;
-	root->SetButton(-1, 1);
+	root->SetButton(-1, 2);
 	root->m_isHit = [=](Ray& ray) mutable
 	{
 		bool result = false;
 		if (root->m_button->m_bEnable)
 		{
 			result = true;
-			root->m_gamepad = (short)(root->defaultIsHit(ray) ? 1 : 2);
+			root->m_gamepad = (short)((!root->defaultIsHit(ray)) ? 1 : 2);
 		}
 		return result;
 	};
@@ -67,7 +66,7 @@ MenuPortItem* MenuPortItemTable::Make_CityMap(short port, short type) {
 	posf->AddIcon(Vector3::zero, 31, true, 0.5f);
 	posf->Build(6, 0, 0.f, 12.f, 0.f);
 	item->AddParts(posf);
-	item->SetTableForItemParam(0, 0, imap = std::make_shared<ICityMap>(item, posf, root->transform()));
+	item->SetTableForItemParam(0, 0, std::make_shared<ICityMap>(item, posf));
 	item->SetTableForCode(1, [=](short posx) mutable
 	{
 		Vector3 localPosition = posf->transform()->localPosition;
@@ -86,31 +85,31 @@ MenuPortItem* MenuPortItemTable::Make_CityMap(short port, short type) {
 	{
 		GameObject* gameObject = new GameObject();
 		gameObject->transform->SetParent(root->transform());
-		gameObject->transform->localPosition = Vector3(2.f, 14.f, -2.f);
-		gameObject->transform->localScale = Vector3(0.99f, 0.99f, 0.99f);
+		gameObject->transform->localPosition = Vector3(0.f, 14.f, 0.f);
 		gameObject->AddComponent<BlinkMapSymbol>()->SetParameter(item->Receive());
 	});
 	item->SetTableForCode(4, [=](short posxy) mutable
 	{
 		float x = (float)(posxy & 0xFF) * 1.7578125f;
 		float z = (0.f - (float)((posxy >> 8) & 0xFF)) * 1.7578125f;
-		MenuParts* menuParts = MenuParts::Create(3);
-		menuParts->AddIcon(Vector3::zero, 29, true, 0.5f);
-		menuParts->Build(4, Vector3(x, 14.f, z), root->transform());
+		MenuParts* menuParts = MenuParts::Create(5);
+		menuParts->AddIcon(Vector3::zero, 3, true, 1.2f);
+		menuParts->Build(4, Vector3(x, 13.f, z), root->transform());
 	});
 	item->SetTableForCode(5, [=](short dummy) mutable
 	{
 		MenuPort::Param param = item->Receive();
-		MenuParts* menuParts = MenuParts::CreateBuildDummy(4, 0.f, 0.f, 0.f);
+		MenuParts* menuParts = MenuParts::CreateBuildDummy(0, 2.f, 12.5f, -2.f);
 		MeshFilter* meshFilter = menuParts->gameObject->AddComponent<MeshFilter>();
+		Mesh* mesh = OwnMesh(meshFilter);
 		MeshRenderer* meshRenderer = menuParts->gameObject->AddComponent<MeshRenderer>();
-		Texture2D* texture2D = new Texture2D(256, 256, TextureFormat::ARGB32, false);
+		Texture2D* texture2D = new Texture2D(256, 192, TextureFormat::ARGB32, false);
 		Material* material = new Material(MenuParts::l_partsShader);
 		texture2D->filterMode = FilterMode::Point;
-		TextAsset* textAsset = Resources::Load<TextAsset>("Menu/map/dq4ds_wmap1m");
+		TextAsset* textAsset = Resources::Load<TextAsset>("Menu/map/dsdq4wmap01m");
 		static const std::vector<uint8_t> noBytes;
 		const std::vector<uint8_t>& bytes = textAsset ? textAsset->bytes : noBytes;
-		std::vector<Color32> array(65536, Color32(0, 0, 0, 0));
+		std::vector<Color32> array(49152, Color32(0, 0, 0, 0));
 		int num = 0;
 		int num2 = 16;
 		while (num < 16)
@@ -124,17 +123,16 @@ MenuPortItem* MenuPortItemTable::Make_CityMap(short port, short type) {
 				{
 					for (int i = 0; i < 10; i++)
 					{
-						int num6 = num2 + i << 8;
-						int num7 = num5 + num6 << 2;
-						num6 = num5 + 65280 - num6;
-						int num8 = 0;
-						while (num8 < 10 && (size_t)num7 + 3 < bytes.size())
+						int num6 = num5 + (num2 + i << 8);
+						int num7 = 0;
+						int num8 = num6 << 2;
+						while (num7 < 10 && (size_t)num8 + 3 < bytes.size() && num6 < 49152)
 						{
-							array[num6].r = bytes[num7++];
-							array[num6].g = bytes[num7++];
-							array[num6].b = bytes[num7++];
-							array[num6].a = bytes[num7++];
-							num8++;
+							array[num6].r = bytes[num8++];
+							array[num6].g = bytes[num8++];
+							array[num6].b = bytes[num8++];
+							array[num6].a = bytes[num8++];
+							num7++;
 							num6++;
 						}
 					}
@@ -151,11 +149,14 @@ MenuPortItem* MenuPortItemTable::Make_CityMap(short port, short type) {
 		menuParts->gameObject->layer = 8;
 		material->mainTexture = texture2D;
 		meshRenderer->setMaterial(material);
-		meshFilter->setMesh(OwnMesh(imap->m_self->gameObject->GetComponent<MeshFilter>()));
-		menuParts->transform()->SetParent(imap->m_self->parent());
-		menuParts->transform()->setPosition(imap->m_self->position() + Vector3::up);
-		menuParts->transform()->localScale = imap->m_self->localScale;
-		menuParts->m_uol.Adds(meshFilter, meshRenderer, texture2D, material);
+		mesh->vertices = { Vector3(0.f, 0.f, 0.f), Vector3(450.f, 0.f, 0.f), Vector3(450.f, 0.f, -337.5f), Vector3(0.f, 0.f, -337.5f) };
+		mesh->uv = { Vector2(0.f, 0.f), Vector2(1.f, 0.f), Vector2(1.f, 1.f), Vector2(0.f, 1.f) };
+		mesh->SetSubMeshCount(1);
+		mesh->SetTriangles(std::vector<int>{ 0, 1, 2, 2, 3, 0 }, 0);
+		mesh->RecalculateBounds();
+		menuParts->transform()->SetParent(root->transform());
+		menuParts->transform()->localScale = Vector3(0.99f, 0.99f, 0.99f);
+		menuParts->m_uol.Adds(meshFilter, mesh, meshRenderer, texture2D, material);
 		item->AddParts(menuParts);
 	});
 	return item;
@@ -201,10 +202,10 @@ MenuPortItem* MenuPortItemTable::Make_MonsterEncyclopedia(short port, short type
 	menuPortItem->SetTableForCode(12, partsNo);
 	menuPortItem->SetTableForItemParam(12, 0, partsNo, 0);
 	menuPortItem->SetTableForItemParam(12, 1, partsNo, 1);
-	MenuParts* menuParts3 = MenuParts::CreateButtonIcon(10, 0, 0.9f, 0, 4);
+	MenuParts* menuParts3 = MenuParts::CreateButtonIcon(10, 0, 0.9f, 0, 8);
 	menuParts3->Build(4, Vector3(-152.f, 4.f, 0.f), menuParts2->transform());
 	menuPortItem->AddParts(menuParts3);
-	menuParts3 = MenuParts::CreateButtonIcon(10, 1, 0.9f, 0, 8);
+	menuParts3 = MenuParts::CreateButtonIcon(10, 1, 0.9f, 0, 4);
 	menuParts3->Build(4, Vector3(152.f, 4.f, 0.f), menuParts2->transform());
 	menuPortItem->AddParts(menuParts3);
 	short num = 0;

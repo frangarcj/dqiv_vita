@@ -16,9 +16,9 @@ public:
   using FUNC_SetCode = std::function<void(short)>;
 
   static constexpr short IUC_None = 0, IUC_setup = 1, IUC_setItemMenu = 2, IUC_setDirectButton = 3, IUC_setActive = 4, IUC_drawRequest = 5, IUC_inputRequest = 6, IUC_Stop = 7,
-                         IUC_ignoreDrawRequset = 8, IUC_setItemParamInt = 10, IUC_setItemParamString = 11, IUC_setItemCode = 12, IUC_drawCancelRequest = 13,
+                         IUC_ignoreDrawRequset = 8, IUC_setItemParamInt = 10, IUC_setItemParamString = 11, IUC_setItemCode = 12,
                          IUC_MenuDebugButtonName = 100, IUC_MenuDebugMisc = 101, OUC_None = 0, OUC_Input = 1;
-  static constexpr short PAD_NONE = 0, PAD_U = 1, PAD_D = 2, PAD_L = 4, PAD_R = 8, PAD_A = 16, PAD_B = 32, PAD_X = 64, PAD_Y = 128;
+  static constexpr short PAD_NONE = 0, PAD_D = 1, PAD_U = 2, PAD_R = 4, PAD_L = 8, PAD_A = 16, PAD_B = 32, PAD_X = 64, PAD_Y = 128;
 
   short m_type;
   short m_menuItemWidth = 0, m_menuItemHeight = 0, m_menuItemNum = 0;

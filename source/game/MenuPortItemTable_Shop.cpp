@@ -46,12 +46,12 @@ void MenuPortItemTable::Sub_ShopBuyButton(MenuPortItem* item, MenuParts* parent,
 	item->SetTableForItemParam(bid, 3, partsNo, 0);
 	if (bNumButton)
 	{
-		MenuParts* menuParts2 = MenuParts::CreateButton(2.f, 14.f, bid, 4);
+		MenuParts* menuParts2 = MenuParts::CreateButton(2.f, 14.f, bid, 8);
 		menuParts2->ChangeParts(8, false, true);
 		menuParts2->AddIcon(4, 0.f, 4.f, 0.f, 2, false, 0.3f);
 		menuParts2->Build(4, Vector3(127.f, 4.f, 0.f), menuParts->transform());
 		item->AddParts(menuParts2);
-		menuParts2 = MenuParts::CreateButton(2.f, 14.f, bid, 8);
+		menuParts2 = MenuParts::CreateButton(2.f, 14.f, bid, 4);
 		menuParts2->ChangeParts(8, false, true);
 		menuParts2->AddIcon(4, 0.f, 4.f, 0.f, 3, false, 0.3f);
 		menuParts2->Build(4, Vector3(190.f, 4.f, 0.f), menuParts->transform());
@@ -138,10 +138,10 @@ void MenuPortItemTable::Sub_ShopCharaButton(MenuPortItem* item, MenuParts* paren
 void MenuPortItemTable::Sub_ShopPageing(MenuPortItem* item, MenuParts* parent, short idex, short prmNo, short prmSub, short visNo) {
 	int count = parent->m_list.size();
 	GameObject* page = parent->AddTextMesh(Vector3(225.f, 4.f, 91.5f), 9.f, TextAlignment::Center, TextAnchor::MiddleCenter);
-	MenuParts* menuParts = MenuParts::CreateButtonIcon(10, 0, 0.9f, -1, 4);
+	MenuParts* menuParts = MenuParts::CreateButtonIcon(10, 0, 0.9f, -1, 8);
 	menuParts->Build(4, 7, -190.f, 4.f, 91.5f, page->transform);
 	item->AddParts(menuParts);
-	menuParts = MenuParts::CreateButtonIcon(10, 1, 0.9f, -1, 8);
+	menuParts = MenuParts::CreateButtonIcon(10, 1, 0.9f, -1, 4);
 	menuParts->Build(4, 7, 190.f, 4.f, 91.5f, page->transform);
 	item->AddParts(menuParts);
 	item->SetTableForItemParam(prmNo, prmSub, idex, count);
@@ -280,12 +280,12 @@ MenuPortItem* MenuPortItemTable::Make_ShopSellItemInfo(short port, short type) {
 	menuParts2->AddTextMesh(Vector3(0.f, 8.f, 0.f), 9.f, TextAlignment::Center, TextAnchor::MiddleCenter);
 	menuPortItem->SetTableForItemParam(1, 0, menuPortItem->AddParts(menuParts2), 1);
 	menuParts2->transform()->SetParent(menuParts->transform());
-	menuParts2 = MenuParts::CreateButton(2.f, 14.f, 0, 4);
+	menuParts2 = MenuParts::CreateButton(2.f, 14.f, 0, 8);
 	menuParts2->ChangeParts(8, false, true);
 	menuParts2->AddIcon(4, 0.f, 4.f, 0.f, 2, false, 0.3f);
 	menuParts2->Build(4, Vector3(160.f, 4.f, 105.f), menuParts->transform());
 	menuPortItem->AddParts(menuParts2);
-	menuParts2 = MenuParts::CreateButton(2.f, 14.f, 0, 8);
+	menuParts2 = MenuParts::CreateButton(2.f, 14.f, 0, 4);
 	menuParts2->ChangeParts(8, false, true);
 	menuParts2->AddIcon(4, 0.f, 4.f, 0.f, 3, false, 0.3f);
 	menuParts2->Build(4, Vector3(254.f, 4.f, 105.f), menuParts->transform());
@@ -363,7 +363,7 @@ MenuPortItem* MenuPortItemTable::Make_BankDraw(short port, short type) {
 Transform* MenuPortItemTable::Sub_ShopButton(MenuPortItem* item, MenuParts* parent, float fontSize, short bid, float x, float y, float w) {
 	MenuParts* menuParts = MenuParts::CreateButton(w, 24.f, bid, 16);
 	menuParts->Build(4, 7, x, 4.f, y, parent->transform());
-	menuParts->AddTextMesh(Vector3(0.f, 4.f, 0.f), fontSize, TextAlignment::Left, TextAnchor::MiddleCenter);
+	menuParts->AddTextMesh(Vector3(0.f, 4.f, 0.f), fontSize, TextAlignment::Center, TextAnchor::MiddleCenter);
 	item->SetTableForItemParam(bid, 0, item->AddParts(menuParts), 1);
 	return menuParts->transform();
 }
@@ -428,75 +428,30 @@ MenuPortItem* MenuPortItemTable::Make_ChurchWork(short port, short type) {
 	return menuPortItem;
 }
 
-MenuPortItem* MenuPortItemTable::Make_MuseumMemo(short port, short type) {
-	float num = -112.5f;
+MenuPortItem* MenuPortItemTable::Make_TorunekoMiseban(short port, short type) {
 	MenuPortItem* menuPortItem = new MenuPortItem(port, type);
-	MenuParts* menuParts = MenuParts::CreateBuildFrameParts(296, 6, 0.f, 0.f, -2.f);
+	MenuParts* menuParts = MenuParts::CreateBuildFrameParts(284, 6, 0.f, 0.f, -2.f);
 	short partsNo = menuPortItem->AddParts(menuParts);
-	menuParts->AddTextMesh(Vector3(8.5f, 4.f, 447.5f), 9.5f, TextAlignment::Left, TextAnchor::MiddleLeft);
-	menuPortItem->SetTableForItemParam(10, 0, partsNo, 1);
-	menuParts->AddTextMesh(Vector3(225.f, 4.f, 93.5f), 9.5f, TextAlignment::Center, TextAnchor::MiddleCenter);
-	menuPortItem->SetTableForItemParam(10, 1, partsNo, 2);
-	MenuParts* menuParts2 = MenuParts::CreateButtonIcon(10, 0, 0.9f, 0, 4);
-	menuParts2->Build(4, 7, -194.f, 4.f, 92.f, menuParts->transform());
-	menuPortItem->AddParts(menuParts2);
-	menuParts2 = MenuParts::CreateButtonIcon(10, 1, 0.9f, 0, 8);
-	menuParts2->Build(4, 7, 194.f, 4.f, 92.f, menuParts->transform());
-	menuPortItem->AddParts(menuParts2);
-	menuParts2 = MenuParts::CreateButton(90.5f, 24.f, 0, 32);
-	menuParts2->Build(4, 7, 159.75f, 4.f, 34.f, menuParts->transform());
-	menuParts2->AddTextMesh(Vector3(0.f, 4.f, 0.f), 9.5f, TextAlignment::Center, TextAnchor::MiddleCenter);
-	menuPortItem->SetTableForItemParam(10, 3, menuPortItem->AddParts(menuParts2), 1);
-	for (int i = 0; i < 5; i++)
+	menuParts->AddTextMesh(Vector3(442.5f, 4.f, 404.5f), 9.f, TextAlignment::Right, TextAnchor::UpperRight, 3.07f);
+	menuPortItem->SetTableForItemParam(6, 0, partsNo, 1);
+	for (short num = 0; num < 6; num++)
 	{
-		for (int j = 0; j < 2; j++)
-		{
-			short num2 = (short)(i * 2 + j);
-			menuParts2 = MenuParts::CreateButton(168.f, 14.f, num2, 16);
-			menuParts2->Build(4, 7, num * (float)(-((j << 1) - 1)), 4.f, 393.f - 62.f * (float)i, menuParts->transform());
-			menuParts2->AddTextMesh(Vector3(0.f, 4.f, 0.f), 9.f, TextAlignment::Center, TextAnchor::MiddleCenter);
-			partsNo = menuPortItem->AddParts(menuParts2);
-			menuPortItem->SetTableForItemParam(num2, 0, partsNo, 1);
-			menuPortItem->SetTableForCode(num2, partsNo);
-		}
+		Sub_ShopBuyButton(menuPortItem, menuParts, 393 - 58 * num, num, false);
 	}
-	menuPortItem->SetTableForCode(10, 0);
 	return menuPortItem;
 }
 
-MenuPortItem* MenuPortItemTable::Make_MuseumInfo(short port, short type) {
+MenuPortItem* MenuPortItemTable::Make_NENE_ItemView(short port, short type) {
 	MenuPortItem* menuPortItem = new MenuPortItem(port, type);
-	MenuParts* menuParts = MenuParts::CreateBuildFrameParts(297, 6, 0.f, 0.f, -2.f);
-	GameObject* page[3] = {};
-	short partsNo = menuPortItem->AddParts(menuParts);
-	MenuParts* menuParts2 = MenuParts::Create(0);
-	menuParts2->AddIcon(0, 0.f, 0.f, 0.f, 603, true, 1.25f);
-	menuParts2->AddIcon(0, 0.f, 4.f, 0.f, 0, true, 1.25f);
-	menuParts2->Build(4, 8, -59.f, 4.f, 368.255f, menuParts->transform());
-	menuPortItem->SetTableForItemParam(10, 0, menuPortItem->AddParts(menuParts2), 1);
-	menuParts->AddTextMesh(Vector3(225.f, 4.f, 419.f), 9.5f, TextAlignment::Center, TextAnchor::MiddleCenter);
-	menuPortItem->SetTableForItemParam(10, 1, partsNo, 1);
-	menuParts->AddTextMesh(Vector3(24.f, 4.f, 366.f), 9.5f, TextAlignment::Left, TextAnchor::UpperLeft, 1.55f);
-	menuPortItem->SetTableForItemParam(10, 2, partsNo, 2);
-	page[0] = menuParts->AddTextMesh(Vector3(225.f, 4.f, 93.5f), 9.5f, TextAlignment::Center, TextAnchor::MiddleCenter);
-	menuPortItem->SetTableForItemParam(10, 3, partsNo, 3);
-	menuParts2 = MenuParts::CreateButtonIcon(10, 0, 0.9f, 0, 4);
-	menuParts2->Build(4, 7, -194.f, 4.f, 92.f, menuParts->transform());
-	menuPortItem->AddParts(menuParts2);
-	page[1] = menuParts2->gameObject;
-	menuParts2 = MenuParts::CreateButtonIcon(10, 1, 0.9f, 0, 8);
-	menuParts2->Build(4, 7, 194.f, 4.f, 92.f, menuParts->transform());
-	menuPortItem->AddParts(menuParts2);
-	page[2] = menuParts2->gameObject;
-	Sub_BackButton(menuPortItem)->transform()->SetParent(menuParts->transform());
-	menuPortItem->SetTableForCode(0, 0);
-	menuPortItem->SetTableForCode(1, [=](short code) mutable
-	{
-		for (GameObject* gameObject : page)
-		{
-			gameObject->SetActive(code != 0);
-		}
-	});
+	MenuParts* menuParts = MenuParts::CreateBuildFrameParts(-1, 6, 0.f, 0.f, -2.f, false, true);
+	menuParts->AddTextMesh(Vector3(45.f, 4.f, 114.f), 9.f, TextAlignment::Left, TextAnchor::MiddleLeft);
+	menuParts->AddTextMesh(Vector3(269.f, 4.f, 471.5f), 9.f, TextAlignment::Left, TextAnchor::MiddleLeft, 1.25f);
+	menuParts->AddTextMesh(Vector3(11.5f, 4.f, 58.5f), 9.f, TextAlignment::Left, TextAnchor::UpperLeft, 1.25f);
+	menuPortItem->AddParts(menuParts);
+	menuPortItem->SetTableForItemParam(0, 0, 0, 0);
+	menuPortItem->SetTableForItemParam(0, 1, 0, 1);
+	menuPortItem->SetTableForItemParam(0, 2, 0, 2);
+	menuPortItem->SetTableForItemParam(0, 3, 0, 3);
 	return menuPortItem;
 }
 

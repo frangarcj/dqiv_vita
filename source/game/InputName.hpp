@@ -43,9 +43,7 @@ private:
   int m_shiftNum = 0;
   char16_t m_blank = u' ';
   std::vector<int> m_mojiModes;
-  bool m_bShift = false, m_bCampaign = false, m_bDefName = false;
-  int m_baseUFrame = 287;
-  bool m_bDisableBack = false;
+  bool m_bShift = false, m_bCampaign = false;
   std::string m_etcText[7];
   int m_padFocus = 0, m_padHold = 0;
   int m_padZone = 0;                                     // 0 = a key of the grid (m_padFocus), else the id of the focused function button (1/2 page tabs, 3 shift, 6 delete, 7 enter, 8 back)

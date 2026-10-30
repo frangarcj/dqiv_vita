@@ -44,7 +44,8 @@ void MenuPortItemTable::Sub_BattleUpStatus(MenuPortItem* item, short no, Transfo
 	item->SetTableForItemParam(no, 2, partsNo, 2);
 	item->SetTableForItemParam(no, 3, partsNo, 3);
 	item->SetTableForItemParam(no, 4, partsNo, 4);
-	MenuParts* menuParts2 = MenuParts::CreateIconTexture(0, 0.f, 0.f, 0.f, 28.800001f);
+	MenuParts* menuParts2 = MenuParts::Create(2);
+	menuParts2->AddIcon(0, 0.f, 0.f, 0.f, 0, true, 0.3f);
 	menuParts2->Build(4, 0, 57.f + num, 0.f, -15.5f, frame->transform());
 	item->SetTableForItemParam(no, 0, item->AddParts(menuParts2), 0);
 	auto battleBar = std::make_shared<BattleBar>(menuParts->AddBar(0, 4, 8, 0.f, 0.f, 28.f, 66.f, 2.f));
@@ -150,20 +151,15 @@ MenuPortItem* MenuPortItemTable::Make_BattleInfo(short port, short type) {
 	MenuParts::APPLY_HERO = 1;
 	menuParts->AddTextMesh(Vector3(48.f, 4.f, 236.f), 9.f, TextAlignment::Center, TextAnchor::MiddleCenter);
 	menuParts->AddTextMesh(Vector3(138.5f, 4.f, 236.f), 9.f, TextAlignment::Center, TextAnchor::MiddleCenter);
-	float num = 9.f;
+	menuParts->AddTextMesh(Vector3(191.5f, 4.f, 236.f), 9.f, TextAlignment::Left, TextAnchor::MiddleLeft);
 	if (GetLangages::m_langagesNumber == 1)
 	{
-		num *= 0.86f;
-	}
-	menuParts->AddTextMesh(Vector3(191.5f, 4.f, 236.f), num, TextAlignment::Left, TextAnchor::MiddleLeft);
-	if (GetLangages::m_langagesNumber == 1)
-	{
-		entext[0] = menuParts->AddTextMesh(Vector3(11.f, 4.f, 208.f), 9.f, TextAlignment::Left, TextAnchor::UpperLeft, 1.26f)->GetComponent<TextMesh>();
+		entext[0] = menuParts->AddTextMesh(Vector3(11.f, 4.f, 185.f), 9.f, TextAlignment::Left, TextAnchor::MiddleLeft, 1.26f)->GetComponent<TextMesh>();
 		entext[1] = menuParts->AddTextMesh(Vector3(300.f, 4.f, 185.f), 9.f, TextAlignment::Left, TextAnchor::MiddleLeft, 1.26f)->GetComponent<TextMesh>();
 	}
 	else
 	{
-		menuParts->AddTextMesh(Vector3(11.f, 4.f, 208.f), 9.f, TextAlignment::Left, TextAnchor::UpperLeft, 1.26f);
+		menuParts->AddTextMesh(Vector3(11.f, 4.f, 185.f), 9.f, TextAlignment::Left, TextAnchor::MiddleLeft, 1.26f);
 		menuParts->AddTextMesh(Vector3(300.f, 4.f, 185.f), 9.f, TextAlignment::Left, TextAnchor::MiddleLeft, 1.26f);
 	}
 	menuPortItem->SetTableForItemParam(2, 0, 0, 1);
@@ -227,7 +223,6 @@ MenuPortItem* MenuPortItemTable::Make_MonsterName(short port, short type) {
 	MenuPortItem* menuPortItem = new MenuPortItem(port, type);
 	MonsterNamePlate* list[4] = {};
 	MonsterMarkList* mlist = new MonsterMarkList(menuPortItem);
-	MonsterMarkList::CalcMarkY();
 	for (int i = 0; i < 4; i++)
 	{
 		list[i] = new MonsterNamePlate(menuPortItem, mlist, i);
@@ -483,9 +478,12 @@ void MenuPortItemTable::Sub_BattleItem(MenuPortItem* item, short buttonId, Trans
 
 void MenuPortItemTable::Sub_BattleTactics(MenuPortItem* item, short buttonId, Transform* parent, float x, float y, float z) {
 	MenuParts* p = MenuParts::CreateButton(136.f, 20.f, buttonId, 16);
-	p->AddChangeIconTexture(3, 41.f, 4.f, 15.5f, 26.400002f, false);
-	p->ChangeParts(1, false, true);
+	p->ChangeParts(2);
+	p->AddIcon(3, 41.f, 4.f, 10.f, 0, false, 0.275f);
+	p->ChangeParts(1);
 	p->AddIcon(4, -42.f, 4.f, 4.f, 24, false);
+	p->ChangeParts(3);
+	p->AddIcon(4, -49.f, 4.f, 0.f, 58, false);
 	p->Build(4, 7, x, y, z, parent);
 	MenuParts::APPLY_HERO = 1;
 	GameObject* text = p->AddTextMesh(Vector3(3.f, 4.f, 9.f), 8.5f, TextAlignment::Left, TextAnchor::MiddleLeft);
@@ -502,39 +500,36 @@ void MenuPortItemTable::Sub_BattleTactics(MenuPortItem* item, short buttonId, Tr
 		case 1:
 			text->transform->localPosition = Vector3(3.f, 4.f, 9.f);
 			p->gameObject->SetActiveRecursively(true);
-			p->m_list[2]->m_intChanger(0);
+			p->m_list[2]->m_intChanger(24);
+			p->m_list[3]->m_intChanger(58);
 			break;
 		case 2:
 			p->gameObject->SetActiveRecursively(true);
 			text->transform->localPosition = Vector3(-6.f, 4.f, 0.f);
-			p->m_list[1]->m_intChanger(0);
-			p->m_list[2]->m_intChanger(92);
+			p->m_list[1]->m_intChanger(18);
+			p->m_list[2]->m_intChanger(22);
+			p->m_list[3]->m_intChanger(58);
 			break;
 		case 3:
 			p->gameObject->SetActiveRecursively(true);
 			text->transform->localPosition = Vector3(-6.f, 4.f, 0.f);
-			p->m_list[1]->m_intChanger(0);
-			p->m_list[2]->m_intChanger(94);
+			p->m_list[1]->m_intChanger(18);
+			p->m_list[2]->m_intChanger(24);
+			p->m_list[3]->m_intChanger(40);
 			break;
 		case 4:
 			text->transform->localPosition = Vector3(3.f, 4.f, 9.f);
 			p->gameObject->SetActiveRecursively(true);
-			p->m_list[2]->m_intChanger(0);
+			p->m_list[2]->m_intChanger(24);
+			p->m_list[3]->m_intChanger(58);
 			flag = true;
 			break;
 		}
 		p->m_button->m_intChanger(flag ? 4 : 0);
 	});
-	MenuParts* menuParts = MenuParts::Create(13, true);
-	Material* nowMaterial = menuParts->m_maker->GetNowMaterial();
-	menuParts->AddIcon(0, 0.f, 4.f, 0.f, 0, true, 0.95f);
-	menuParts->AddIcon(0, 0.f, 4.f, -16.f, 0, true, 0.95f);
-	menuParts->Build(4, Vector3(-53.f, 4.f, 8.f), p->transform());
-	item->AddParts(menuParts);
-	item->SetTableForItemParam(buttonId, 4, std::make_shared<StatusIconChanger>(nowMaterial, menuParts->m_list[0], menuParts->m_list[1]));
 	item->SetTableForItemParam(buttonId, 0, partsNo, 1);
-	item->SetTableForItemParam(buttonId, 1, partsNo, 3);
-	item->SetTableForItemParam(buttonId, 2, partsNo, 4);
+	item->SetTableForItemParam(buttonId, 1, partsNo, 4);
+	item->SetTableForItemParam(buttonId, 2, partsNo, 5);
 	item->SetTableForItemParamTextColorChanger(buttonId, 3, p);
 }
 
@@ -589,10 +584,10 @@ MenuPortItem* MenuPortItemTable::Make_BattleIM(short port, short type) {
 	partsNo = menuPortItem->AddParts(menuParts2);
 	menuPortItem->SetTableForItemParam(5, 0, partsNo, 0);
 	menuPortItem->SetTableForCode(5, partsNo);
-	MenuParts* menuParts3 = MenuParts::CreateButtonIcon(3, 34, 1.2f, -1, 4);
+	MenuParts* menuParts3 = MenuParts::CreateButtonIcon(3, 34, 1.2f, -1, 8);
 	menuParts3->Build(4, 7, -198.f, 4.f, 87.f, menuParts2->transform());
 	menuPortItem->SetTableForCode(1, menuPortItem->AddParts(menuParts3));
-	menuParts3 = MenuParts::CreateButtonIcon(3, 35, 1.2f, -1, 8);
+	menuParts3 = MenuParts::CreateButtonIcon(3, 35, 1.2f, -1, 4);
 	menuParts3->Build(4, 7, 198.f, 4.f, 87.f, menuParts2->transform());
 	menuPortItem->SetTableForCode(1, menuPortItem->AddParts(menuParts3));
 	Sub_BackButton(menuPortItem)->transform()->SetParent(menuParts->transform());
@@ -662,15 +657,11 @@ MenuPortItem* MenuPortItemTable::Make_BattleChangeInfo(short port, short type) {
 	{
 		menuPortItem->SetTableForItemParam(0, num, 0, num);
 	}
-	MenuParts* menuParts2 = MenuParts::CreateIconTexture(0, 0.f, 0.f, 0.f, 33.6f);
-	menuParts2->ChangeParts(13, true);
-	Material* nowMaterial = menuParts2->m_maker->GetNowMaterial();
-	menuParts2->AddIcon(0, -20.f, 2.f, 0.f, 0, false, 0.95f);
-	menuParts2->AddIcon(0, -20.f, 2.f, -18.f, 0, false, 0.95f);
+	MenuParts* menuParts2 = MenuParts::Create(2);
+	menuParts2->AddIcon(0, 0.f, 0.f, 0.f, 0, true, 0.35f);
 	menuParts2->Build(4, 6, 48.f, 4.f, 44.5f, menuParts->transform());
 	menuPortItem->SetTableForItemParam(0, 9, menuPortItem->AddParts(menuParts2), 0);
 	menuPortItem->SetTableForItemParamTextColorChanger(0, 10, menuParts);
-	menuPortItem->SetTableForItemParam(0, 11, std::make_shared<StatusIconChanger>(nowMaterial, menuParts2->m_list[1], menuParts2->m_list[2]));
 	Sub_BackButton(menuPortItem)->transform()->SetParent(menuParts->transform());
 	return menuPortItem;
 }

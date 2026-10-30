@@ -19,7 +19,7 @@ void AppendUtf8(std::string& s, uint32_t c) {
 
 MenuPortItem* MenuPortItemTable::Make_NetworkRoot(short port, short type) {
   MenuPortItem* menuPortItem = new MenuPortItem(port, type);
-  MenuParts* menuParts = MenuParts::CreateBuildFrameParts(291 + type, 6, 0.f, 0.f, -2.f);
+  MenuParts* menuParts = MenuParts::CreateBuildFrameParts(289 + type, 6, 0.f, 0.f, -2.f);
   menuParts->AddTextMesh(Vector3(117.5f, 4.f, (type != 0) ? 224.f : 336.f), 9.5f, TextAlignment::Center, TextAnchor::MiddleCenter);
   short framePartsNo = menuPortItem->AddParts(menuParts);
   menuPortItem->SetTableForItemParam(4, 0, framePartsNo, 1);
@@ -35,7 +35,7 @@ MenuPortItem* MenuPortItemTable::Make_NetworkRoot(short port, short type) {
 MenuPortItem* MenuPortItemTable::Make_NetworkPLST(short port, short type) {
   const std::vector<PRESENT_CODE>& plist = PresentList();
   MenuPortItem* menuPortItem = new MenuPortItem(port, type);
-  MenuParts* menuParts = MenuParts::CreateBuildFrameParts(293, 6, 0.f, 0.f, -2.f);
+  MenuParts* menuParts = MenuParts::CreateBuildFrameParts(291, 6, 0.f, 0.f, -2.f);
   auto texts = std::make_shared<std::array<TextMesh*, 6>>();            // texts[page row][field]
   int pmax = (int)plist.size() / 2;
   if ((plist.size() & 1) == 0) pmax--;
@@ -51,10 +51,10 @@ MenuPortItem* MenuPortItemTable::Make_NetworkPLST(short port, short type) {
   txPageGo->transform->SetParent(menuParts->transform());
   short partsNo = menuPortItem->AddParts(menuParts);
   menuPortItem->SetTableForItemParam(0, 0, partsNo, 1);
-  MenuParts* menuParts2 = MenuParts::CreateButtonIcon(10, 0, 1.f, -1, 4);
+  MenuParts* menuParts2 = MenuParts::CreateButtonIcon(10, 0, 1.f, -1, 8);
   menuParts2->Build(4, 7, -176.f, 4.f, 95.f, txPageGo->transform);
   menuPortItem->AddParts(menuParts2);
-  menuParts2 = MenuParts::CreateButtonIcon(10, 1, 1.f, -1, 8);
+  menuParts2 = MenuParts::CreateButtonIcon(10, 1, 1.f, -1, 4);
   menuParts2->Build(4, 7, 176.f, 4.f, 95.f, txPageGo->transform);
   menuPortItem->AddParts(menuParts2);
   if (pmax == 0) txPageGo->SetActiveRecursively(false);
@@ -86,7 +86,7 @@ MenuPortItem* MenuPortItemTable::Make_NetworkPLST(short port, short type) {
 
 MenuPortItem* MenuPortItemTable::Make_NetworkCODE(short port, short type) {
   MenuPortItem* menuPortItem = new MenuPortItem(port, type);
-  MenuParts* menuParts = MenuParts::CreateBuildFrameParts(295, 4, 0.f, 0.f, 120.f);
+  MenuParts* menuParts = MenuParts::CreateBuildFrameParts(293, 4, 0.f, 0.f, 120.f);
   short num = 0;
   std::string text;
   for (char c : InputCode()) {
@@ -105,7 +105,7 @@ MenuPortItem* MenuPortItemTable::Make_NetworkCODE(short port, short type) {
 
 MenuPortItem* MenuPortItemTable::Make_NetworkITEM(short port, short type) {
   MenuPortItem* menuPortItem = new MenuPortItem(port, type);
-  MenuParts* menuParts = MenuParts::CreateBuildFrameParts(294, 1, 0.f, 0.f, 0.f);
+  MenuParts* menuParts = MenuParts::CreateBuildFrameParts(292, 1, 0.f, 0.f, 0.f);
   menuParts->AddTextMesh(1, 0.f, 4.f, -132.5f, 9.5f, TextAlignment::Center, TextAnchor::MiddleCenter);
   menuParts->AddTextMesh(1, 0.f, 4.f, -160.f, 9.5f, TextAlignment::Center, TextAnchor::UpperCenter, 1.5f);
   short partsNo = menuPortItem->AddParts(menuParts);

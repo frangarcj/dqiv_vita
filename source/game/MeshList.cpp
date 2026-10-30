@@ -9,9 +9,9 @@ std::vector<Vector2> MeshList::s_uv;
 void MeshList::Build(GameObject* o) { Build(o->GetComponent<MeshFilter>()); }
 
 void MeshList::SetDynamicMesh(Mesh* target) {
-  target->MarkDynamic();
   target->vertices = s_vtx;
   target->uv = s_uv;
+  target->MarkDynamic();
 }
 
 void MeshList::BuildDynamicMesh(MeshFilter* filter, MeshCollider* collider) {

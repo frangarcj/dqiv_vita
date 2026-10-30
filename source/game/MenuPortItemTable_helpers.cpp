@@ -24,28 +24,13 @@ void MenuPortItemTable::ItemNumCTRL::Changer(int value) {
   }
 }
 
-MenuPortItemTable::ICityMap::ICityMap(MenuPortItem* item, MenuParts* posf, Transform* root) {
-  m_stringChanger = [this, item, posf, root](const std::string& value) {
-    MenuParts* menuParts = MenuParts::CreateFromTexture("Menu/map/" + value, true, 0.75f);
-    menuParts->Build(0, 0, 2.f, 12.f, -2.f);
-    menuParts->transform()->localScale = Vector3(0.99f, 0.99f, 0.99f);
-    menuParts->transform()->SetParent(root);
-    posf->transform()->SetParent(menuParts->transform());
-    item->AddParts(menuParts);
-    m_self = menuParts->transform();
-  };
-}
-
-MenuPortItemTable::IBetText::IBetText(TextMesh* textMesh) {
-  static const char* s_replace[8][2] = { { "@0", "</color>" }, { "@1", "<color=#ff84ffff>" }, { "@2", "<color=#31ceffff>" }, { "@3", "<color=#84ff84ff>" },
-                                         { "@4", "<color=#ffc542ff>" }, { "@5", "<color=#ff4242ff>" }, { "@6", "<color=#4280ffff>" }, { "@7", "<color=#ffff00ff>" } };
-  m_stringChanger = [textMesh](const std::string& text) {
-    std::string s = text;
-    for (int i = 0; i < 8; i++) {
-      std::string from = s_replace[i][0], to = s_replace[i][1];
-      for (size_t p = s.find(from); p != std::string::npos; p = s.find(from, p + to.size())) s.replace(p, from.size(), to);
-    }
-    textMesh->text = s;
+MenuPortItemTable::ICityMap::ICityMap(MenuPortItem* item, MenuParts* posf) {
+  m_stringChanger = [this, item, posf](const std::string& value) {
+    m_map = MenuParts::CreateFromTexture("Menu/map/" + value, true, 0.75f);
+    m_map->Build(0, 0, 2.f, 12.f, -2.f);
+    m_map->transform()->localScale = Vector3(0.99f, 0.99f, 0.99f);
+    posf->transform()->SetParent(m_map->transform());
+    item->AddParts(m_map);
   };
 }
 
@@ -67,8 +52,6 @@ MenuPortItemTable::BattleBar::BattleBar(std::shared_ptr<MenuParts::IBar> bar) : 
 }
 void MenuPortItemTable::BattleBar::RedApply() { m_bar->m_intChanger(-(m_value + 1)); }
 
-float MenuPortItemTable::MonsterMarkList::s_posY = 0.f;
-
 MenuPortItemTable::MonsterMarkList::MonsterMarkList(MenuPortItem* item) {
   for (int i = 0; i < 12; i++) {
     MenuParts* menuParts = MenuParts::Create(6);
@@ -77,20 +60,21 @@ MenuPortItemTable::MonsterMarkList::MonsterMarkList(MenuPortItem* item) {
     menuParts->gameObject->SetActive(false);
     item->AddParts(m_list[i] = menuParts);
   }
+  m_pos = eIndent::CalcScreenPosition(1, 0.f, 0.f, -464.f);
 }
-void MenuPortItemTable::MonsterMarkList::CalcMarkY() { s_posY = eIndent::CalcScreenPosition(1, 0.f, 0.f, -474.f).z; }
 void MenuPortItemTable::MonsterMarkList::Reset() {
   for (MenuParts* menuParts : m_list) menuParts->gameObject->SetActive(false);
   m_used = 0u;
 }
-void MenuPortItemTable::MonsterMarkList::SetMark(int id, float x, float y) {
+void MenuPortItemTable::MonsterMarkList::SetMark(int id, float x) {
   for (int i = 0; i < 12; i++) {
     uint32_t num = (uint32_t)(1 << i);
     if ((m_used & num) == 0) {
       m_used |= num;
       m_list[i]->gameObject->SetActive(true);
       m_list[i]->m_list[0]->m_intChanger(5 + id);
-      m_list[i]->transform()->setPosition(Vector3(x, 0.f, s_posY + y));
+      m_pos.x = x;
+      m_list[i]->transform()->setPosition(m_pos);
       break;
     }
   }
@@ -123,7 +107,7 @@ void MenuPortItemTable::MonsterNamePlate::ReceiveParameters(short code) {
     std::string text = param.ConvertString();
     m_fname->gameObject->SetActiveRecursively(true);
     if (!text.empty() && text[0] == '^') {
-      text.erase(0, 1);
+      text.erase(0, 2);
       m_text->characterSize = (GetLangages::m_langagesNumber >= 2 ? 7.5f : 8.5f) * MenuParts::BIAS_FONT_SIZE;
     } else {
       m_text->characterSize = 8.5f * MenuParts::BIAS_FONT_SIZE;
@@ -144,10 +128,7 @@ void MenuPortItemTable::MonsterNamePlate::ReceiveParameters(short code) {
         if (num2 > position.x) num2 = position.x;
         if (num < position.x) num = position.x;
         m_yPos = position.z;
-        switch (code) {
-          case 2: m_markList->SetMark(m_id, position.x, 0.f); break;
-          case 3: m_markList->SetMark(m_id, position.x, 20.f); break;
-        }
+        if (code == 2) m_markList->SetMark(m_id, position.x);
       }
       num5 <<= 1;
       num6++;

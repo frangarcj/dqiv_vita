@@ -90,17 +90,11 @@ void MenuPortItem::NoticeReceive(Param prm) {
       break;
     case 8: m_bIgnoreDrawRequset = prm[1] != 0; break;
     case 10: SetItemParam(prm[1], prm[2], prm[3] | (prm[4] << 16)); break;
-    case 11: {
-      auto it = m_partsControl.find((prm[1] << 16) | prm[2]);
-      if (it != m_partsControl.end()) it->second->m_sprm = prm[3];
-      SetItemParam(prm[1], prm[2], Receive().ConvertString());
-      break;
-    }
+    case 11: SetItemParam(prm[1], prm[2], Receive().ConvertString()); break;
     case 12:
       SetItemCode(prm[1], prm[2]);
       m_bForuceDrawRequest = true;
       break;
-    case 13: m_bDrawRequest = false; break;
     default: Debug::Log("Unknown MenuItemPortCode %d (port %d type %d) %s", (int)prm[0], (int)m_port, (int)m_type, prm.Dump().c_str()); break;
   }
 }
@@ -117,9 +111,10 @@ void MenuPortItem::Update(int pushState, Ray& ray) {
     case 1:
       for (MenuParts* button : m_buttonList) {
         if (button->m_isHit(ray)) {
+          int num = (!button->m_externalToggle) ? 2064 : 2560;
           m_pushing = button;
           m_pushing->SetPush(m_bHit = true);
-          if (button->m_se) Sound::PlaySE(300);
+          if ((button->m_gamepad & num) != 0) Sound::PlaySE(300);
           break;
         }
       }
@@ -140,7 +135,7 @@ void MenuPortItem::Update(int pushState, Ray& ray) {
   }
   if (TouchPad::m_bToggleESC) {
     for (MenuParts* button2 : m_buttonList) {
-      if ((button2->m_gamepad == 32 || button2->m_gamepad == 1024) && button2->m_button->m_bEnable) {
+      if (button2->m_gamepad == 32 || button2->m_gamepad == 1024) {
         if (button2->m_externalToggle) TouchPad::m_externalToggle |= 1024;
         else Send(1, button2->m_buttonId, button2->m_gamepad);
         TouchPad::m_bToggleESC = false;

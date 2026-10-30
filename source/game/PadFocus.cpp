@@ -138,7 +138,7 @@ static MenuParts* Move(MenuPortItem* it, MenuParts* from, int dx, int dy) {     
 }
 
 static void Press(MenuPortItem* it, MenuParts* b) {
-  if (b->m_se) Sound::PlaySE(300);
+  if ((b->m_gamepad & (b->m_externalToggle ? 2560 : 2064)) != 0) Sound::PlaySE(300);
   if (b->m_externalToggle) TouchPad::m_externalToggle |= b->m_gamepad;
   else it->Send(1, b->m_buttonId, b->m_gamepad);
 }
@@ -178,8 +178,8 @@ void EndFrame() {
     MenuParts* n = Move(s_owner, s_focus, dx, dy);
     if (n && n != s_focus) { s_focus = n; Sound::PlaySE(300); }
   }
-  if (t & 0x10) { if (MenuParts* b = ByGamepad(s_owner, 4)) Press(s_owner, b); }             // L: page-left arrow
-  if (t & 0x20) { if (MenuParts* b = ByGamepad(s_owner, 8)) Press(s_owner, b); }             // R: page-right arrow
+  if (t & 0x10) { if (MenuParts* b = ByGamepad(s_owner, MenuPortItem::PAD_L)) Press(s_owner, b); }   // L: page-left arrow (DQ4: PAD_L = 8, PAD_R = 4)
+  if (t & 0x20) { if (MenuParts* b = ByGamepad(s_owner, MenuPortItem::PAD_R)) Press(s_owner, b); }   // R: page-right arrow
   if (t & 0x800) { if (MenuParts* b = ByGamepad(s_owner, 64)) Press(s_owner, b); }           // Triangle: X-coded button
   if (t & 0x1000) { if (MenuParts* b = ByGamepad(s_owner, 128)) Press(s_owner, b); }         // Square: Y-coded button
   if ((t & 0x200) && s_focus) Press(s_owner, s_focus);                                       // Cross

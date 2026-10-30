@@ -61,7 +61,7 @@ void TapToStart::Update() {
   }
   m_copyright->renderer()->enabled = true;
   if (m_waitCopyright > num) return;
-  if (m_waitCopyright == 2508) {                 // DQ4: the copyright line fades out again after 2508 frames (DQ5: stays)
+  if (m_waitCopyright == 2508) {
     if ((m_copyrightAlpha -= 0.0625f) < 0.f) {
       m_copyrightAlpha = 0.f;
       m_waitCopyright = 999999;
