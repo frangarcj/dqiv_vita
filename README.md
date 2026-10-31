@@ -109,7 +109,7 @@ Mapping of the Vita buttons to the original pad bits (`source/platform/vita_inpu
 | Select | toggles an on-screen pointer that the d-pad moves and Cross / Circle "tap" (for any touch-only spot) | same |
 | touch screen | still works everywhere, as on Android | |
 
-Known limit: on the CityMap / WorldLargeMap screens Circle does not close the map yet (see docs/TODO_DQ4.md); the Square map button or the touch screen do.
+On the CityMap / WorldLargeMap screens Circle closes the map (the Back icon is a touch-only button, so the pad presses it with a synthetic finger tap); Cross on the CityMap switches to the shop list, Cross on the WorldLargeMap to the whole-world map.
 
 ## Saves
 Written by the game itself to `ux0:data/dqiv/saves1/` (`data1..5.dat` = 15 360 bytes each, `data9.dat` = 512 bytes, as created in Vita3K), in the original Android format. Back that folder up before updating.

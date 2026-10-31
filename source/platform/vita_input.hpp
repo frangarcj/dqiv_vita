@@ -36,6 +36,7 @@ void Init();
 void Poll();                  // fills Input.touches / touchCount / escapeDown and State()
 const State& GetState();
 void SetPreGame(bool pre);    // true until the first GameUpdate: any face button = a tap at the screen centre (Boot logos / title)
+void InjectTap(float x, float y, int holdFrames = 4);   // synthesise a finger tap at logical surface pixels (bottom-left origin): what the pointer cursor generates, for pad shortcuts that must press a touch-only (external toggle) button
 bool ScriptActive();          // an input script was loaded and has events left
 
 // 06 §2: raw front-panel coordinates (0..1919, 0..1087) -> logical surface pixels, origin bottom-left. False if outside the surface.

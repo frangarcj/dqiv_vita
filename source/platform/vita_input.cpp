@@ -46,6 +46,7 @@ static State g_state;
 static unsigned g_prevButtons;
 static bool g_swapConfirm;
 static bool g_preGame = true;
+static float g_injX, g_injY; static int g_injFrames = 0;
 static int g_synthTap = 0;              // frames left of a synthesised centre tap (pre-game face button)
 
 // touch state machine (06 §2)
@@ -246,6 +247,7 @@ void Init() {
   LoadScript();
 }
 void SetPreGame(bool pre) { g_preGame = pre; }
+void InjectTap(float x, float y, int holdFrames) { g_injX = x; g_injY = y; g_injFrames = holdFrames; }
 
 bool TouchToLogical(int rawX, int rawY, float* lx, float* ly) {
   float sx = (float)(rawX / 2), sy = (float)(rawY / 2);           // display pixels (integer division: raw 1087 -> 543), origin top-left
@@ -372,6 +374,7 @@ void Poll() {
     if (g_preGame && (edge & (SCE_CTRL_CROSS | SCE_CTRL_CIRCLE | SCE_CTRL_TRIANGLE | SCE_CTRL_SQUARE))) g_synthTap = 2;
     if (g_synthTap > 0) { g_synthTap--; smp[ns++] = { true, Layout::SurfaceW() * 0.5f, Layout::SurfaceH() * 0.5f }; g_state.held = 0; }
   }
+  if (ns == 0 && g_injFrames > 0) { smp[ns++] = { true, g_injX, g_injY }; g_injFrames--; }
   if (ns == 0 && g_sTouchDown) smp[ns++] = { true, g_sX, g_sY };
   if (ns == 0) {
     // sceTouchRead returns every sample since the last call (up to N): a down+up between two frames is not lost

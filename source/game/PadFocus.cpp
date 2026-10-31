@@ -7,6 +7,7 @@
 #include "game/MenuPortItem.hpp"
 #include "game/Sound.hpp"
 #include "game/TouchPad.hpp"
+#include "platform/vita_input.hpp"
 #include "pack/dqiv_pack.h"
 #include "utils/logger.h"
 
@@ -79,18 +80,20 @@ static Vector3 Pos(MenuParts* b) { Vector3 p = b->transform()->position(); retur
 
 static bool HasButtons(MenuPortItem* it) { for (MenuParts* b : it->m_buttonList) if (Usable(b)) return true; return false; }
 
+static bool TapButton(MenuParts* b);
 void BeginFrame() {
   std::vector<MenuPortItem*> prevLive; prevLive.swap(s_live);
   s_ownsNow = false;
   if (s_owner && (TouchPad::m_toggle & 0x400)) {                   // Circle: the owner's cancel button (MenuPortItem::Update handles m_bToggleESC)
-    bool found = false;
-    for (MenuParts* b : s_owner->m_buttonList) if ((b->m_gamepad == 32 || b->m_gamepad == 1024) && Usable(b)) { TouchPad::m_bToggleESC = true; found = true; break; }
-    // DQ4 CityMap / WorldLargeMap: the owner is the whole-window tap button (ids -1, codes 1/2) and the Back button sits on a second live port: use that one
-    if (!found) for (MenuPortItem* it : prevLive) {
-      if (it == s_owner) continue;
-      for (MenuParts* b : it->m_buttonList) if ((b->m_gamepad == 32 || b->m_gamepad == 1024) && Usable(b)) { TouchPad::m_bToggleESC = true; found = true; break; }
-      if (found) break;
-    }
+    // DQ4 CityMap / WorldLargeMap: the owner is the whole-window tap button and the Back button (external toggle, code 1024) sits on a second live port: look there too
+    auto tryCancel = [&](MenuPortItem* it) {
+      for (MenuParts* b : it->m_buttonList) if ((b->m_gamepad == 32 || b->m_gamepad == 1024) && Usable(b)) {
+        if (!(b->m_externalToggle && TapButton(b))) TouchPad::m_bToggleESC = true;        // external Back: a synthetic finger tap (see TapButton); others: the ESC path
+        return true;
+      }
+      return false;
+    };
+    if (!tryCancel(s_owner)) for (MenuPortItem* it : prevLive) if (it != s_owner && tryCancel(it)) break;
   }
 }
 void Register(MenuPortItem* item) { s_live.push_back(item); }
@@ -144,9 +147,28 @@ static MenuParts* Move(MenuPortItem* it, MenuParts* from, int dx, int dy) {     
   return best;
 }
 
+// Centre of a button in logical surface pixels (bottom-left origin), seen through the camera that draws it: where a finger would have to be.
+static bool ScreenCentre(MenuParts* b, float& x, float& y) {
+  Camera* cam = UiCameras::ForLayer(b->gameObject->layer);
+  BoxCollider* bc = b->gameObject->GetComponent<BoxCollider>();
+  if (!cam || !bc) return false;
+  Transform* t = b->transform();
+  Vector3 h(bc->size.x * 0.5f, 0.f, bc->size.z * 0.5f);
+  Vector3 p0 = cam->WorldToScreenPoint(t->TransformPoint(bc->center - h)), p1 = cam->WorldToScreenPoint(t->TransformPoint(bc->center + h));
+  x = (p0.x + p1.x) * 0.5f; y = (p0.y + p1.y) * 0.5f;
+  return true;
+}
+// External-toggle buttons (CityMap / WorldLargeMap Back) hand their key to libdq4core only when pressed the way the original does: a real finger tap (ANY toggle + the external toggle one frame
+// later).  A bare B from the pad does not close the map, so the pad presses them with a synthetic tap at the button, like the pointer cursor does (same fix as the DQ6 port).
+static bool TapButton(MenuParts* b) {
+  float x, y;
+  if (!ScreenCentre(b, x, y)) return false;
+  vita_input::InjectTap(x, y, 4);
+  return true;
+}
 static void Press(MenuPortItem* it, MenuParts* b) {
   if ((b->m_gamepad & (b->m_externalToggle ? 2560 : 2064)) != 0) Sound::PlaySE(300);
-  if (b->m_externalToggle) TouchPad::m_externalToggle |= b->m_gamepad;
+  if (b->m_externalToggle) { if (!TapButton(b)) TouchPad::m_externalToggle |= b->m_gamepad; }
   else it->Send(1, b->m_buttonId, b->m_gamepad);
 }
 static MenuParts* ByGamepad(MenuPortItem* it, int code) {

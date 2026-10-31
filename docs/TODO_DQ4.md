@@ -69,3 +69,5 @@ Played with buttons only (input scripts: `tap`, `walk`, `autotap`, `roam`, see D
 * Monster book from a town (`maout`): clean parchment, **no** sky / island overlay (the earlier overlay was the `ev01` title scene still loaded when the book was started from the title state).
 * Battle Fight -> Party -> Change One with 4 members in the fight ("You don't have enough party members to change your line-up.") is dismissed with Cross within one tap (**not reproduced**).
 * Not reached by pad: shop buy, inn, church (Confession / save), opening a chest, entering a door of a real building (the interiors were only warped into: `hay1f1` inn, `hak1f1` church, `ham1f1` shop; the scripted walks did not find the right tile to talk across the counter / to the priest).
+
+* CityMap / WorldLargeMap: the Back icon is an external-toggle button (code 1024) that libdq4core only accepts from a finger tap; `PadFocus::TapButton` + `vita_input::InjectTap` (same fix as the DQ6 port) synthesise it for Circle. Verified in Vita3K: open with Square, Cross toggles, Circle closes, on both maps (`build/verify/03_citymap_open_close_sheet.jpg`, `03_worldmap_open_close_sheet.jpg`).
