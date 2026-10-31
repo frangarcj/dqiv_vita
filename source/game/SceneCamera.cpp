@@ -42,7 +42,8 @@ void SceneCamera::InitParam::Apply() {
   SetTargetCamera(targetCamera);
   SetViewAndCenterY(Rect(0.f, viewY, 1.f, viewH), yOffset);
   if (bBGClear && !(Layout::Wide() && Layout::GetBattleLayout() != Layout::BattleLayout::Band)) {                // landscape: the battle view uses the whole surface, no black bars (07_LANDSCAPE.md)
-    if (s_clearPlane == nullptr) {
+    if (s_clearPlane != nullptr) return;                                  // C#: `if (!(s_clearPlane == null)) return;`
+    if (s_bFixAdrendo) {                                                   // Adreno GPUs: the 8-vertex black bar mesh on the menu layer
       s_clearPlane = new GameObject();
       Mesh* mesh = s_clearPlane->AddComponent<MeshFilter>()->mesh();
       MeshRenderer* meshRenderer = s_clearPlane->AddComponent<MeshRenderer>();
@@ -60,6 +61,13 @@ void SceneCamera::InitParam::Apply() {
       mesh->SetTriangles(std::vector<int>{ 0, 1, 2, 2, 3, 0, 4, 5, 6, 6, 7, 4 }, 0);
       meshRenderer->setMaterial(material);
       s_clearPlane->layer = Layout::Wide() ? Fade::FullLayer(1) : 8;       // landscape: drawn by the full-surface camera (the MenuCamera is the panel only)
+    } else {                                                               // every other GPU (the Vita): a black clear camera one depth step below the main camera
+      Camera* camera = (s_clearPlane = new GameObject())->AddComponent<Camera>();
+      camera->depth = l_camera->depth - 1.f;
+      camera->cullingMask = 0;
+      camera->clearFlags = CameraClearFlags::Color;
+      camera->backgroundColor = Color::black;
+      s_clearPlane = camera->gameObject;
     }
   } else if (s_clearPlane != nullptr) {
     Object::Destroy(s_clearPlane);
@@ -72,7 +80,7 @@ void SceneCamera::SystemInit() {
   s_yReverse = Quaternion::Euler(Vector3(0.f, 180.f, 0.f));
   l_bCalcProjection = true;
   // DQ4: no DSSA ortho camera (DQ5 SceneCamera.SystemInit created s_DSSAOrthoCamera, layer 11 / cmd_mesh_ortho); s_DSSAOrthoCamera stays null.
-  s_bFixAdrendo = Boot::s_gpuName.find("ADRENO") != std::string::npos;     // false on the Vita (PowerVR): TODO(dq4) the non-Adreno clear-plane path (a black Camera at depth-1) is not ported, the DQ5 mesh plane is used for both
+  s_bFixAdrendo = Boot::s_gpuName.find("ADRENO") != std::string::npos;     // false on the Vita (Boot::s_gpuName is "POWERVR SGX543MP4+"): the clear-camera path of Apply() is the one used
 }
 static void CalcProjection() {
   if (!l_camera) return;

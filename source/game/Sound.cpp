@@ -43,7 +43,10 @@ void Sound::SoundControl::Play(const char* fname, int no, float vol) {
       char path[64];
       snprintf(path, sizeof(path), "sound/%s.akb", fname);
       void* p = NativeCall::FileReadAllBytes(path);
-      if (p == nullptr) { l_warn("Sound: %s not found", path); return; }
+      if (p == nullptr) {                         // the C# returns silently too: the native asks for SE 0 ("no sound") and the OBB has no sound/SE0000.akb (SE files are 0300..1170, BGM01..)
+        if (strncmp(fname, "SE", 2) == 0) l_info("Sound: %s not in the OBB (silent, as in the C#)", path); else l_warn("Sound: %s not found", path);
+        return;
+      }
       m_bankID = SdLib::AddData(p);
       m_addr = p;
     } else {

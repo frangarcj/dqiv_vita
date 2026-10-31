@@ -45,19 +45,16 @@ GameObject* FxQuad(const char* name, int layer, float x, float y, float w, float
 
 class FxDriver : public Component {
 public:
-  int frame = 0;
-  void Update() override {
-    frame++;
-    if (frame == 3) Global::Flag &= ~0x10000;           // Capture::Start waits for it
-    if (frame != g_start) return;
-    l_info("FxTest: start '%s' at frame %d", g_effect.c_str(), frame);
-    const std::string& e = g_effect;
+  int frame = 0, step = 0, nextAt = 0;
+  bool running = false;
+  static void Start(const std::string& e) {
+    l_info("FxTest: start '%s'", e.c_str());
     if (e == "battle") Capture::ScreenEffect(4);
     else if (e == "darklamp") Capture::ScreenEffect(5);
-    else if (e == "morning") Capture::ScreenEffect(5 | 0x8000);
+    else if (e == "morning") Capture::ScreenEffect(5 | 0x80);        // C# `screen_effect & 0x80` = reverse flag
     else if (e == "riremito") Capture::ScreenEffect(6);
     else if (e == "tabi") Capture::ScreenEffect(3);
-    else if (e == "tabirev") Capture::ScreenEffect(3 | 0x8000);
+    else if (e == "tabirev") Capture::ScreenEffect(3 | 0x80);
     else if (e == "buttons") {
       Texture2D* col = new Texture2D(64, 64, TextureFormat::RGBA32);
       std::vector<Color32> px(64 * 64);
@@ -67,6 +64,19 @@ public:
       const char* sh[3] = { "Custom/Picture", "Custom/ButtonGray", "Custom/ButtonReverse" };
       for (int i = 0; i < 3; i++) FxQuad("btn", 0, 0, 150.f - i * 130.f, W * 0.6f, 100.f, sh[i], col, Color::white);
     }
+  }
+  void Update() override {
+    frame++;
+    if (frame == 3) Global::Flag &= ~0x10000;           // Capture::Start waits for it
+    if (g_effect == "all") {                            // every DQ4 effect in turn, the next one 60 frames after the previous one released Global.Flag bit 2
+      static const char* const k_all[] = { "battle", "darklamp", "morning", "riremito", "tabi", "tabirev" };
+      if (frame < g_start) return;
+      if (running && (Global::Flag & 2) == 0) { running = false; nextAt = frame + 60; l_info("FxTest: effect %d ended after its start at frame %d", step, frame); }
+      if (!running && frame >= nextAt && step < 6) { Start(k_all[step++]); running = true; nextAt = frame + 20; }
+      return;
+    }
+    if (frame != g_start) return;
+    Start(g_effect);
   }
 };
 }  // namespace
@@ -119,7 +129,7 @@ void Create() {
     (void)pq;
   }
   FxQuad("chk", 0, 0, 0, W, H, "Custom/Picture", chk, Color::white);
-  FxQuad("grad", 0, -W * 0.2f, H * 0.2f, W * 0.4f, W * 0.4f, "Custom/DssaNormal", nullptr, Color::white, true);
+  FxQuad("grad", 0, -W * 0.2f, H * 0.2f, W * 0.4f, W * 0.4f, "BackColor", nullptr, Color::white, true);
   FxQuad("logo", 0, 0, -H * 0.25f, W * 0.8f, W * 0.8f * 0.33f, "Custom/Picture", Resources::Load<Texture>("title/sqex"), Color::white);
 
   SceneCamera::SystemInit();                             

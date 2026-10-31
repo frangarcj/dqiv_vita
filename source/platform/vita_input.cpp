@@ -21,6 +21,7 @@
 
 using namespace miniunity;
 const char* DqvCurrentScene();                 // game/NativeManager.cpp: last map loaded by the native side (script `sync`)
+bool DqvInBattle();                           // game/NativeManager.cpp: the battle stage is up (script `roam`)
 bool DqvHeroPos(float* x, float* y, float* z); // game/NativeManager.cpp: last position the native sent for character 0 (script `walk`)
 
 /*
@@ -34,6 +35,8 @@ bool DqvHeroPos(float* x, float* y, float* z); // game/NativeManager.cpp: last p
  *     <F> sync  <text> [tap <btn> <period>]                   hold the script until NativeManager's last loaded map path contains <text>; later events are then relative to that moment
  *     <F> walk  <x> <z> [tol=0.5] [timeout=600] [map]   closed loop with the d-pad only: hold the directions that bring the hero (position as sent by the native, `heropos` units)
  *                                     towards (x,z) until within tol (or `timeout` frames, or the scene no longer contains [map]); later events are relative to that moment.  Screen up = +z, right = +x (calibrated: d-pad Up raises z)
+ *     <F> roam <timeout> [period=40]    walk about with the d-pad (down, right, up, left bursts of <period> frames) until a random battle starts; during the battle only Cross is tapped (every 20 frames);
+ *                                     ends 120 frames after the battle stage went away again (victory) or at the timeout; later events are relative to that moment
  *     <F> autotap <btn> <period>        press <btn> for 2 frames every <period> frames from now on (0 = off), also while `walk`/`sync` hold the script
  *     <F> log   <text>                  write a marker line to the log   <F> quit                  Application.Quit() (clean end of a headless run)
  */
@@ -53,13 +56,14 @@ static float g_moved;
 struct Sample { bool down; float x, y; };
 
 // ------------------------------------------------------------------------------------------------ script
-enum ActType { A_BTN_ON, A_BTN_OFF, A_TOUCH, A_TOUCH_UP, A_STICK, A_LOG, A_QUIT, A_SYNC, A_WALK, A_AUTOTAP };
+enum ActType { A_BTN_ON, A_BTN_OFF, A_TOUCH, A_TOUCH_UP, A_STICK, A_LOG, A_QUIT, A_SYNC, A_WALK, A_AUTOTAP, A_ROAM };
 struct Act { int frame; ActType type; unsigned mask; float x, y; int a, b; std::string text; };
 static std::vector<Act> g_script;
 static size_t g_scriptNext;
 static int g_scriptBase;                       // `sync`: events after it are relative to the frame the condition became true
 static bool g_scriptWait;
 static unsigned g_autoMask; static int g_autoPer;               // `autotap`: press a button every N frames whatever else the script is doing (dismiss messages while walking)
+static bool g_roamOn, g_roamSeen; static int g_roamStart, g_roamOut;
 static bool g_walkOn; static int g_walkStart, g_walkLast;       // `walk` in progress
 static unsigned g_sButtons;                    // buttons held by the script
 static bool g_sTouchDown; static float g_sX, g_sY;
@@ -127,6 +131,8 @@ static void LoadScript() {
       } else if (cmd == "walk" && w.size() >= 4) {
         float tol = w.size() > 4 ? (float)atof(w[4].c_str()) : 0.5f; int to = w.size() > 5 ? atoi(w[5].c_str()) : 600;
         Add(fr, A_WALK, 0, (float)atof(w[2].c_str()), (float)atof(w[3].c_str()), to, (int)(tol * 1000.f), w.size() > 6 ? w[6].c_str() : "");
+      } else if (cmd == "roam" && w.size() >= 3) {
+        Add(fr, A_ROAM, 0, 0, 0, atoi(w[2].c_str()), w.size() > 3 ? atoi(w[3].c_str()) : 40);
       } else if (cmd == "autotap" && w.size() >= 4) {
         Add(fr, A_AUTOTAP, ParseButtons(w[2]), 0, 0, atoi(w[3].c_str()));
       } else if (cmd == "quit") {
@@ -166,6 +172,20 @@ static void RunScript(int frame) {
         if (dz > tol * 0.5f) g_sButtons |= SCE_CTRL_UP; else if (dz < -tol * 0.5f) g_sButtons |= SCE_CTRL_DOWN;      // calibrated in mlb1a: Up raises z, Right raises x
       }
       if (frame - g_walkLast >= 120) { g_walkLast = frame; l_info("SCRIPT f%d: walking, hero (%d, %d) /100, scene '%s'", frame, (int)(px * 100.f), (int)(pz * 100.f), ::DqvCurrentScene()); }
+      return;
+    }
+    if (a.type == A_ROAM) {
+      const unsigned dirs = SCE_CTRL_UP | SCE_CTRL_DOWN | SCE_CTRL_LEFT | SCE_CTRL_RIGHT;
+      if (!g_roamOn) { g_roamOn = true; g_roamSeen = false; g_roamStart = frame; g_roamOut = 0; l_info("SCRIPT f%d: roam until a battle (timeout %d)", frame, a.a); }
+      bool inB = ::DqvInBattle();
+      if (inB) { if (!g_roamSeen) l_info("SCRIPT f%d: battle started", frame); g_roamSeen = true; g_roamOut = 0; } else if (g_roamSeen) g_roamOut++;
+      if ((g_roamSeen && g_roamOut > 120) || frame - g_roamStart > a.a) {
+        l_info("SCRIPT f%d: roam %s (scene '%s')", frame, g_roamSeen ? "battle fought, back on the map" : "timeout, no battle", ::DqvCurrentScene());
+        g_sButtons &= ~(dirs | SCE_CTRL_CROSS); g_roamOn = false; g_scriptBase = frame - a.frame; g_scriptNext++; continue;
+      }
+      g_sButtons &= ~(dirs | SCE_CTRL_CROSS);
+      if (inB) { if (frame % 20 < 2) g_sButtons |= SCE_CTRL_CROSS; }
+      else if (!g_roamSeen) { static const unsigned seq[4] = { SCE_CTRL_DOWN, SCE_CTRL_RIGHT, SCE_CTRL_UP, SCE_CTRL_LEFT }; g_sButtons |= seq[((frame - g_roamStart) / std::max(a.b, 1)) & 3]; }
       return;
     }
     g_scriptNext++;

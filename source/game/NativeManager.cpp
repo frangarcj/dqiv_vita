@@ -437,5 +437,6 @@ void NativeManager::Update(int padPress, int padToggle) {
   if (Sound::s_state != 0) Sound::SystemUpdate();
 }
 
+bool DqvInBattle() { return NativeManager::InBattleStage(); }
 bool DqvHeroPos(float* x, float* y, float* z) { if (!s_heroPosValid) return false; *x = s_heroPos.x; *y = s_heroPos.y; *z = s_heroPos.z; return true; }
 const char* DqvCurrentScene() { return NativeManager::s_sceneName.c_str(); }       // input script `sync` command (platform/vita_input.cpp)
