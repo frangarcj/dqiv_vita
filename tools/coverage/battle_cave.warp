@@ -1,0 +1,9 @@
+#shots 640,800,1000,1400
+#dur 100
+#input battle_pad.txt
+delay 150
+eventinit 83
+town dfb1a
+wait 200
+nodamage 1
+battle btlda1 1x1 2x1

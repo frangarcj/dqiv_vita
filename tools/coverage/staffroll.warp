@@ -1,4 +1,5 @@
 #shots 450,700,1000
 #dur 110
 delay 150
+eventinit 0
 staffroll

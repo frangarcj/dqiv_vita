@@ -41,7 +41,7 @@ extern void (*DebugGetValue)(int, unsigned*);
 // Dev hooks that depend on DQ5 semantics of DebugSetValue ids / DQ5-only mangled symbols (Encount::brew, PartyStatusUtility::setNoDamageEnable, Global::startTown(int),
 // Global::loadGame, FieldPlayerManager ...). NOT re-derived for libdq4core yet: WarpTest, BattleTest and the DevCheats patches are disabled (logged) while this is false.
 // TODO(dq4): re-derive with tools/re/decomp.sh (see docs/TODO_DQ4.md), then flip.
-constexpr bool kDevHooksVerified = false;
+constexpr bool kDevHooksVerified = true;      // harness branch: WarpTest/BattleTest/DevCheats use the DQ4 hooks decoded in game/WarpTest.hpp (each feature is verified in Vita3K, see README "Warp harness")
 bool DeviceInit();                 // DevInit(OBB path, save path, lang)
 
 }  // namespace NativeCall

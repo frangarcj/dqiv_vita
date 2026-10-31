@@ -1,0 +1,9 @@
+#shots 745,830,930,1000,1100,1500
+#dur 100
+#input battle_tactics_pad.txt
+delay 150
+eventinit 289
+town maout
+wait 200
+nodamage 1
+battle btl_mt_d 34x2 38x1

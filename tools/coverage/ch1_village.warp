@@ -1,0 +1,6 @@
+#shots 450,650
+delay 150
+chapter 1
+eventinit 4
+town maout
+nodamage 1

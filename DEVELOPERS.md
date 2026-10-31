@@ -143,8 +143,9 @@ Run (3 runs of ~27 ids, ~150 s each): `CFG_EXTRA='ui_tour=150:1,150:2,...' tools
 
 ### Battle (forced through the native debug hooks)
 
-`ux0:data/dqiv/battletest<slot>.on` (`game/BattleTest`): the game boots normally (title), then after `delay` frames the driver calls libdq4core's own debug entry points, as the original debug menu did: `DebugSetMapName("B-<short battle map>")`, optional `DebugSetValue(12, id, 0)`... `(12,-1,0)` (party; the default debug party is the hero LV14 + Harry), `DebugSetValue(8, g, monster<<16 | count)` for groups 0..3, then `DebugSetValue(8, 4, 0)` = `setTileId` + `Encount::brew` + `Global::startBattle()` (game part 5). File lines: `map btlca1` (the SHORT native name; `unity_load_fld` copies it into a 16-byte stack buffer and builds `map/btl/btlca/stage/btlca1`, so a full path smashes the stack), `mon <id> <count>` (up to 4), `party <id>`, `delay N`, `repeat N`.
-Then drive the existing battle screens with `INPUT_SCRIPT` touches (logical coords, origin bottom-left; Fight (224,165), Attack (104,165), Magic (297,165), target list rows (104,166)/(104,120), spell Cast button (204,97)); pad buttons do not move the MenuPort cursor yet. Verified: map `btlca1` + burr babies (fight to victory, return to the title), `btl_pl_d` + Healslime x2/Gourdzilla/Samigina (attack, spell Woosh with its wind effect, damage numbers, aura effect, party HP/MP updates).
+Decoded from `DebugSetValue` / `DebugSetMapName` of libdq4core (not the DQ5 numbers): the game must have a state (the title has an empty party), so `DebugSetValue(1, event, female)` loads a story checkpoint first (`status::Status::setEventParty`: party, levels, gold, items, flags, chapter; table `param::Event`, 347 rows, `dumpevents` logs it). Then `DebugSetValue(8, g, monster << 16 | count)` fills monster group g = 0..3 (`Encount` +0x34/+0x44), and `DebugSetValue(8, 4, 0)` sets Encount type 0, `StageStatus::setBtlMapName("btl_pl_d")` and calls `Global::startBattle()` (`NonBattleActionManager::setAction(4)`, handled by the running town/field part). The harness then overwrites the stage name in the `StageStatus` instance (`g_Global - 0x1dcfa8 + 0x1dff70`, +0x28; the native reads it in `BattleStage::initialize` through `getBtlMapName`, which swaps the 7th/8th characters for the time-of-day letters `_d/_e/_n` when the time zone is enabled). `DebugSetMapName("<count>-<monster>")` is the native shortcut for the same fight on `btl_pl_d` (ignored while the map is the title `ev01`); `0-890` no encounters, `0-801` no damage, `0-802` level 99, `0-899` chapter 9 (staff roll), `1-701`/`1-702` shop/inn fights: the debug lists `BT/..`, `FS/..` at the end of `map/map_list` (`tools/coverage/maps.txt`) are these codes.
+WarpTest line `battle MAP GROUPS...` (`battle btl_pl_d 34x2 38x1`) or `ux0:data/dqiv/battletest<slot>.on` (`game/BattleTest`): `map <stage>`, `mon <id> <count>` (up to 4), `event <id> [female]` (default 1; `chapter N` accepted), `delay N`, `repeat N`. Stage names are the files under `map/btl/*/stage` (`btl_pl_d`, `btl_mt_d`, `btl_wd_d`, `btl_sd_e`, `btlda1` (cave), `btlcb1_d`, ...). Monster ids are the ones of the debug list (34 38 42 51 59 69 89 91 97 107 115 119 124 133 145 162 170 ...; id 1 = Walking stick).
+Drive the battle with the pad: an input script of Cross taps (`tools/coverage/battle_pad.txt`, `700-2500/24 tap cross`) goes through Fight, Attack, the first target and the messages (PadFocus) to victory and back to the map. Touch coordinates work too (`<F> touch x y`, UI-panel pixels).
 Battle layout: `Global.CameraInitParams[1]` view rect (0,0.275,1,0.42) scaled by aspect: the 3D view is the middle band, `SceneCamera.s_clearPlane` blacks the rest.
 
 ### Config, language, saves (WP4)
@@ -156,62 +157,32 @@ Battle layout: `Global.CameraInitParams[1]` view rect (0,0.275,1,0.42) scaled by
 ## Soak test (long-session memory / stability, Vita3K)
 
 Tools (dev builds, `-DDQIV_DEV_TOOLS=ON`): `game/SoakStats` logs one `SOAK ...` line every 300 frames (newlib heap used/peak/arena, vitaGL pool free/total, live GameObjects/components/materials/meshes/textures (+CPU/GL bytes), open fds, open MenuPorts, frame time avg/max);
-`ui_soak=300:0` (UiSelfTest) builds/fills/closes every screen of the MenuPortItemTable in an endless loop; `tools/soak/make_soak.py N <ready_frame> --input input.txt > warp<slot>.on` writes N iterations of
-*warp into a town/dungeon (480 f) -> forced battle on another stage fought by scripted touches (1320 f) -> world map (480 f)* (needs the WP1/WP5 `WarpTest` harness + `input_script=1`); `tools/soak/analyze.py dqivn.log --every 8 --window 2280 --offset 240` makes the tables below.
-Run: `INPUT_SCRIPT=input.txt CFG_EXTRA='input_script=1\nlayout=landscape\nui_soak=300:0' tools/run_vita3k.sh 1500 ""` (muted, one emulator at a time).
+`ui_soak=300:0` (UiSelfTest) builds/fills/closes every screen of the MenuPortItemTable in an endless loop (not used in the DQ4 run below: the DQ4 table is still being ported); `tools/soak/make_soak.py N <ready_frame> --input input.txt > warp<slot>.on` (DQ4 version) writes N iterations of
+*town/dungeon warp with the chapter-5 party (480 f) -> forced battle on another stage (`battle <stage> <monsters>`) fought by pad Cross taps (1320 f) -> world map (480 f)*; the party is the event-289 party with `nodamage`, `noencount`, 99999 gold (it needs the WarpTest harness + `input_script=1`);
+`tools/soak/analyze.py dqivn.log --every 8 --window 2280 --offset 240` makes the tables below.
+Run: `cp warp.on .../ux0/data/dqiv/warp<slot>.on; INPUT_SCRIPT=input.txt CFG_EXTRA='input_script=1' tools/run_vita3k.sh 720 ""` (muted, one emulator at a time; with other agents queued the wait can be 40+ minutes: do not wrap it in a short `timeout`).
 
-Result (2026-10-27, Vita3K, loaded Mac so ~15-20 fps of real time; 19 200 frames = 823 s of game time, 8 battles on 6 stages + 8 town/dungeon FLD loads + 48 complete passes over the 98 UI screens = ~4 700 screen open/close cycles):
+Result (2026-10-31, Vita3K, chapter-5 party, `python3 tools/soak/make_soak.py 4 150`; the run was cut at frame 5143 (191 s of game time, 27 Hz) when the surrounding `timeout` of the queued script expired, so only 2.2 of the 4 planned iterations ran: towns `maout` -> `mfout` -> `dab1`, 2 forced battles on `btl_pl_d` (2 x Walking stick) and `btl_mt_d` (Restless armour + Bullfinch) won with Cross taps, 2 world-map phases):
 
-Sampled curve (landscape; heap/peak/arena in MB, `mesh` count, `tex` = live Texture2D objects, `res` = textures with a GL copy):
+| frame | ms_avg | ms_max | heap | peak | arena | go | comp | mat | mesh | tex | res | texMB | live | fds | ports |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 300 | 40.3 | 328 | 6.5 | 6.9 | 7.2 | 385 | 1218 | 431 | 109 | 118 | 95 | 1.7 | 2293 | 4 | 11 |
+| 1200 | 37.6 | 223 | 6.3 | 6.9 | 7.2 | 167 | 588 | 88 | 113 | 121 | 9 | 4.2 | 1109 | 4 | 13 |
+| 1800 | 38.7 | 550 | 6.8 | 6.9 | 7.2 | 391 | 1234 | 437 | 124 | 124 | 103 | 4.9 | 2342 | 4 | 11 |
+| 2400 | 37.5 | 101 | 7.8 | 7.8 | 10.4 | 137 | 474 | 82 | 77 | 129 | 20 | 6.8 | 933 | 4 | 11 |
+| 3000 | 37.4 | 99 | 6.8 | 7.8 | 9 | 351 | 1114 | 364 | 130 | 165 | 98 | 4.8 | 2158 | 4 | 11 |
+| 3600 | 37.2 | 71 | 6.6 | 7.8 | 9 | 207 | 749 | 97 | 161 | 168 | 14 | 4.5 | 1416 | 4 | 16 |
+| 4200 | 38.6 | 445 | 6.8 | 7.8 | 9 | 351 | 1114 | 366 | 140 | 169 | 101 | 5.1 | 2174 | 4 | 11 |
+| 4800 | 37.1 | 94 | 7.8 | 7.8 | 10.2 | 137 | 474 | 87 | 87 | 170 | 23 | 7.1 | 989 | 4 | 11 |
+| 5100 | 36.8 | 42 | 7.8 | 7.8 | 10.2 | 137 | 474 | 87 | 87 | 170 | 23 | 7.1 | 989 | 4 | 11 |
 
-| frame | ms_avg | ms_max | heap | peak | arena | go | comp | mat | mesh | meshMB | tex | res | texMB | live | fds | ports |
-|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| 300 | 65 | 849 | 7.9 | 7.9 | 8 | 438 | 1377 | 477 | 153 | 0.24 | 113 | 72 | 1.5 | 2594 | 4 | 11 |
-| 2700 | 45.6 | 359 | 7.6 | 8.3 | 10.2 | 159 | 540 | 119 | 94 | 0.07 | 153 | 31 | 4.3 | 1104 | 4 | 11 |
-| 5100 | 64.7 | 811 | 8.3 | 8.4 | 12.1 | 125 | 438 | 98 | 82 | 0.17 | 167 | 25 | 4.6 | 949 | 4 | 11 |
-| 7500 | 41.9 | 471 | 7.6 | 8.5 | 11.5 | 167 | 564 | 141 | 110 | 0.09 | 180 | 40 | 4.9 | 1201 | 4 | 11 |
-| 9900 | 38.7 | 210 | 7.7 | 8.5 | 11.5 | 146 | 515 | 95 | 110 | 0.1 | 186 | 15 | 4.9 | 1091 | 4 | 12 |
-| 12300 | 44.6 | 650 | 7.8 | 8.5 | 11.5 | 209 | 738 | 137 | 171 | 0.13 | 195 | 18 | 5.1 | 1489 | 4 | 15 |
-| 14700 | 47.1 | 500 | 8.2 | 8.5 | 13.1 | 236 | 853 | 150 | 214 | 0.21 | 241 | 26 | 5.1 | 1733 | 4 | 18 |
-| 17100 | 45.4 | 382 | 8 | 8.5 | 12.7 | 227 | 826 | 142 | 211 | 0.2 | 246 | 21 | 5.5 | 1691 | 4 | 18 |
-| 19200 | 39.9 | 173 | 8.1 | 8.5 | 12.9 | 137 | 478 | 111 | 114 | 0.17 | 247 | 20 | 7.2 | 1126 | 4 | 11 |
-
-Per-iteration floor..ceiling (a leak would be a rising floor; landscape, then portrait (5 iterations, 11 400 frames)):
-
-| iter | heap | arena | go | mat | mesh | tex | live | ms_avg |
-|---|---|---|---|---|---|---|---|---|
-| 0 | 7.7..8.2 | 8..11.7 | 136..438 | 86..486 | 76..168 | 113..138 | 949..2633 | 39.5..169.6 |
-| 1 | 7.6..8.1 | 10.2..11.7 | 119..227 | 91..134 | 83..192 | 153..157 | 909..1574 | 39.7..47 |
-| 2 | 7.8..8.4 | 11.7..12.1 | 110..225 | 77..118 | 82..186 | 156..170 | 860..1558 | 37.4..64.7 |
-| 3 | 7.6..8.1 | 11.5..11.7 | 136..227 | 92..143 | 87..190 | 180..183 | 1011..1594 | 40.8..49.2 |
-| 4 | 7.7..8.1 | 11.5..11.7 | 136..225 | 95..154 | 97..194 | 184..187 | 1034..1592 | 38.6..46.9 |
-| 5 | 7.7..8.1 | 11.5..13.1 | 136..248 | 106..171 | 105..222 | 194..196 | 1056..1764 | 39.5..50.9 |
-| 6 | 8.1..8.2 | 13.1..13.1 | 136..301 | 114..308 | 112..215 | 241..242 | 1117..2013 | 45.6..64.2 |
-| 7 | 7.8..8.2 | 12.7..13.1 | 130..227 | 105..151 | 107..221 | 242..247 | 1093..1710 | 41.9..51.8 |
-| 8 | 8.1..8.1 | 12.9..12.9 | 136..137 | 109..116 | 113..116 | 247..247 | 1118..1128 | 39.9..41.1 |
-
-portrait:
-
-| iter | heap | arena | go | mat | mesh | tex | live | ms_avg |
-|---|---|---|---|---|---|---|---|---|
-| 0 | 7.7..8.2 | 8..11.8 | 136..438 | 87..487 | 77..169 | 114..138 | 952..2636 | 38.7..58.9 |
-| 1 | 7.6..8.1 | 11.6..11.8 | 118..227 | 92..135 | 84..193 | 153..157 | 910..1577 | 42.9..59.5 |
-| 2 | 7.8..8.4 | 11.8..12.2 | 109..225 | 78..119 | 83..187 | 156..170 | 860..1561 | 43.3..52.1 |
-| 3 | 7.6..8.1 | 11.6..11.8 | 136..227 | 93..144 | 88..191 | 180..183 | 1014..1597 | 40.7..54.5 |
-| 4 | 7.7..8.1 | 11.6..11.8 | 136..225 | 96..155 | 98..195 | 184..187 | 1037..1595 | 41.7..46.8 |
-
-
-Verdict:
-* **Flat**: heap in use 7.6-8.5 MB, peak 8.5 MB from frame 5700 on, GameObjects/components return to the same town baseline (go 136, comp 474) at the end as at the start, open fds constant (4), open ports back to 11 after every UI pass, frame time avg 39-50 ms in Vita3K (no trend; the slope of the second half is +-3 ms / 10 000 frames, spikes to 0.5-1.5 s are first-load hitches of new maps/battle stages).
-* **Bounded growth, not leaks**: the newlib *arena* (high-water mark) crept 10.2 -> 13.1 MB while the in-use heap did not (fragmentation; stops after iteration 5); the number of live `Texture2D`/`Material`/`Mesh` *objects* at the town baseline rises with the number of distinct maps/stages visited (tex 113 -> 247, mat 86 -> 110, mesh 76 -> 113) and plateaus once the stage list repeats (iterations 6-8): they are the lazy pack caches (GL copies of textures are evicted by the sweep, `res` stays 11-40; CPU mesh data 0.1-0.2 MB).
-* Portrait behaves identically to landscape for the 5 iterations run (11 400 frames; the second run was cut short by the one-emulator-at-a-time rule).
-* UI: `UI-MEM` counters (see "Free of leaks" in the UI section) stay flat over 10 open/close cycles of any screen; the 4 700 cycles of the soak confirm it.
-* Not measurable in Vita3K: vitaGL pool free sizes (`vglMemFree` uses `sceClibMspaceMallocStats`, which the emulator stubs: all pools report the same bogus 2039 MB) - the columns are meaningful on real hardware only; native-side (libdq4core) allocations are inside the newlib heap numbers (the bionic shim mallocs); GXM textures/meshes are tracked through `tex`/`res`/`texMB`.
-* Notes for owners: 2 of the 6 battle stages (`btl_is_d`, `btl_dk1`) did not start through `battle <name>` (no `map_name` line, probably not valid native short names) - harness only; world-map (`field`) phases add no FLD (no map_name line), so the field-map loader is exercised by the towns/battle stages only.
+Verdict (short run, so only a first look): heap in use 6.3-7.8 MB (peak 7.8, arena 10.4 MB), flat; GameObjects fall back to the same world-map baseline (go 137, comp 474, mat 82-87) after every town + battle cycle (the first value, 385, is the town itself); open fds constant (4); open ports 11 (16 during battle menus); frame time 37-40 ms (27 Hz) without trend, spikes of 0.2-0.5 s only at map / battle-stage loads. Live `Texture2D` objects rise 118 -> 170 and texMB 1.7 -> 7.1 while new maps and stages are visited (lazy pack caches, the same plateau pattern as the DQ5 soak: not a leak, but only 3 towns + 2 stages were visited, so the plateau itself is not shown). No DABT, no ERR. Not covered: the multi-hour behaviour, the vitaGL pool counters (Vita3K reports bogus 2039 MB), real hardware.
 
 ## Tester cheats and pad-only scripts (WP3)
-* `game/DevCheats.{hpp,cpp}`: cfg keys `nodamage`, `noencount`, `gold`, `party_hp`, `party_mp`, `warp` (+`warp_chapter`, `warp_delay`), `heropos`; documented in README "Debug options". `noencount` overwrites the first two words of
-  `btl::Encount::brew` (ARM, `mov r0,#0; bx lr`) with kuKernelCpuUnrestrictedMemcpy; the callers (`execField`, `execDungeon`) only start a battle when it returns non-zero. `warp` reuses `WarpTest` (`WarpTest::CreateFromCfg`).
+* `game/DevCheats.{hpp,cpp}`: cfg keys `nodamage`, `noencount`, `gold`, `party_level`, `party_hp`, `party_mp`, `warp` (+`warp_chapter`, `warp_delay`), `heropos`; documented in README "Debug options". DQ4 mechanisms (all decoded from libdq4core): `nodamage` = exported static
+  `status::PartyStatus::setNoDamageEnable(bool)` (a plain global byte, re-armed every 30 frames); `noencount` = `DebugSetValue(10, 0, 2)` which clears the `Encount` "enabled" byte (`Encount::initialize` resets it on every event load, so it is re-armed every 60 frames; `DebugGetValue(1)` reads it back);
+  `gold` = `DebugSetValue(3, 0, N)`; `party_level` = `DebugSetValue(11, N, 0)` (`PlayerStatus::levelup`); `party_hp` / `party_mp` = `DebugSetValue(0x11 / 0x12, player, N)` for every player id 1..25 (the native skips mask 0x104ec00) followed by `DebugSetValue(9, 0, 0)` (full heal), read back with `DebugGetValue(0x11)`;
+  `warp` = `eventinit <chapter event>` + `Global::startTown(<map>)` (`WarpTest::CreateFromCfg`). Encount / StageStatus / StoryStatus are not exported: `DevHooks::Obj(vaddr)` addresses them relative to `g_Global` (offsets read from the GOT relocation of the `DebugSetValue` code).
 * Input scripts (`INPUT_SCRIPT`, `platform/vita_input.cpp`): besides buttons / touch / sticks there is `<F> sync <map substring> [tap <btn> <period>]` (wait for a map, tapping meanwhile; later events are relative to that moment).
   `tools/padonly_to_cabin.txt` (boot -> New Game -> name -> cabin) and `tools/coverage/cave_walk.txt` (random walk + Cross taps, use with `warp=dab1 nodamage=1`) need no touch at all.
 * `PadFocus` (`game/PadFocus.cpp`): physical-button navigation of every MenuPortItem screen (see its header); `InputName` has its own pad path.

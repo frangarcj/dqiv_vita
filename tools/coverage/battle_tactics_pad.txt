@@ -1,0 +1,10 @@
+# Fight -> down (Party) -> left (Tactics) -> Cross opens the Tactics page; Cross picks the first entry; Circle twice leaves the page; up refocuses Fight; Cross taps fight to victory
+700 tap down
+712 tap left
+730 tap cross
+800 tap cross
+860 tap circle
+900 tap circle
+940 tap up
+980-2500/24 tap cross
+3000 quit

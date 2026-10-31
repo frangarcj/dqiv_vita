@@ -1,0 +1,7 @@
+#shots 450,700,900
+#dur 90
+delay 150
+eventinit 4
+town maout
+wait 150
+title

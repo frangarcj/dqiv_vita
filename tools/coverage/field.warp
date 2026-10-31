@@ -1,7 +1,7 @@
-#shots 450,600
+#shots 500,700
 #dur 80
 delay 150
-chapter 4
+eventinit 289
 field
-wait 40
-fieldpos 124 117
+wait 60
+fieldgetpos
