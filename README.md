@@ -14,9 +14,10 @@ A native PS Vita port of the Android version of *Dragon Quest IV: Chapters of th
 
 * **verified**: both libraries load and link with 0 unresolved imports, `JNI_OnLoad` of both succeeds, the converted pack opens (28 446 objects), the world-map tile patch is applied (`libdq4core` `FieldData::drawBlock`, 59 columns) and the widened world map was seen in play (full 960 px width);
   the title scene (logos, backdrop, start menu with Continue / Create a new adventure log / Delete / Licence / Cloud Save) in landscape with sound running (no underruns in the log).
-* **played with the physical buttons only** (no touch): Create a new adventure log -> slot list -> **hero name entry** (type with Cross, Triangle = shift, Square = delete, d-pad to Enter or Start) -> gender -> "Prologue" card -> the prologue basement and the hero's village (**the way out of the prologue was not found**, see docs/TODO_DQ4.md); Continue from the title (loads the last game);
+* **played with the physical buttons only** (no touch): Create a new adventure log -> slot list -> **hero name entry** (type with Cross, Triangle = shift, Square = delete, d-pad to Enter or Start) -> gender -> "Prologue" card -> the prologue basement and the hero's village (the prologue itself is left to the user's play test, see docs/TODO_DQ4.md); Continue from the title (loads the last game);
   from a `chapter 1` warp: the king's cutscene (Cross), the throne hall, Burland town, the exit to the world map and a **random battle fought to victory** with Cross (Fight, Attack, first target, messages); command menu (Items / Magic / Attributes / Misc. with Equipment, Line-up, Organise Items); the **area map** with Square (CityMap with the real Burland picture and its weapon-shop list, WorldLargeMap on the world map); camera rotation with L / R in a town; battle Party > Change One.
-* **not verified**: buying in a shop, an inn, a church / saving at one, opening a chest, entering a building by its door (the inn, church and shop interiors only rendered after a warp), the prologue exit, cutscenes beyond the first one, the staff roll, the Korean and Chinese languages, `layout=split`, performance and memory on a real console. Several in-game screens (shops, church, bank, casino games) were only screenshotted with sample data or through warps.
+  Round 2 (Burland from an `eventinit 6` warp, buttons only, 2-frame d-pad taps included): **talking with Cross** (it did nothing before: a port bug fixed, the DQ4 core only reads the 0x100 tap as the field "A"), **item and weapon stall: buy, equip on purchase, sell** (prices and the gold amount after a transaction not verified, see below), **church: Confession (Save) to slot 1 and Continue from the title back into the saved church**, **inn: stay with the night fade and "Good morning"**, entering the church and the inn by their real doors, pushing a pot, talking to a roaming villager, the command menu / Misc. submenu, party talk with the Chapter-5 party, and the sepia map shader forced with the dev cfg `fldsepia=1`.
+* **not verified**: money (the HUD shows `999999G` in every warped state and a purchase did not change it, so deduction and the sale price credit were not seen), **Quick Save** (greyed in the towns tried), opening a chest or a pot with content, the wagon, the prologue (it is left to the user's own play test; it is not tracked as a bug), cutscenes beyond the first one, the staff roll, the Korean and Chinese languages, `layout=split`, performance and memory on a real console. The bank, casino games and the monster arena were only screenshotted or warped.
 * the developer cheats and warp harness (`DevCheats`, `WarpTest`, `BattleTest`) work in DQ4 (see "Warp harness and Coverage" below); `layout=portrait` and `battle_layout=band` were seen in a battle, the other battle/dialogue options were carried over from the DQ5 port and not re-checked.
 
 See [DEVELOPERS.md](DEVELOPERS.md) and [docs/TODO_DQ4.md](docs/TODO_DQ4.md) for the details and the open items.
@@ -100,7 +101,7 @@ Mapping of the Vita buttons to the original pad bits (`source/platform/vita_inpu
 | Button | Field | Menus and screens |
 |---|---|---|
 | D-pad / left stick | move | move the focus (yellow frame); in battle it picks the command |
-| Cross | talk / check (A) when facing an NPC, a chest, a door | press the focused button (confirm) |
+| Cross | talk / check (A) when facing an NPC, a shop clerk across the counter, a pot, a door (sent to the DQ4 core as the touch tap, the only bit its field logic reads for A) | press the focused button (confirm) |
 | Circle | party talk (B) | cancel / Back (on screens that have a Back button) |
 | Triangle | command menu (X): Items, Magic, Attributes, Misc. | Name entry: Shift |
 | Square | area map (Y): town map, or the world map outside towns | Name entry: Delete |
@@ -151,7 +152,11 @@ Last full run (2026-10-31, main after the pad-play work, Vita3K, muted): **all 2
 | random encounters | cfg `warp=dab1 nodamage=1 noencount=1 heropos=1` + `cave_walk.txt` | earlier run: 2200 frames in the Imuru cave, no battle with `noencount`; a real random encounter without it |
 | cheats | cfg `gold=12345 party_level=20 party_hp=500 ...` | earlier run: read-back `player N hpmax 500 mpmax 100`, `noencount armed`; gold is only logged |
 
-Not reachable by warp: the monster arena (entered from the casino town scripts), the bank, ships and balloons; shop / inn / church screens need the NPC dialogue (a warp into `hay1f1` inn, `hak1f1` church, `ham1f1` shop only places the hero at the default tile; `ham1f1` shows the hero outside the drawn room).
+| **pad play, Burland** (`eventinit 6`, `town haout`) | `play_itemshop` `play_weaponshop` `play_church` `play_load` `play_inn` `play_misc` | OK (looked at): shop buy / equip / sell dialogues, church save + load back from the title, inn night fade, pot, roaming villager, command menu with 2-frame taps |
+| Chapter-5 party talk, command menu, world map | `play_ch5` | OK (looked at) |
+| sepia map shader | `play_sepia` with `CFG_EXTRA='fldsepia=1'` | OK: Burland in sepia, trees intact |
+
+Not reachable by warp: the monster arena (entered from the casino town scripts), the bank, ships and balloons. Shop / inn / church dialogues are reached by walking up to the NPC and pressing Cross (`play_*` scenarios; Burland's shops are stalls on the street of `haout`; `ham1f1` has no script in the OBB, it is not a shop).
 
 
 ### Debug options (testers)
@@ -164,15 +169,16 @@ Keys in `ux0:data/dqiv/config.txt` (all slots) or `dqivn<slot>.cfg`, inert unles
 | `party_level=N` | same moment: every player to level N (`DebugSetValue(11, N, 0)`) |
 | `party_hp=N` / `party_mp=N` | same moment: max HP / MP of every player, then a full heal |
 | `warp=<map>` | after boot, load the story event of `warp_chapter=N` (1..5, default 1: party, level, items, flags of that chapter's start) and start in map `<map>` (`warp_delay=F`, default 150 frames); map short names: `tools/coverage/maps.txt`, e.g. `maout` (Imuru village), `dab1` (Imuru cave), `caf1` (Burland castle), `mhg1n1` (chapter 4 start) |
-| `heropos=1` | log `CHARA0 pos` (hero position as sent by the native) whenever it changes |
+| `heropos=1` | log `CHARA0 pos` (hero position as sent by the native) and `CHARA0 pattern` (facing) whenever they change; `heropos=2` also logs every character slot (`CHARA<n> pos`, NPCs) and `CHARA_LOAD` |
+| `fldsepia=1` | 90 frames after a town loads, swap the map materials to their `_sepia` shaders (what the native `fld_color` command does in flashback scenes) |
 
 ## Open problems / next steps
 From [docs/TODO_DQ4.md](docs/TODO_DQ4.md) (the authoritative list):
 
-* Find the way out of the prologue by pad (docs/TODO_DQ4.md) and play Chapter 1 to the first dungeon without warps; shops, inn, church (save), chests and doors of real buildings were never operated by pad.
+* The prologue and Chapter 1 to the first dungeon are left to the user's own play test (the agents start from warps and saves). Still unverified by pad: gold deduction in shops (the warp state shows 999999G), Quick Save (greyed), chests with items, the wagon.
 * Real-hardware test (never done); sound only checked through log lines.
 * Not ported (not needed so far): `MainLoopEx/FadeEx/MenuPortSystemEx` (non-NEON path) and the virtual-pad code of `TouchPad` (physical buttons replace the virtual pad).
-* `Sepia` (the screen effect) does not exist in DQ4, but the `fld_*_sepia` map shaders and `dqiv_sepia_fld` are used by the native `fld_color` command, so they stay; they were never seen on screen.
+* `Sepia` (the screen effect) does not exist in DQ4, but the `fld_*_sepia` map shaders and `dqiv_sepia_fld` are used by the native `fld_color` command, so they stay; forced with `fldsepia=1` they render correctly in Burland (not seen from a real flashback scene).
 
 ## Build (developers)
 You need a standard (hardfp) [vitasdk](https://github.com/vitasdk) and these packages (`vdpm`):
