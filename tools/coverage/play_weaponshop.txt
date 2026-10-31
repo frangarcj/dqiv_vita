@@ -1,0 +1,39 @@
+# PAD ONLY: weapon stall (left of the road): Buy Oaken club, Ragnar, equip now, leave the list with Circle, Sell (2-frame right tap), Ragnar, Oaken club, confirm.
+0 sync haout
+30 walk 0 -9 0.4 400
+40 walk 0 -14 0.4 300
+50 walk -3.4 -14 0.3 300
+60 tap up 40
+120 tap cross 4
+190 shot wshop_talk
+200 tap cross 4
+270 shot wshop_doWhat
+280 tap cross 4
+350 shot wshop_buyq
+360 tap cross 4
+430 shot wshop_list
+440 tap cross 4
+510 shot wshop_pick
+520 tap cross 4
+590 shot wshop_equipq
+600 tap cross 4
+670 shot wshop_equipped
+680 tap cross 4
+750 shot wshop_else
+760 tap circle 4
+830 shot wshop_list_again
+840 tap circle 4
+910 shot wshop_anything
+920 tap cross 4
+990 shot wshop_doWhat2
+1000 tap right 2
+1070 shot wshop_sellfocus
+1080 tap cross 4
+1150 shot wshop_sell1
+1160 tap cross 4
+1230 shot wshop_sell2
+1240 tap cross 4
+1310 shot wshop_sell3
+1320 tap cross 4
+1390 shot wshop_sell4
+1400 log END

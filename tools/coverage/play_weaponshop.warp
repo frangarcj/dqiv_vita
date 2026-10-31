@@ -1,0 +1,7 @@
+#dur 240
+#input play_weaponshop.txt
+delay 150
+chapter 1
+eventinit 6
+town haout
+noencount 1

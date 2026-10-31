@@ -1,0 +1,6 @@
+# needs CFG_EXTRA='fldsepia=1' (dev cfg): the native fld_color command's sepia map shaders forced on Burland
+0 sync haout
+150 shot s_sepia
+160 walk 0 -9 0.4 300
+170 shot s_sepia_walk
+200 log END

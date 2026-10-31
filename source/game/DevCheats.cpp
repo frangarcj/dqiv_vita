@@ -22,13 +22,16 @@ int HeroPosLog() { static int v = -1; if (v < 0) v = Cfg::GetInt("heropos", 0); 
 namespace {
 class DevDriver : public Component {
 public:
-  bool applied = false; int sinceScene = 0; std::string lastScene; int tick = 0;
+  bool applied = false; int sinceScene = 0; std::string lastScene; int tick = 0, sepiaWait = 0; bool sepiaDone = false;
   void Update() override {
     if (!MainLoop::s_ready) return;
     // both flags live in native state that EventInit / Encount::initialize rewrite: re-arm them (cheap calls)
     if (Cfg::GetInt("nodamage", 0) && (tick % 30) == 0) DevHooks::SetNoDamage(true);
     if (Cfg::GetInt("noencount", 0) && (tick % 60) == 0) { DevHooks::SetNoEncount(true); if (tick == 0) l_info("cheat: noencount armed, encounters %s", DevHooks::NoEncountActive() ? "off" : "STILL ON"); }
     tick++;
+    if (Cfg::GetInt("fldsepia", 0) && NativeManager::s_sceneName != "(title)" && NativeManager::s_sceneName.find("ev01") == std::string::npos && !sepiaDone && ++sepiaWait == 90) {   // test of the fld_*_sepia shaders: what the native's fld_color command does in flashback scenes
+      sepiaDone = true; NativeManager::m_fld.calculateExecSepia(); l_info("cheat: fldsepia applied to %s", NativeManager::s_sceneName.c_str());
+    }
     if (!applied) {
       const std::string& sc = NativeManager::s_sceneName;
       if (sc != lastScene) { lastScene = sc; sinceScene = 0; }
@@ -64,7 +67,7 @@ void Create() {
     l_warn("DevCheats: DISABLED (NativeCall::kDevHooksVerified=false)");
     return;
   }
-  bool any = Cfg::GetInt("nodamage", 0) || Cfg::GetInt("noencount", 0) || Cfg::Has("gold") || Cfg::Has("party_hp") || Cfg::Has("party_mp") || Cfg::Has("party_level");
+  bool any = Cfg::GetInt("nodamage", 0) || Cfg::GetInt("noencount", 0) || Cfg::Has("fldsepia") || Cfg::Has("gold") || Cfg::Has("party_hp") || Cfg::Has("party_mp") || Cfg::Has("party_level");
   if (any) {
     GameObject* g = new GameObject("DevCheats");
     g->AddComponent<DevDriver>();

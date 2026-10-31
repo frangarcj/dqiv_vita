@@ -1,0 +1,31 @@
+# PAD ONLY: church by its real door (hak1f1): talk to the priest, Confession (Save), slot 1, overwrite, wait for the save jingle (sound is not in step under TURBO: long wait), recorded message. Run play_load afterwards.
+0 sync haout
+30 walk 0 -9 0.4 400
+40 walk 0 -15.2 0.4 300
+50 walk -7.6 -15.2 0.3 400
+70 tap up 90
+180 sync hak1f1
+200 walk 0 1.1 0.15 400
+210 shot church_priest
+220 tap cross 4
+290 shot church_talk
+300 tap cross 4
+370 shot church_menu
+380 tap cross 4
+450 shot church_confess
+460 tap cross 4
+530 shot church_permit
+540 tap cross 4
+610 shot church_whichlog
+620 tap cross 4
+690 shot church_slots
+700 tap cross 4
+770 shot church_overwrite
+780 tap cross 4
+850 shot church_saving
+2060 shot church_jingle
+2070 tap cross 4
+2170 shot church_after1
+2180 tap cross 4
+2280 shot church_after2
+2290 log END

@@ -1,0 +1,32 @@
+# PAD ONLY: pot next to the weapon stall (Cross: 'fld_common_anim' + se_play packets, empty pot so no text), roaming villager (`walk @12`), command menu with 2-frame d-pad taps down to the Misc. submenu (Quick Save stays greyed).
+0 sync haout
+30 walk 0 -9 0.4 400
+40 walk 0 -13.9 0.4 300
+50 walk -5.4 -13.9 0.3 400
+60 tap up 40
+110 shot misc_pot_bump
+120 tap cross 4
+135 shot misc_pot_1
+150 shot misc_pot_2
+420 walk -7.6 -15.2 0.4 300
+430 walk @12 1.2 500
+440 shot misc_vil_adj
+450 tap cross 4
+500 shot misc_vil_talk
+600 tap cross 4
+680 shot misc_vil_end
+700 tap triangle 4
+760 shot misc_cmd
+770 tap right 2
+820 shot misc_cmd_right
+830 tap down 2
+880 shot misc_cmd_down
+890 tap cross 4
+960 shot misc_sub
+970 tap down 2
+1020 shot misc_sub_d1
+1030 tap down 2
+1080 shot misc_sub_d2
+1090 tap down 2
+1140 shot misc_sub_d3
+1150 log END

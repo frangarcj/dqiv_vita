@@ -1,0 +1,33 @@
+0 sync maout
+60 shot ch5_t_town
+70 tap circle 4
+110 shot ch5_t_pt40
+170 shot ch5_t_pt100
+230 shot ch5_t_pt160
+270 tap cross 4
+340 shot ch5_t_pt2
+350 tap cross 4
+420 shot ch5_t_pt3
+430 tap cross 4
+500 shot ch5_t_pt4
+510 tap triangle 4
+570 shot ch5_t_menu
+580 tap right 2
+620 tap down 2
+660 tap cross 4
+730 shot ch5_t_misc
+740 tap circle 4
+800 shot ch5_t_misc_closed
+900 sync worldmap
+960 shot ch5_f_world
+970 tap triangle 4
+1030 shot ch5_f_menu
+1040 tap right 2
+1080 tap down 2
+1120 tap cross 4
+1190 shot ch5_f_misc
+1200 tap down 2
+1240 shot ch5_f_d1
+1250 tap down 2
+1290 shot ch5_f_d2
+1300 log END

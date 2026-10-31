@@ -1,0 +1,8 @@
+# PAD ONLY from a cold start (no warp): TapToStart, Continue your adventure, slot 1, then the church map where play_church saved. Needs the save written by play_church
+# (ux0:data/dqiv/saves<slot>/data1.dat). Cross is tapped every 45 frames until the map is up (closed loop: robust to TURBO load times); shots by `#shots` frames.
+0 log load_back_from_title
+0 autotap cross 45
+1 sync hak1f1
+60 autotap cross 0
+90 shot load_church
+200 shot load_church2

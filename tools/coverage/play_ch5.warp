@@ -1,0 +1,10 @@
+#dur 600
+#input play_ch5.txt
+delay 150
+eventinit 289
+town maout
+nodamage 1
+noencount 1
+wait 1500
+field
+noencount 1

@@ -14,6 +14,7 @@ for n in "${NAMES[@]}"; do
   DUR=$(sed -n 's/^#dur //p' "$W" | head -1); DUR=${DUR:-60}
   INP=$(sed -n 's/^#input //p' "$W" | head -1)
   grep -v '^#shots\|^#dur\|^#input' "$W" > "$FS/warp$SLOT.on"
+  [ -s "$FS/warp$SLOT.on" ] || rm -f "$FS/warp$SLOT.on"      # a scenario without warp lines starts from the title (cold start, e.g. play_load)
   if [ -n "$INP" ]; then export INPUT_SCRIPT="$HERE/tools/coverage/$INP"; else unset INPUT_SCRIPT; fi
   rm -rf "$OUT/$n"; mkdir -p "$OUT/$n"
   VITA3K_MUTE=1 timeout $((DUR+1800)) "$HERE/tools/run_vita3k.sh" "$DUR" "$SHOTS" > "$OUT/$n/run.out" 2>&1

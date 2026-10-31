@@ -1,0 +1,59 @@
+# PAD ONLY: inn (big red house, door found by walking into its south-west corner): talk to the innkeeper across his counter, 'Will you be staying?' Yes, night fade shots every 8 frames, 'Good morning'.
+0 sync haout
+30 walk 0 -9 0.4 400
+40 walk 0 -15.2 0.4 300
+50 walk 0 -18.3 0.3 120
+60 walk -0.8 -19.4 0.2 200
+70 sync hay1f1
+100 walk -1.6 -0.4 0.3 100
+110 walk 0.5 2.9 0.2 300
+130 tap right 30
+170 tap cross 4
+230 shot inn_talk
+270 tap cross 4
+330 shot inn_welcome
+370 tap cross 4
+430 shot inn_rate
+470 tap cross 4
+480 shot inn_yes_010
+490 shot inn_yes_020
+500 shot inn_yes_030
+510 shot inn_yes_040
+520 shot inn_yes_050
+530 shot inn_yes_060
+540 shot inn_yes_070
+550 shot inn_yes_080
+560 shot inn_yes_090
+570 shot inn_yes_100
+590 tap cross 4
+598 shot inn_fade_008
+614 shot inn_fade_024
+630 shot inn_fade_040
+646 shot inn_fade_056
+662 shot inn_fade_072
+678 shot inn_fade_088
+694 shot inn_fade_104
+710 shot inn_fade_120
+726 shot inn_fade_136
+742 shot inn_fade_152
+758 shot inn_fade_168
+774 shot inn_fade_184
+790 shot inn_fade_200
+806 shot inn_fade_216
+822 shot inn_fade_232
+838 shot inn_fade_248
+854 shot inn_fade_264
+870 shot inn_fade_280
+886 shot inn_fade_296
+902 shot inn_fade_312
+918 shot inn_fade_328
+934 shot inn_fade_344
+950 shot inn_fade_360
+966 shot inn_fade_376
+982 shot inn_fade_392
+998 shot inn_fade_408
+1014 shot inn_fade_424
+1030 shot inn_fade_440
+1046 shot inn_fade_456
+1062 shot inn_fade_472
+1090 log END
