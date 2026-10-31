@@ -64,7 +64,8 @@ std::string MenuPort::Param::Dump() const {
 MenuPort* MenuPort::CreateMenuPort(short port, short catego, short type) {
   MenuPort* result = nullptr;
   bool boot = UiCameras::BootEnabled() && catego == 1 && UiCameras::IsBootScreen(type);       // landscape start flow: centred panel (UiCameras.hpp)
-  UiCameras::s_creatingBoot = boot;
+  bool chapterCard = !boot && catego == 1 && type == 12 && UiCameras::BootEnabled();         // chapter / episode title card (Make_Chapter, Menu/map/hyodai1): centred on the surface like the start flow, but NOT counted as a boot port (a counted one would move the message window to the boot layer while it lives)
+  UiCameras::s_creatingBoot = boot || chapterCard;
   switch (catego) {
     case 1: result = MenuPortItemTable::CreateMenuPortItem(port, type); break;
     case 2: result = new MenuMessage(port); break;
@@ -76,6 +77,7 @@ MenuPort* MenuPort::CreateMenuPort(short port, short catego, short type) {
   if (result) {
     int layer = 8;
     if (boot) { layer = UiCameras::kBootLayer; result->m_bootCounted = true; UiCameras::s_bootPorts++; }
+    else if (chapterCard) layer = UiCameras::kBootLayer;
     else if (catego == 1 && type == 1 && UiCameras::BootPhase()) layer = UiCameras::kBootLayer;                 // Yes/No inside the start flow (SaveOverwrite...)
     else if (UiCameras::DialogueEnabled() && (catego == 2 || (catego == 1 && type == 1))) layer = UiCameras::kDialogueLayer;   // message window / Yes/No: bottom-centre
     if (layer != 8) {
