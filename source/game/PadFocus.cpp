@@ -80,10 +80,17 @@ static Vector3 Pos(MenuParts* b) { Vector3 p = b->transform()->position(); retur
 static bool HasButtons(MenuPortItem* it) { for (MenuParts* b : it->m_buttonList) if (Usable(b)) return true; return false; }
 
 void BeginFrame() {
-  s_live.clear();
+  std::vector<MenuPortItem*> prevLive; prevLive.swap(s_live);
   s_ownsNow = false;
   if (s_owner && (TouchPad::m_toggle & 0x400)) {                   // Circle: the owner's cancel button (MenuPortItem::Update handles m_bToggleESC)
-    for (MenuParts* b : s_owner->m_buttonList) if ((b->m_gamepad == 32 || b->m_gamepad == 1024) && Usable(b)) { TouchPad::m_bToggleESC = true; break; }
+    bool found = false;
+    for (MenuParts* b : s_owner->m_buttonList) if ((b->m_gamepad == 32 || b->m_gamepad == 1024) && Usable(b)) { TouchPad::m_bToggleESC = true; found = true; break; }
+    // DQ4 CityMap / WorldLargeMap: the owner is the whole-window tap button (ids -1, codes 1/2) and the Back button sits on a second live port: use that one
+    if (!found) for (MenuPortItem* it : prevLive) {
+      if (it == s_owner) continue;
+      for (MenuParts* b : it->m_buttonList) if ((b->m_gamepad == 32 || b->m_gamepad == 1024) && Usable(b)) { TouchPad::m_bToggleESC = true; found = true; break; }
+      if (found) break;
+    }
   }
 }
 void Register(MenuPortItem* item) { s_live.push_back(item); }
@@ -150,7 +157,7 @@ static MenuParts* ByGamepad(MenuPortItem* it, int code) {
 static void DebugLive() {
   static std::string last;
   std::string cur;
-  for (MenuPortItem* it : s_live) { int n = 0; for (MenuParts* b : it->m_buttonList) if (Usable(b)) n++; char buf[96]; snprintf(buf, sizeof(buf), "[p%d t%d pad%d can%d act%d btn%d]", (int)it->m_port, (int)it->m_type, (int)it->m_bPad, (int)it->m_bCancel, (int)it->m_bActive, n); cur += buf; }
+  for (MenuPortItem* it : s_live) { int n = 0; std::string g; for (MenuParts* b : it->m_buttonList) if (Usable(b)) { n++; char gb[24]; snprintf(gb, sizeof(gb), " i%d:g%d", (int)b->m_buttonId, (int)b->m_gamepad); g += gb; } char buf[96]; snprintf(buf, sizeof(buf), "[p%d t%d pad%d can%d act%d btn%d%s]", (int)it->m_port, (int)it->m_type, (int)it->m_bPad, (int)it->m_bCancel, (int)it->m_bActive, n, g.c_str()); cur += buf; }
   if (cur != last) { last = cur; l_debug("PadFocus live: %s", cur.c_str()); }
 }
 void EndFrame() {
