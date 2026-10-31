@@ -40,4 +40,25 @@ bool PatchFieldBlock() {
   return true;
 }
 
+// status::BasePartyStatus::setGold / addGold of this libdq4core build compare the wrong way round (`cmp r2, r1` / `cmp r1, r3` with the 999998 limit on the left), so any amount below the limit
+// becomes 999999 and shops never charge. libdq5core and libdq4core's own setBankMoney / addBankMoney show the normal form; a scan of the whole core finds no other limit compared like this.
+// Restore the two words; a build that already has the normal form is left alone.
+void RestoreGoldLimit() {
+  static const uint32_t kSetGold = 0x108af8;
+  uintptr_t sg = loader_symbol("dq4core", "_ZN6status15BasePartyStatus7setGoldEj");
+  if (!sg) { l_warn("RestoreGoldLimit: BasePartyStatus::setGold not found"); return; }
+  uintptr_t base = sg - kSetGold;
+  const Site sites[] = {
+    { 0x108b10, 0xe1520001u, 0xe1510002u },   // setGold: cmp r2, r1 -> cmp r1, r2
+    { 0x108b3c, 0xe1510003u, 0xe1530001u },   // addGold: cmp r1, r3 -> cmp r3, r1
+  };
+  for (const Site& s : sites) if (*(volatile uint32_t*)(base + s.vaddr) != s.expect) { l_info("RestoreGoldLimit: word %08x at +%x is not the expected one, not patching", *(volatile uint32_t*)(base + s.vaddr), s.vaddr); return; }
+  for (const Site& s : sites) {
+    uint32_t w = s.repl;
+    kuKernelCpuUnrestrictedMemcpy((void*)(base + s.vaddr), &w, sizeof(w));
+    kuKernelFlushCaches((void*)(base + s.vaddr), 4);
+  }
+  l_success("gold limit comparison restored (setGold / addGold)");
+}
+
 }  // namespace NativeCall
