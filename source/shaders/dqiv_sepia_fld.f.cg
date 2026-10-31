@@ -3,7 +3,7 @@
 float4 main(float2 vTex : TEXCOORD0, float4 vColor : COLOR0, uniform sampler2D tex : TEXUNIT0, uniform float atest) : COLOR
 {
   float4 c = tex2D(tex, vTex) * vColor;
-  if (atest > 0.5 && c.w == 0.0) discard;
+  clip((atest > 0.5 && c.w < 0.002) ? -1.0 : 1.0);     // clip() instead of discard: libshacccg miscompiled `discard` in dqiv_sleep.f.cg (every fragment was killed)
   float l = dot(c.xyz, float3(0.299, 0.587, 0.114));
   return float4(l + 0.109375, l - 0.0546875, l, c.w);
 }

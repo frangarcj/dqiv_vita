@@ -1,0 +1,8 @@
+#shots 450,520,600,700,800,900
+#dur 110
+#input world_walk.txt
+delay 150
+eventinit 289
+field
+wait 60
+fieldgetpos

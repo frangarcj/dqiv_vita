@@ -1,0 +1,6 @@
+# world map walk (pad only): after the warp's `field` the party stands on the world map
+0 log world walk
+520 down right
+600 up right
+600 down down
+700 up down

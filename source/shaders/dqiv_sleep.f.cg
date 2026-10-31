@@ -1,8 +1,11 @@
-// CharaSleep: c = tex * _Color; discard if c.a == 0 (atest 1)   CharaSleepEx pass 0: discard if c.a != 1 (atest 2)
+// CharaSleep: c = tex * _Color; alpha test GREATER 0 (atest 1).  CharaSleepEx pass 0: keep only a == 1 (atest 2).
+// NOTE: the Vita Cg compiler (libshacccg) miscompiles `if (cond) discard;` here (every fragment was killed): clip() is used instead.
 float4 main(float2 vTex : TEXCOORD0, float4 vColor : COLOR0, uniform sampler2D tex : TEXUNIT0, uniform float atest) : COLOR
 {
   float4 c = tex2D(tex, vTex) * vColor;
-  if (atest > 0.5 && atest < 1.5 && c.w == 0.0) discard;
-  if (atest > 1.5 && c.w != 1.0) discard;
+  float keep = 1.0;
+  if (atest > 1.5) keep = (c.w > 0.999) ? 1.0 : -1.0;
+  else if (atest > 0.5) keep = (c.w > 0.002) ? 1.0 : -1.0;
+  clip(keep);
   return c;
 }

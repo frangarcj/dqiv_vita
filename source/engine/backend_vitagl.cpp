@@ -5,6 +5,7 @@
 // GL-state hygiene (01 §5): libdq4core's TextCanvasTransfer (UnityRenderEvent) binds its own texture and changes the error state;
 // every Draw() re-binds its texture and sets the full state, nothing is cached across draws.
 #include "engine/backend.hpp"
+#include "platform/cfg.hpp"
 #include "config.h"
 #include "pack/dqiv_pack.h"
 #include "utils/logger.h"
@@ -273,6 +274,7 @@ static bool LoadCg(int i) {
   for (int k = 0; k < 4; k++) { c.uMvp[k] = glGetUniformLocation(p, mvpn[k]); c.uSlp[k] = glGetUniformLocation(p, slpn[k]); c.uVp[k] = glGetUniformLocation(p, vpn[k]); }
   c.uSt = glGetUniformLocation(p, "st"); c.uTint = glGetUniformLocation(p, "tint");
   c.uBright = glGetUniformLocation(p, "brightness"); c.uAtest = glGetUniformLocation(p, "atest");
+  _log_print(LT_INFO, "CG program %s: uniforms mvp0 %d slp0 %d vp2 %d st %d tint %d atest %d", kCgName[i], c.uMvp[0], c.uSlp[0], c.uVp[2], c.uSt, c.uTint, c.uAtest);
   return true;
 }
 
@@ -392,7 +394,8 @@ void Draw(const DrawCall& dc) {
 
   ApplyPassState(ps);
 
-  if (ps.op == OP_GRAY || ps.op == OP_SEPIA_FLD || ps.op == OP_SLEEP) {
+  static const bool sleepCg = Cfg::GetInt("sleep_cg", 1) != 0;     // cfg sleep_cg=0: draw CharaSleep with the fixed-function MODULATE fallback (debug)
+  if (ps.op == OP_GRAY || ps.op == OP_SEPIA_FLD || (ps.op == OP_SLEEP && sleepCg)) {
     if (DrawCg(dc, ps, s, ps.op == OP_GRAY ? 0 : ps.op == OP_SEPIA_FLD ? 1 : 2)) return;
   }
   // ---- matrices (model; view/projection were loaded by BeginCamera). Clip-space shaders ignore all of them.

@@ -179,6 +179,9 @@ target_link_libraries(${CMAKE_PROJECT_NAME}
                       )
 
 # precompiled CharaSleep program (generated once by a runtime compile in Vita3K, see source/engine/backend_vitagl.cpp LoadCg); optional until it exists
+if(EXISTS ${CMAKE_SOURCE_DIR}/extras/cg/dqiv_sepia_fld.bin)
+  set(DQIV_SEPIA_BLOB ${CMAKE_SOURCE_DIR}/extras/cg/dqiv_sepia_fld.bin cg/dqiv_sepia_fld.bin)
+endif()
 if(EXISTS ${CMAKE_SOURCE_DIR}/extras/cg/dqiv_sleep.bin)
   set(DQIV_SLEEP_BLOB ${CMAKE_SOURCE_DIR}/extras/cg/dqiv_sleep.bin cg/dqiv_sleep.bin)
 endif()
@@ -192,7 +195,7 @@ vita_create_vpk(${VITA_VPKNAME}.vpk ${VITA_TITLEID} eboot.bin
                 ${CMAKE_SOURCE_DIR}/extras/livearea/bg0.png sce_sys/livearea/contents/bg0.png
                 ${CMAKE_SOURCE_DIR}/extras/livearea/template.xml sce_sys/livearea/contents/template.xml
                 ${CMAKE_SOURCE_DIR}/extras/cg/dqiv_gray.bin cg/dqiv_gray.bin
-                ${CMAKE_SOURCE_DIR}/extras/cg/dqiv_sepia_fld.bin cg/dqiv_sepia_fld.bin
+                ${DQIV_SEPIA_BLOB}
                 ${DQIV_SLEEP_BLOB}
                 )
 
