@@ -46,6 +46,7 @@ MeshChara* NativeManager::m_dssa[24];
 FbxObject* NativeManager::m_model[16];
 NativeManager::FrameStats NativeManager::s_stats;
 static int s_frame = 0;
+static Vector3 s_heroPos; static bool s_heroPosValid = false;      // last position the native sent for character slot 0 (input script `walk`)
 
 NativeManager::NativeCmd NativeManager::m_cmd_tbl[NUM_CMDS] = {
   cmd_fld_load, cmd_fld_color, cmd_fld_alpha, cmd_fld_pos, cmd_fld_rot, cmd_fld_common_anim, cmd_fld_event_anim, cmd_fld_on_off, cmd_back_color, cmd_fade,
@@ -177,6 +178,7 @@ void NativeManager::cmd_chara() {
   if (btst(num, 8192)) {
     Vector3 v = GetVector3();
     if (chara) { chara->SetPosition(v); chara->m_billboard_request = true; }
+    if ((num & 0xFF) == 0) { s_heroPos = v; s_heroPosValid = true; }
     if ((num & 0xFF) == 0 && DevCheats::HeroPosLog()) { static Vector3 s_last; if ((v - s_last).magnitude() > 0.001f) { l_info("CHARA0 pos f%d (%.3f, %.3f, %.3f)", s_frame, v.x, v.y, v.z); s_last = v; } }   // hero position as sent by the native (walk tests)
   }
   if (btst(num, 16384)) { int n2 = GetInt(); if (chara) chara->SetPattern(n2 & 0xFF, n2 >> 8); }
@@ -435,4 +437,5 @@ void NativeManager::Update(int padPress, int padToggle) {
   if (Sound::s_state != 0) Sound::SystemUpdate();
 }
 
+bool DqvHeroPos(float* x, float* y, float* z) { if (!s_heroPosValid) return false; *x = s_heroPos.x; *y = s_heroPos.y; *z = s_heroPos.z; return true; }
 const char* DqvCurrentScene() { return NativeManager::s_sceneName.c_str(); }       // input script `sync` command (platform/vita_input.cpp)

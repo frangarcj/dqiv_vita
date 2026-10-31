@@ -87,6 +87,7 @@ static const struct { const char* alias; const char* name; } k_alias[] = {
 const ShaderDesc* FindShader(const char* name) {
   for (const ShaderDesc& d : k_table)
     if (!strcasecmp(d.name, name)) return &d;
+  if (!strcasecmp(name, "Diffuse")) return &k_default;          // Unity's built-in default shader (pack materials of the FBX importer): intentional, not an unknown shader
   for (const auto& a : k_alias)
     if (!strcasecmp(a.alias, name))
       for (const ShaderDesc& d : k_table) if (!strcasecmp(d.name, a.name)) return &d;
