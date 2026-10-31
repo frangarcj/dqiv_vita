@@ -22,8 +22,21 @@
 2010 up up
 2020 log arrived outside the castle (mlout1)
 2150 down down
-2200 up down
-2200 down left
-2380 up left
-2380 down down
-2500 up down
+2450 up down
+2450 down left
+2550 up left
+2550 down down
+2850 up down
+2850 down right
+2950 up right
+2950 down down
+3250 up down
+3250 down left
+3350 up left
+3350 down down
+3650 up down
+3650 down right
+3800 up right
+3800 down down
+4100 up down
+2200-4200/70 tap cross

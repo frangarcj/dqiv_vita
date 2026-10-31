@@ -12,7 +12,7 @@
 | `Endroll*`, `SlimeTouch*` | no such classes in DQ4 | files deleted (FxTest keeps only the effects that exist) |
 
 ## Still in the tree but dead for DQ4 (remove when you touch them)
-`Spotlight`, `Sepia` (screen effect class; the DQ4 FLD sepia *shaders* exist), `Volcano` (used by `FieldSymbol`), `CgController` (was in SlimeTouch, gone), `Capture::ScreenEffect` still has the DQ5 spotlight sub-commands (reads `NativeManager::GetFloatEx`), `MenuPortItemTable::Make_SlimeTouch_*`, `PadFocus`/`Layout` hooks that name DQ5 screens.
+(done by the world/sprite package: `Spotlight`, `Sepia`, `Volcano` deleted, `Capture::ScreenEffect` without the spotlight/sepia sub-commands.)
 
 ## Packet / opcode differences found (NativeManager.cs, 38 vs 41 commands)
 DQ5 ops removed in DQ4: 8 `fld_etc`, 28 `mesh_ortho`, 40 `particle`. DQ4 numbering (every later op shifts down): 0 fld_load 1 fld_color 2 fld_alpha 3 fld_pos 4 fld_rot 5 fld_common_anim 6 fld_event_anim 7 fld_on_off
@@ -49,3 +49,10 @@ world maps `Menu/map/DSDQ4WMap01(m)` + `DSDQ4LMap0_1024` instead of `Menu/map/DQ
 
 ## Shaders (DQ4 pack: 45 shader objects)
 Not in DQ4: Sepia, Pre/Post-Spotlight, Particle, FieldVolcano, DssaNormal, Bssa*, ImdShadeChara(2), Field_iOS (table entries and the `dqiv_sepia_scr` CG program removed). New in DQ4: `Custom/CharaSleep`, `Custom/CharaSleepEx` (Chara lying pose): vertex `clip.xy = (mvp*v).xy`, `clip.zw = (VP * _sleepMatrix * v).zw`; implemented as `OP_SLEEP` with the CG programs `source/shaders/dqiv_sleep.{v,f}.cg` (blob `extras/cg/dqiv_sleep.bin`, same mechanism as gray / sepia_fld; fixed-function MODULATE fallback if the blob is missing and libshacccg is absent).
+
+
+## World / sprite package status (Chara, Field, FldObject, Sound, Capture, Staffroll, shaders)
+* Delta-ported from the C# diff: `Chara` (older 4/8-row meshes, sprite size from the texture, lying pose via `Custom/CharaSleep(Ex)`), `Field` (host-side tile UVs, `UpdatePattern`, `SystemInit` material), `FldObject` (`rotateXZY` order Y*Z*X, per-frame `update_material_color`, ev02 flags, no `FixProblems`), `FieldSymbol` (21 symbols), `Riseup` (single shader), `FbxObject` (id 10 scale 0.4), `MeshChara` (4 shaders, no texture scale/offset), `Sound` (`s_state`/`s_bgmNext` jingle machine, SE 307 bank, 1171 volumes), `Capture` (no spotlight/sepia, flag order), `NetConnection` (only cloud names/xor changed: the offline stub is unaffected), `Staffroll` + `StaffrollPort` (category 3).
+* Title (ev01): the cloud layer is a 3 x 4 grid of 1 x 1 unit cells of one 256 px tile (by design a repeating cloud texture) on a plane only 34 units wide, made for the 0.75 portrait view; in landscape its edge showed as a slanted black wedge when the camera moves. `FldObject::s_skyStretch` (set by `NativeManager::cmd_fld_load` in landscape) stretches object 0 of `ev/ev01` horizontally by surfaceAspect/0.75 (2.35), so the view shows the same 1.3 x 2 tiles as the portrait original and no edge. `MeshChara` lost the DQ5 `(1,-1)`/`(0,1)` texture scale, `rotateXZY` was DQ5's order.
+* Cg: `if (...) discard;` is miscompiled by libshacccg in `dqiv_sleep.f.cg` (every fragment was killed, verified with debug outputs); `clip()` works. `dqiv_sepia_fld.f.cg` was switched to `clip()` too (blob regenerated, not visually tested: no sepia scene was reached). `cfg sleep_cg=0` draws the sleeping sprites with the fixed-function fallback.
+* Language: `lang=` accepts en, ko, zh-tw, zh-cn only (the OBB has `msg/{en,ko,sl,tl}`).
