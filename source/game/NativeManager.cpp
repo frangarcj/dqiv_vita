@@ -160,6 +160,7 @@ void NativeManager::cmd_chara_load() {
   if ((unsigned)num >= 40) { l_error("cmd_chara_load: bad slot %d", num); return; }
   if (num2 >= 0) {
     Chara* chara = new Chara(num2 & 0xFFF);
+    if (DevCheats::HeroPosLog() >= 2) l_info("CHARA_LOAD slot %d id %d", num, num2 & 0xFFF);
     if (btst(num2, 4096)) { chara->m_billboard_request = false; chara->SetFieldMode(); chara->SetVisible(false); }
     if (m_chara[num]) { m_chara[num]->Release(); delete m_chara[num]; }
     m_chara[num] = chara;
@@ -179,6 +180,10 @@ void NativeManager::cmd_chara() {
     Vector3 v = GetVector3();
     if (chara) { chara->SetPosition(v); chara->m_billboard_request = true; }
     if ((num & 0xFF) == 0) { s_heroPos = v; s_heroPosValid = true; }
+    if ((num & 0xFF) != 0 && DevCheats::HeroPosLog() >= 2 && (num & 0xFF) < 40) {   // `heropos=2`: every character slot (NPC positions for walk scripts)
+      static Vector3 s_lastN[40]; Vector3& l = s_lastN[num & 0xFF];
+      if ((v - l).magnitude() > 0.001f) { l_info("CHARA%d pos f%d (%.3f, %.3f, %.3f)", num & 0xFF, s_frame, v.x, v.y, v.z); l = v; }
+    }
     if ((num & 0xFF) == 0 && DevCheats::HeroPosLog()) { static Vector3 s_last; if ((v - s_last).magnitude() > 0.001f) { l_info("CHARA0 pos f%d (%.3f, %.3f, %.3f)", s_frame, v.x, v.y, v.z); s_last = v; } }   // hero position as sent by the native (walk tests)
   }
   if (btst(num, 16384)) { int n2 = GetInt(); if (chara) chara->SetPattern(n2 & 0xFF, n2 >> 8); }

@@ -10,5 +10,5 @@
 #pragma once
 namespace DevCheats {
 void Create();           // GameLoop: after the level builder; creates the driver only when a key is present
-bool HeroPosLog();       // `heropos=1`
+int HeroPosLog();        // `heropos=1` hero only, `heropos=2` every character slot
 }

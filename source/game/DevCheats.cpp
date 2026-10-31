@@ -16,7 +16,7 @@
 using namespace miniunity;
 
 namespace DevCheats {
-bool HeroPosLog() { static int v = -1; if (v < 0) v = Cfg::GetInt("heropos", 0); return v != 0; }
+int HeroPosLog() { static int v = -1; if (v < 0) v = Cfg::GetInt("heropos", 0); return v; }
 }
 
 namespace {
