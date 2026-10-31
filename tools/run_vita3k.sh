@@ -46,6 +46,8 @@ rm -f "$SHOTDIR"/dqivn${SLOT}_* 2>/dev/null
 printf 'shot_frames=%s\n' "$SHOTS" > "$FS/ux0/data/dqiv/dqivn$SLOT.cfg"
 # extra cfg lines (e.g. CFG_EXTRA='audiotest=1\nconfirm=circle') and an input script (INPUT_SCRIPT=path; see platform/vita_input.cpp) for headless runs
 [ -n "${CFG_EXTRA:-}" ] && printf '%b\n' "$CFG_EXTRA" >> "$FS/ux0/data/dqiv/dqivn$SLOT.cfg"
+# TURBO=1 (VBLANK_HZ=<n>, default 240): faster than real time for scripted runs (Debug builds). The game is frame-locked, so frame numbers and input scripts stay valid; DUR stays wall-clock seconds, sound is not in step.
+[ -n "${TURBO:-}" ] && echo "turbo=1" >> "$FS/ux0/data/dqiv/dqivn$SLOT.cfg"
 rm -f "$FS/ux0/data/dqiv/trace$SLOT.on" "$FS/ux0/data/dqiv/replay$SLOT.on"
 # TRACE=<frames>: record packets of this run (ux0:data/dqiv/trace<slot>/, copied to build/trace/; check with tools/pktcheck.py).  REPLAY=1: replay the trace of the previous TRACE run (no GameUpdate)
 [ -n "${TRACE:-}" ] && { rm -rf "$FS/ux0/data/dqiv/trace$SLOT"; echo "$TRACE" > "$FS/ux0/data/dqiv/trace$SLOT.on"; }
@@ -71,7 +73,7 @@ while pgrep -f '^v3k-' >/dev/null || pgrep -x Vita3K >/dev/null; do sleep 5; don
 START_TS=$(date +%s)
 
 cd "$V3K"
-( VITA3K_MUTE=${VITA3K_MUTE:-1} VITA3K_JIT_CACHE_MB=${VITA3K_JIT_CACHE_MB:-16} exec -a v3k-dqivn$SLOT "$BIN" -w -r "$TITLEID" ) > "$HERE/build/vita3k-stdout.log" 2>&1 &
+( VITA3K_MUTE=${VITA3K_MUTE:-1} VITA3K_JIT_CACHE_MB=${VITA3K_JIT_CACHE_MB:-16} VITA3K_VBLANK_HZ=${TURBO:+${VBLANK_HZ:-240}} exec -a v3k-dqivn$SLOT "$BIN" -w -r "$TITLEID" ) > "$HERE/build/vita3k-stdout.log" 2>&1 &
 PID=$!
 # watchdog: kill OUR process after DUR seconds (also ends early if it exits by itself)
 ( sleep "$DUR"; kill -9 "$PID" 2>/dev/null ) &

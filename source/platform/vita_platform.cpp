@@ -8,6 +8,7 @@
 #include <psp2/power.h>
 
 #include "game/Sound.hpp"
+#include "platform/cfg.hpp"
 #include "utils/logger.h"
 
 namespace vita_platform {
@@ -57,7 +58,12 @@ void PaceFrame() {
   constexpr uint64_t PERIOD_US = 33333;
   uint64_t now = sceKernelGetProcessTimeWide();
   uint64_t el = now - s_frameStart;
-  if (el < PERIOD_US - 1500) sceKernelDelayThread((SceUInt)(PERIOD_US - 1000 - el));       // vsync (interval 2) normally already did the waiting
+#ifdef DQIV_DEV_TOOLS
+  static const bool turbo = Cfg::GetInt("turbo", 0) != 0;      // tools/run_vita3k.sh TURBO=1: no 30 Hz limit, the game is frame-locked so scripted tests just finish sooner
+#else
+  constexpr bool turbo = false;
+#endif
+  if (!turbo && el < PERIOD_US - 1500) sceKernelDelayThread((SceUInt)(PERIOD_US - 1000 - el));       // vsync (interval 2) normally already did the waiting
   now = sceKernelGetProcessTimeWide();
   float ms = (float)(now - s_frameStart) / 1000.f;
   s_total++; s_frames++; s_sumMs += ms; if (ms > s_maxMs) s_maxMs = ms;
