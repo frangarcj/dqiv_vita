@@ -34,24 +34,28 @@ def title(img, text, y, size, color=(255, 214, 90), cx=None):
     d.text((x + 3, y + 3), text, font=f, fill=(20, 10, 40))
     d.text((x, y), text, font=f, fill=color)
 
+def save(img, name):
+    """the Vita refuses to promote a package with non-indexed PNGs (0x8010113D): 8-bit palette only"""
+    img.quantize(256, method=Image.Quantize.MEDIANCUT, dither=Image.Dither.FLOYDSTEINBERG).save(os.path.join(OUT, name))
+
 def main():
     icon = load_icon(sys.argv[1])
     # icon0: 128x128
-    icon.resize((128, 128), Image.LANCZOS).save(os.path.join(OUT, "icon0.png"))
+    save(icon.resize((128, 128), Image.LANCZOS), "icon0.png")
     # bg0: 840x500
-    bg = backdrop(icon, 840, 500, 0.45); bg.save(os.path.join(OUT, "bg0.png"))
+    save(backdrop(icon, 840, 500, 0.45), "bg0.png")
     # pic0: 960x544 with the icon and the title
     pic = backdrop(icon, 960, 544, 0.5)
     big = icon.resize((300, 300), Image.LANCZOS)
     pic.paste(big, (60, 122))
     title(pic, "DRAGON QUEST IV", 205, 52, cx=660)
     title(pic, "Chapters of the Chosen", 290, 30, (230, 230, 255), cx=660)
-    pic.save(os.path.join(OUT, "pic0.png"))
+    save(pic, "pic0.png")
     # startup: 280x158 gate image
     st = backdrop(icon, 280, 158, 0.4)
     st.paste(icon.resize((110, 110), Image.LANCZOS), (14, 24))
     title(st, "DRAGON", 36, 28, cx=205); title(st, "QUEST IV", 72, 28, cx=205)
-    st.save(os.path.join(OUT, "startup.png"))
+    save(st, "startup.png")
     for f in ("icon0", "bg0", "pic0", "startup"): print(f, Image.open(os.path.join(OUT, f + ".png")).size)
 
 main()
