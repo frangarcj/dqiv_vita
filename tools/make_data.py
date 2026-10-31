@@ -11,7 +11,7 @@
     main.obb                                     your OBB, copied unchanged (the native code reads it directly)
     pack/{index.bin,meta.pak,mesh.pak,tex.pak,blob.pak}   the converted Unity assets (tools/convert, ~200 MB)
     cg/*.bin                                     precompiled GPU programs of the screen-effect shaders (from extras/cg)
-    config.txt                                   user config (language ...), see README
+    config.txt                                   user config (language ...), see docs/REFERENCE.md
 
 Supported game version: Dragon Quest IV (Google Play) v1.0.5, OBB main.106 -- the md5 of both files is checked (--skip-md5 to override at your own risk).
 The conversion needs Python >= 3.10 and the packages of tools/requirements.txt; unless --no-venv is given, this script creates tools/.venv and re-runs itself there.
