@@ -16,7 +16,7 @@ Where a section below still quotes DQ5 measurements or ids it says so.
 
 ## Status (2026-10-30)
 
-"Works" below means seen in Vita3K (`tools/run_vita3k.sh`, headless); the real console was never tried.
+"Works" below means seen in Vita3K (`tools/run_vita3k.sh`, headless); on the real console only the start-up of the Release VPK was seen (intro credits and title menu, 2026-10-31).
 
 * so-loader: libdq4core + libsdlib_android load, link (0 unresolved imports), run their constructors and `JNI_OnLoad` (`IsLoadNativeCode() = 1`).
 * boot sequence of the C# `Boot`/`MainLoop` as in DQ4: the asset table is built from the OBB zip directory (`native/asset_manager.c`; DQ4 has no `filelist.bin`), `DevInit` with the 3-argument DQ4 signature,
@@ -27,7 +27,7 @@ Where a section below still quotes DQ5 measurements or ids it says so.
   (`tools/padonly_dq4.txt`); saves are written by the native (`saves<slot>/data1..5.dat` 15 360 bytes, `data9.dat` 512 bytes seen in Vita3K). Audio runs (OpenSLES, no underruns in a 3600-frame title run).
 * UI: the 81-entry DQ4 `MenuPortItemTable` (ids 0..80) is ported; ids 1..80 except 55 and 74 were built with sample data and screenshotted (checklist below).
 * Delta ports done (build and title only): Chara, Field, FldObject, FieldSymbol, Riseup, FbxObject, MeshChara, Capture, Sound (partly), Staffroll + StaffrollPort, CharaSleep shaders.
-* **Not verified for DQ4**: any real play (towns, dungeons, world map, battles, events, staff roll), Korean/Chinese text, `layout=split|portrait`, DQ5-derived battle/dialogue options, long-session stability (the soak numbers below are DQ5's), the real console.
+* **Not verified for DQ4**: any real play (towns, dungeons, world map, battles, events, staff roll), Korean/Chinese text, `layout=split|portrait`, DQ5-derived battle/dialogue options, long-session stability (the soak numbers below are DQ5's), play on the real console.
 * Disabled until re-derived from `libdq4core.so` (`NativeCall::kDevHooksVerified`): `DevCheats`, `WarpTest`, `BattleTest`.
 
 > **End users**: see `README.md` (`tools/make_data.py` or the page in `web/` builds `ux0:data/dqiv` from an APK+OBB; Release builds have no developer tools, `-DDQIV_DEV_TOOLS=ON` / Debug enables test scenes and scripted UI).
@@ -220,4 +220,4 @@ The authoritative list is [docs/TODO_DQ4.md](docs/TODO_DQ4.md). In short:
 * `vglInitExtended` returns GL_TRUE only when the resolution had to be reduced (it is *not* a success flag) - do not check it.
 * Audio threads: vitasdk OpenSLES callback stack (0x10000) vs Vorbis decoding in `CoreAudioOutCallback`: runs in Vita3K without underruns, untested on hardware; fallback = an own audio thread.
 * Memory budget: newlib heap 96 MB (`DQIV_HEAP_MB`), vitaGL takes the rest minus 6 MiB; textures are uploaded eagerly (no unload yet); only the title run was measured.
-* Real hardware untested. `libshacccg` is not needed to start (`cg/dqiv_gray.bin` and `cg/dqiv_sepia_fld.bin` are shipped), but `dqiv_sleep` (CharaSleep) has no shipped blob and falls back to fixed-function without it.
+* Real hardware: only the start-up was seen. `libshacccg` is not needed to start (`cg/dqiv_gray.bin` and `cg/dqiv_sepia_fld.bin` are shipped), but `dqiv_sleep` (CharaSleep) has no shipped blob and falls back to fixed-function without it.

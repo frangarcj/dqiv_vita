@@ -10,7 +10,7 @@ A native PS Vita port of the Android version of *Dragon Quest IV: Chapters of th
 * Landscape display (the original is portrait-only; `layout=portrait` restores it). Physical controls plus touch, as on Android. Saves are the original format (`data1..5.dat`, `data9.dat`).
 * Cloud Save / Google Drive and the online present-code features are not available (the Vita side answers as if the device were offline).
 
-**Status: early.** What was actually checked, in Vita3K only (the logs and screenshots of the development builds; **no real PS Vita has ever run this port**, and the emulator is muted, so sound was only checked through log lines, never by ear):
+**Status: early.** What was actually checked, in Vita3K unless noted (the logs and screenshots of the development builds; **on a real PS Vita only the start-up was checked: the Release VPK boots through the intro credits to the title menu at 30 FPS, nothing was played there**, and the emulator is muted, so sound was only checked through log lines, never by ear):
 
 * **verified**: both libraries load and link with 0 unresolved imports, `JNI_OnLoad` of both succeeds, the converted pack opens (28 446 objects), the world-map tile patch is applied (`libdq4core` `FieldData::drawBlock`, 59 columns) and the widened world map was seen in play (full 960 px width);
   the title scene (logos, backdrop, start menu with Continue / Create a new adventure log / Delete / Licence / Cloud Save) in landscape with sound running (no underruns in the log).
@@ -31,6 +31,7 @@ See [DEVELOPERS.md](DEVELOPERS.md) and [docs/TODO_DQ4.md](docs/TODO_DQ4.md) for 
   ux0:tai/kubridge.skprx
   ```
   (reboot afterwards).
+* Recommended: [FdFix](https://github.com/TheOfficialFloW/FdFix/releases/), added under `*KERNEL` in the same way, unless you use rePatch (do not install both). The port keeps its data files open while running, and FdFix keeps those file handles valid after the console suspends and resumes.
 * `libshacccg.suprx` is **not needed to start the game** as long as `ux0:data/dqiv/cg/*.bin` exists (prepared by step 3): the screen-effect shaders `dqiv_gray` and `dqiv_sepia_fld` are shipped precompiled. The third program (`dqiv_sleep`, the lying-down pose of characters) has no shipped blob: without `libshacccg.suprx` it falls back to a fixed-function approximation (unverified on hardware), with it the game compiles it once and caches it as `ux0:data/dqiv/cg/dqiv_sleep.bin`
   ([how to get libshacccg.suprx](https://samilops2.gitbook.io/vita-troubleshooting-guide/shader-compiler/extract-libshacccg.suprx)).
 
@@ -48,7 +49,7 @@ The OBB is in `/sdcard/Android/obb/com.square_enix.android_googleplay.dq4/` on y
 
 ### 3. Prepare the data on a PC (Windows, macOS or Linux)
 
-**Recommended: the web page** (source in `web/`, no install; the planned address is <https://frangarcj.github.io/dqiv_vita/>, which **only becomes valid once this repository is published** and the Pages workflow has run). Open it in a modern browser (Chrome/Edge write straight into a folder; Firefox/Safari download one ZIP), select the APK and the OBB, pick language and screen layout, press Convert. Everything runs locally in the browser tab: your files are never uploaded and the site ships no game data. Its output is streamed, so it needs well under 1 GB of RAM on top of the browser; it checks that the result is byte-identical to the reference conversion (SHA-256 of the five pack files).
+**Recommended: the web page** (source in `web/`, no install; <https://frangarcj.github.io/dqiv_vita/>). Open it in a modern browser (Chrome/Edge write straight into a folder; Firefox/Safari download one ZIP), select the APK and the OBB, pick language and screen layout, press Convert. Everything runs locally in the browser tab: your files are never uploaded and the site ships no game data. Its output is streamed, so it needs well under 1 GB of RAM on top of the browser; it checks that the result is byte-identical to the reference conversion (SHA-256 of the five pack files).
 You can serve the page yourself: from a clone of this repository run `python3 -m http.server -d web 8000` and open <http://localhost:8000/> (or just open `web/index.html` from disk; `web/dist/app.js` is committed, no build needed). Details, build and test instructions in [web/README.md](web/README.md). The workflow `.github/workflows/pages.yml` publishes `web/index.html` + `web/dist/app.js` to GitHub Pages from the `main` branch.
 
 **Alternative: the Python script** (same output, bit for bit). Needs Python 3.10+ (3.12 recommended), about 2 GB of free RAM and 1.5 GB of free disk, and internet access on first run (it creates `tools/.venv` and installs the pinned packages of `tools/requirements.txt`).
@@ -71,7 +72,7 @@ config.txt  user settings
 Copy **the contents** of `dqiv_data/` (or of the folder you chose in the web page; or the `dqiv` folder of `dqiv.zip`) to `ux0:data/dqiv/` on the Vita (FTP via VitaShell, or USB).
 
 ### 4. Install the app
-Install `dqivn.vpk` (from the [Releases](../../releases) page once one exists, or build it yourself, see below) with VitaShell. The bubble is "Dragon Quest IV" (title id `DQIVN0001`). The first launch takes a little longer.
+Install `dqivn.vpk` (from the [Releases](../../releases) page, or build it yourself, see below) with VitaShell. The bubble is "Dragon Quest IV" (title id `DQIVN0001`). The first launch takes a little longer.
 
 ### config.txt
 `ux0:data/dqiv/config.txt`, one `key=value` per line (`#` = comment). Every key below is read by the code of this repository; **in DQ4 in Vita3K only `lang=en`, the default `layout=landscape`, `field_patch=1`, `layout=portrait` and `battle_layout=band` (one battle) were seen working**; `confirm`, `split` and the other battle / dialogue keys come with the DQ5 port's code and have not been re-checked in DQ4 gameplay.
@@ -176,7 +177,7 @@ Keys in `ux0:data/dqiv/config.txt` (all slots) or `dqivn<slot>.cfg`, inert unles
 From [docs/TODO_DQ4.md](docs/TODO_DQ4.md) (the authoritative list):
 
 * The prologue and Chapter 1 to the first dungeon are left to the user's own play test (the agents start from warps and saves). Still unverified by pad: Quick Save (greyed), chests with items, the wagon.
-* Real-hardware test (never done); sound only checked through log lines.
+* Real-hardware play test (only the start-up was seen on a console); sound only checked through log lines.
 * Not ported (not needed so far): `MainLoopEx/FadeEx/MenuPortSystemEx` (non-NEON path) and the virtual-pad code of `TouchPad` (physical buttons replace the virtual pad).
 * `Sepia` (the screen effect) does not exist in DQ4, but the `fld_*_sepia` map shaders and `dqiv_sepia_fld` are used by the native `fld_color` command, so they stay; forced with `fldsepia=1` they render correctly in Burland (not seen from a real flashback scene).
 
@@ -198,7 +199,7 @@ or use the container: see [.github/workflows/compilation.yml](.github/workflows/
 | `DQIV_FAST_BOOT` | ON for Debug, OFF for Release | shortened boot logos (development) |
 | `VITA_VERSION` (edit CMakeLists) | `01.00` | version shown in the LiveArea / SFO |
 
-LiveArea images (`extras/livearea/*.png`) are generated from the game's own launcher icon by `extras/livearea/src/make_art.py <apk>` (needs Pillow); they remain Square Enix artwork, replace them if you redistribute a VPK.
+LiveArea images (`extras/livearea/*.png`) are generated from the game's own launcher icon by `extras/livearea/src/make_art.py <apk>` (needs Pillow); they remain Square Enix artwork, replace them if you redistribute a VPK. They must be 8-bit palette PNGs, or the Vita refuses to install the package (`0x8010113D`); `tools/check_release.py` checks this.
 
 ## On-Vita data preparation instead of a PC step? (evaluated, not implemented)
 The converter (`tools/convert`) is Python + UnityPy + texture decoders. A first-boot converter on the Vita would remove the PC step, but:
