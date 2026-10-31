@@ -62,12 +62,21 @@ rm -f "$FS/ux0/data/dqiv/input_script$SLOT.txt" "$FS/ux0/data/dqiv/charatest$SLO
 LOCK=/tmp/v3k-machine.lock
 FREE_MB=$(df -m /System/Volumes/Data | awk 'NR==2{print $4}')
 [ "$FREE_MB" -lt 2048 ] && { echo "only $FREE_MB MB free on disk: not starting the emulator"; exit 1; }
-until mkdir "$LOCK" 2>/dev/null; do
+# First come, first served: a ticket per waiting run (<epoch>.<pid>), only the oldest live ticket may take the lock, so agents relaunching back to back cannot starve the others.
+# NOTE: replace this script by rename, never edit it in place: a bash waiting here resumes at its old byte offset of the same file.
+QUEUE=/tmp/v3k-queue; mkdir -p "$QUEUE"
+TICKET=$(date +%s).$$; : > "$QUEUE/$TICKET"
+trap 'rm -f "$QUEUE/$TICKET"' EXIT
+until
+  for T in $(ls "$QUEUE" | sort -n); do kill -0 "${T##*.}" 2>/dev/null && break; rm -f "$QUEUE/$T"; T=; done
+  [ "$T" = "$TICKET" ] && mkdir "$LOCK" 2>/dev/null
+do
   OWNER=$(cat "$LOCK/pid" 2>/dev/null)
-  if [ -n "$OWNER" ] && ! kill -0 "$OWNER" 2>/dev/null; then rm -rf "$LOCK"; continue; fi
-  sleep 5
+  if [ -n "$OWNER" ] && ! kill -0 "$OWNER" 2>/dev/null; then rm -rf "$LOCK"; fi
+  sleep 3
 done
 echo $$ > "$LOCK/pid"
+rm -f "$QUEUE/$TICKET"
 trap 'rm -rf "$LOCK"' EXIT
 while pgrep -f '^v3k-' >/dev/null || pgrep -x Vita3K >/dev/null; do sleep 5; done
 START_TS=$(date +%s)
