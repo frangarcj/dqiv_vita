@@ -34,6 +34,7 @@ bool DqvHeroPos(float* x, float* y, float* z); // game/NativeManager.cpp: last p
  *     <F> sync  <text> [tap <btn> <period>]                   hold the script until NativeManager's last loaded map path contains <text>; later events are then relative to that moment
  *     <F> walk  <x> <z> [tol=0.5] [timeout=600] [map]   closed loop with the d-pad only: hold the directions that bring the hero (position as sent by the native, `heropos` units)
  *                                     towards (x,z) until within tol (or `timeout` frames, or the scene no longer contains [map]); later events are relative to that moment.  Screen up = +z, right = +x (calibrated: d-pad Up raises z)
+ *     <F> autotap <btn> <period>        press <btn> for 2 frames every <period> frames from now on (0 = off), also while `walk`/`sync` hold the script
  *     <F> log   <text>                  write a marker line to the log   <F> quit                  Application.Quit() (clean end of a headless run)
  */
 namespace vita_input {
@@ -52,12 +53,13 @@ static float g_moved;
 struct Sample { bool down; float x, y; };
 
 // ------------------------------------------------------------------------------------------------ script
-enum ActType { A_BTN_ON, A_BTN_OFF, A_TOUCH, A_TOUCH_UP, A_STICK, A_LOG, A_QUIT, A_SYNC, A_WALK };
+enum ActType { A_BTN_ON, A_BTN_OFF, A_TOUCH, A_TOUCH_UP, A_STICK, A_LOG, A_QUIT, A_SYNC, A_WALK, A_AUTOTAP };
 struct Act { int frame; ActType type; unsigned mask; float x, y; int a, b; std::string text; };
 static std::vector<Act> g_script;
 static size_t g_scriptNext;
 static int g_scriptBase;                       // `sync`: events after it are relative to the frame the condition became true
 static bool g_scriptWait;
+static unsigned g_autoMask; static int g_autoPer;               // `autotap`: press a button every N frames whatever else the script is doing (dismiss messages while walking)
 static bool g_walkOn; static int g_walkStart, g_walkLast;       // `walk` in progress
 static unsigned g_sButtons;                    // buttons held by the script
 static bool g_sTouchDown; static float g_sX, g_sY;
@@ -125,6 +127,8 @@ static void LoadScript() {
       } else if (cmd == "walk" && w.size() >= 4) {
         float tol = w.size() > 4 ? (float)atof(w[4].c_str()) : 0.5f; int to = w.size() > 5 ? atoi(w[5].c_str()) : 600;
         Add(fr, A_WALK, 0, (float)atof(w[2].c_str()), (float)atof(w[3].c_str()), to, (int)(tol * 1000.f), w.size() > 6 ? w[6].c_str() : "");
+      } else if (cmd == "autotap" && w.size() >= 4) {
+        Add(fr, A_AUTOTAP, ParseButtons(w[2]), 0, 0, atoi(w[3].c_str()));
       } else if (cmd == "quit") {
         Add(fr, A_QUIT);
       } else { l_warn("input script %s:%d: cannot parse '%s'", path, lineNo, cmd.c_str()); break; }
@@ -136,6 +140,7 @@ static void LoadScript() {
 }
 
 static void RunScript(int frame) {
+  if (g_autoPer > 0 && g_autoMask) { static unsigned held; if (frame % g_autoPer == 0) held = g_autoMask, g_sButtons |= held; else if (frame % g_autoPer == 2) g_sButtons &= ~g_autoMask; }
   while (g_scriptNext < g_script.size() && g_script[g_scriptNext].frame + g_scriptBase <= frame) {
     const Act& a = g_script[g_scriptNext];
     if (a.type == A_SYNC) {                    // `<F> sync <map substring>`: hold the script until the native side loaded a map whose path contains the text
@@ -146,13 +151,13 @@ static void RunScript(int frame) {
     }
     if (a.type == A_WALK) {                    // closed loop on the hero position: only ever sets d-pad bits
       const unsigned dirs = SCE_CTRL_UP | SCE_CTRL_DOWN | SCE_CTRL_LEFT | SCE_CTRL_RIGHT;
-      if (!g_walkOn) { g_walkOn = true; g_walkStart = frame; g_walkLast = frame; l_info("SCRIPT f%d: walk to (%.1f, %.1f)", frame, a.x, a.y); }
+      if (!g_walkOn) { g_walkOn = true; g_walkStart = frame; g_walkLast = frame; l_info("SCRIPT f%d: walk to (%d, %d) /100", frame, (int)(a.x * 100.f), (int)(a.y * 100.f)); }
       float px, py, pz; bool have = ::DqvHeroPos(&px, &py, &pz);
       float tol = a.b / 1000.f, dx = a.x - px, dz = a.y - pz;
       bool wrongMap = !a.text.empty() && !strstr(::DqvCurrentScene(), a.text.c_str());
       bool done = have && std::fabs(dx) <= tol && std::fabs(dz) <= tol;
       if (done || wrongMap || frame - g_walkStart > a.a) {
-        l_info("SCRIPT f%d: walk %s at (%.2f, %.2f, %.2f) target (%.1f, %.1f) scene '%s'", frame, done ? "reached" : wrongMap ? "left the map" : "timeout", px, py, pz, a.x, a.y, ::DqvCurrentScene());
+        l_info("SCRIPT f%d: walk %s at (%d, %d) /100 target (%d, %d) scene '%s'", frame, done ? "reached" : wrongMap ? "left the map" : "timeout", (int)(px * 100.f), (int)(pz * 100.f), (int)(a.x * 100.f), (int)(a.y * 100.f), ::DqvCurrentScene());     // ints: Vita3K's sceClibVsnprintf crashes on several double varargs
         g_sButtons &= ~dirs; g_walkOn = false; g_scriptBase = frame - a.frame; g_scriptNext++; continue;
       }
       g_sButtons &= ~dirs;
@@ -160,7 +165,7 @@ static void RunScript(int frame) {
         if (dx > tol * 0.5f) g_sButtons |= SCE_CTRL_RIGHT; else if (dx < -tol * 0.5f) g_sButtons |= SCE_CTRL_LEFT;
         if (dz > tol * 0.5f) g_sButtons |= SCE_CTRL_UP; else if (dz < -tol * 0.5f) g_sButtons |= SCE_CTRL_DOWN;      // calibrated in mlb1a: Up raises z, Right raises x
       }
-      if (frame - g_walkLast >= 120) { g_walkLast = frame; l_info("SCRIPT f%d: walking, hero (%.2f, %.2f), scene '%s'", frame, px, pz, ::DqvCurrentScene()); }
+      if (frame - g_walkLast >= 120) { g_walkLast = frame; l_info("SCRIPT f%d: walking, hero (%d, %d) /100, scene '%s'", frame, (int)(px * 100.f), (int)(pz * 100.f), ::DqvCurrentScene()); }
       return;
     }
     g_scriptNext++;
@@ -170,6 +175,7 @@ static void RunScript(int frame) {
       case A_TOUCH: g_sTouchDown = true; g_sX = a.x + ScriptPanelX0(); g_sY = a.y; break;   // script x = UI-panel pixels; the panel is centred during the start flow, else at the right
       case A_TOUCH_UP: g_sTouchDown = false; break;
       case A_STICK: g_sLx = a.a & 0xFF; g_sLy = (a.a >> 8) & 0xFF; g_sRx = a.b & 0xFF; g_sRy = (a.b >> 8) & 0xFF; break;
+      case A_AUTOTAP: g_autoMask = a.mask; g_autoPer = a.a; if (!a.a) g_sButtons &= ~a.mask; break;
       case A_LOG: l_info("SCRIPT f%d: %s", frame, a.text.c_str()); break;
       case A_QUIT: l_info("SCRIPT f%d: quit", frame); Application::Quit(); break;
       default: break;
