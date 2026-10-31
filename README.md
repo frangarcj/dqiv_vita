@@ -10,13 +10,14 @@ A native PS Vita port of the Android version of *Dragon Quest IV: Chapters of th
 * Landscape display (the original is portrait-only; `layout=portrait` restores it). Physical controls plus touch, as on Android. Saves are the original format (`data1..5.dat`, `data9.dat`).
 * Cloud Save / Google Drive and the online present-code features are not available (the Vita side answers as if the device were offline).
 
-**Status: early.** What was actually checked, in Vita3K only (the logs and screenshots of the development builds; **no real PS Vita has ever run this port**):
+**Status: early.** What was actually checked, in Vita3K only (the logs and screenshots of the development builds; **no real PS Vita has ever run this port**, and the emulator is muted, so sound was only checked through log lines, never by ear):
 
-* verified: both libraries load and link with 0 unresolved imports, `JNI_OnLoad` of both succeeds, the converted pack opens (28 446 objects), the world-map tile patch is applied (`libdq4core` `FieldData::drawBlock`, 59 columns);
-  the title scene (logos, backdrop, "Create a new adventure log" menu with Licence / Cloud Save buttons) and the new-game name-entry screen render in landscape with sound running (no underruns in the log) and are reachable with the buttons only (`tools/padonly_dq4.txt`);
-  libdq4core writes its save files (`data1..5.dat`, `data9.dat`) into `saves1/`; the DQ4 menu screens with ids 1..80 (except 55, the name entry, and 74, an empty port; the name entry was seen separately) were built with sample data and screenshotted (`docs/TODO_DQ4.md`, DEVELOPERS.md "UI visual checklist").
-* **not verified in this port**: actually playing: walking in towns/dungeons, the world map, battles, shops and every other in-game screen driven by the real game, cutscenes, the staff roll, the Korean and Chinese languages, `layout=split|portrait`, the battle/dialogue layout options below, performance on a real console, memory use on a real console. The code for most of these (field, characters, world map, battle UI, effects) is ported but, for DQ4, only seen at title/menu level.
-* the developer cheats and warp harness (`DevCheats`, `WarpTest`, `BattleTest`) are **disabled for DQ4** in the code this README was written against (their DQ5 hooks do not exist in `libdq4core.so`; see `docs/TODO_DQ4.md` for the current state). The Coverage section and the Debug options below were carried over from the DQ5 port and are rewritten by the harness work, not here: until then they do not describe DQ4.
+* **verified**: both libraries load and link with 0 unresolved imports, `JNI_OnLoad` of both succeeds, the converted pack opens (28 446 objects), the world-map tile patch is applied (`libdq4core` `FieldData::drawBlock`, 59 columns) and the widened world map was seen in play (full 960 px width);
+  the title scene (logos, backdrop, start menu with Continue / Create a new adventure log / Delete / Licence / Cloud Save) in landscape with sound running (no underruns in the log).
+* **played with the physical buttons only** (no touch): Create a new adventure log -> slot list -> **hero name entry** (type with Cross, Triangle = shift, Square = delete, d-pad to Enter or Start) -> gender -> "Prologue" card -> the prologue basement and the hero's village (**the way out of the prologue was not found**, see docs/TODO_DQ4.md); Continue from the title (loads the last game);
+  from a `chapter 1` warp: the king's cutscene (Cross), the throne hall, Burland town, the exit to the world map and a **random battle fought to victory** with Cross (Fight, Attack, first target, messages); command menu (Items / Magic / Attributes / Misc. with Equipment, Line-up, Organise Items); the **area map** with Square (CityMap with the real Burland picture and its weapon-shop list, WorldLargeMap on the world map); camera rotation with L / R in a town; battle Party > Change One.
+* **not verified**: buying in a shop, an inn, a church / saving at one, opening a chest, entering a building by its door (the inn, church and shop interiors only rendered after a warp), the prologue exit, cutscenes beyond the first one, the staff roll, the Korean and Chinese languages, `layout=split`, performance and memory on a real console. Several in-game screens (shops, church, bank, casino games) were only screenshotted with sample data or through warps.
+* the developer cheats and warp harness (`DevCheats`, `WarpTest`, `BattleTest`) work in DQ4 (see "Warp harness and Coverage" below); `layout=portrait` and `battle_layout=band` were seen in a battle, the other battle/dialogue options were carried over from the DQ5 port and not re-checked.
 
 See [DEVELOPERS.md](DEVELOPERS.md) and [docs/TODO_DQ4.md](docs/TODO_DQ4.md) for the details and the open items.
 
@@ -72,7 +73,7 @@ Copy **the contents** of `dqiv_data/` (or of the folder you chose in the web pag
 Install `dqivn.vpk` (from the [Releases](../../releases) page once one exists, or build it yourself, see below) with VitaShell. The bubble is "Dragon Quest IV" (title id `DQIVN0001`). The first launch takes a little longer.
 
 ### config.txt
-`ux0:data/dqiv/config.txt`, one `key=value` per line (`#` = comment). Every key below is read by the code of this repository; **only `lang`, `confirm`, `field_patch` and the default `layout=landscape` were seen working in DQ4 in Vita3K**, the other layout and battle keys come with the DQ5 port's code and have not been re-checked in DQ4 gameplay.
+`ux0:data/dqiv/config.txt`, one `key=value` per line (`#` = comment). Every key below is read by the code of this repository; **in DQ4 in Vita3K only `lang=en`, the default `layout=landscape`, `field_patch=1`, `layout=portrait` and `battle_layout=band` (one battle) were seen working**; `confirm`, `split` and the other battle / dialogue keys come with the DQ5 port's code and have not been re-checked in DQ4 gameplay.
 
 | key | values | meaning |
 |---|---|---|
@@ -89,23 +90,26 @@ Install `dqivn.vpk` (from the [Releases](../../releases) page once one exists, o
 | `battle_shift` | `1` (default), `0` | landscape battles: fixed slide of the 3D view to the left of the panel for the whole battle |
 | `battle_face_scale` | `100`..`300` (default 250) | landscape battles: scale of the party face icons only |
 | `battle_status_y` | `0`..`120` (default 45) | landscape battles: the whole party status row is moved down by this many pixels |
-| `field_patch` | `1` (default), `0` | landscape: patch libdq4core so the world map draws a 59-column tile block (needed for the full 960 px width); `0` = limit the camera instead. The patch log line `world map tile block widened to 59 columns` is seen at every start; the widened map itself was not looked at in play. |
+| `field_patch` | `1` (default), `0` | landscape: patch libdq4core so the world map draws a 59-column tile block (needed for the full 960 px width); `0` = limit the camera instead. The patch log line `world map tile block widened to 59 columns` is seen at every start and the widened map was looked at in play (world map and battle return, 960 px wide). |
 
-The DQ5 keys that do not exist for this game are gone: the cheats (`nodamage`, `noencount`, `gold`, `party_hp`, `party_mp`, `warp`) are disabled in DQ4 (see the Debug options note below).
+The DQ5 keys that do not exist for this game are gone. The tester cheats (`nodamage`, `noencount`, `gold`, ...) are in "Debug options" below (dev builds only).
 
 ## Controls
-Mapping of the Vita buttons to the original pad bits (`source/platform/vita_input.cpp`); the in-game effect of each button in DQ4 has not been checked beyond the menus and the name entry.
+Mapping of the Vita buttons to the original pad bits (`source/platform/vita_input.cpp`, `game/PadFocus.cpp`). Checked with the pad in Vita3K: move, Cross (talk / check, menu confirm, battle commands), Circle (party talk in a town, menu cancel), Triangle (command menu), Square (area map), L / R (town camera rotation), name entry keys. **Nothing in DQ4 needs the touch screen**: every touch-only button of the Android UI maps to a button (the map / command / talk buttons of the touch overlay are Square / Triangle / Circle; the virtual-pad size button has no meaning with a real pad).
 
-| Button | Field | Menus |
+| Button | Field | Menus and screens |
 |---|---|---|
-| D-pad / left stick | move | move the cursor |
-| Cross | confirm / talk-check (A) | confirm |
-| Circle | cancel / talk (B) | cancel / back |
-| Triangle | command menu (X) | |
-| Square | area map (Y) | |
-| L / R (or right stick) | rotate the camera (towns and dungeons only, there is no field rotation on the world map); L+R or R3 = reset north | |
-| Start | quit dialog | |
-| touch screen | everything that was touch-only on Android (name entry, shops, battle commands ...) | |
+| D-pad / left stick | move | move the focus (yellow frame); in battle it picks the command |
+| Cross | talk / check (A) when facing an NPC, a chest, a door | press the focused button (confirm) |
+| Circle | party talk (B) | cancel / Back (on screens that have a Back button) |
+| Triangle | command menu (X): Items, Magic, Attributes, Misc. | Name entry: Shift |
+| Square | area map (Y): town map, or the world map outside towns | Name entry: Delete |
+| L / R (or right stick) | rotate the camera in towns and dungeons (no rotation on the world map); L+R or R3 = reset north | Name entry: the two keyboard pages |
+| Start | quit dialog | Name entry: Enter |
+| Select | toggles an on-screen pointer that the d-pad moves and Cross / Circle "tap" (for any touch-only spot) | same |
+| touch screen | still works everywhere, as on Android | |
+
+Known limit: on the CityMap / WorldLargeMap screens Circle does not close the map yet (see docs/TODO_DQ4.md); the Square map button or the touch screen do.
 
 ## Saves
 Written by the game itself to `ux0:data/dqiv/saves1/` (`data1..5.dat` = 15 360 bytes each, `data9.dat` = 512 bytes, as created in Vita3K), in the original Android format. Back that folder up before updating.
@@ -129,23 +133,25 @@ Logs: `ux0:data/dqiv/dqivn1.log` (errors only in the release build).
 `battle MAP GROUPS...` forces a fight: `DebugSetValue(8, g, monster<<16 | count)` for groups 0..3, then `DebugSetValue(8, 4, 0)` (native: Encount type 0, battle map `btl_pl_d`, `Global::startBattle`) and the stage name is overwritten in `StageStatus` (`btl_pl_d`, `btl_mt_d`, `btlda1`, ... any `map/btl/*/stage/*.fld`; the last letter d/e/n is the time of day). Example `battle btl_pl_d 1x2`. The battle UI is then driven with an input script of Cross taps (`tools/coverage/battle_pad.txt`: PadFocus presses Fight, Attack, the first target and the messages) to victory and back to the map.
 `tools/coverage_run.sh [name...]` runs `tools/coverage/<name>.warp` (headers `#shots`, `#dur`, `#input`) one muted emulator at a time (it waits for the machine-wide emulator lock) and keeps screenshots + issue extracts (STUB/UNPORTED/WRN/ERR after the warp, DABT) in `build/coverage/<name>/`.
 
-| place | warp script | result | issues (owner) |
-|---|---|---|---|
-| chapter 1-5 starts (Burland castle `caf1`, `cbf2`, Lakanaba shop `mfm1f1`, `mhg1n1`, hamlet `mlm1f1`) | `ch1_start` `ch2_start` `ch3_start` `ch4_start` `ch5_start` `ch5_heroine` (`event 109 1`) | OK: chapter-1 title card fades in on the right panel, then the narration box on black (Alena / Lakanaba / the two sisters / the nameless hamlet); no STUB / UNPORTED / WRN / ERR / DABT | the heroine variant is indistinguishable here (hero name is not shown); not checked that the title card of chapters 2-5 appears (shots start after it) |
-| town exterior, chapter 1 (Imuru `maout`) | `ch1_village` | OK: FLD map, buildings, NPCs; no log issues | first shot (f650) shows characters as thin vertical slivers, a second run (f700) shows them complete but each drawn twice side by side (Chara / FldObject owner) |
-| cave / well (`dab1`, `dbb2b`; chapter 3 cave `dfb1a`) | `ch1_cave` `ch1_well` `ch3_cave` | OK (lit cave FLD, party sprites, torches); no log issues | - |
-| towns, chapters 2, 4, 5 (`mdout` Frenor, `miout`, `msout` Gotside) | `ch2_town` `ch4_town` `ch5_town` | OK (full town FLD + NPCs + hero pair); no log issues | hero is drawn as a doubled sprite pair in every town (Chara owner) |
-| world map (`field`, chapter 5 party, native start position tile 26.5/18.4 via `fieldgetpos`) | `field` | OK after merging main (`field_patch`): ocean, islands, mountains, a castle and the party of 3 on the coast; before the merge the map was white (`Field::SetIndexList: native FieldSet not bound`); no log issues | - |
-| forced battle, plains (`btl_pl_d`, 2 x Walking stick, party of 4) | `battle_pl` + `battle_pad.txt` | OK to victory, re-run after merging main: both mantis monsters drawn, face icons in the status boxes, command menu with PadFocus on Fight, "Walking stick A is defeated", back on the Imuru map; no log issues, no DABT (before the merge: magenta checker monsters and `Menu/face/f00 f02 f14 f15` not found) | - |
-| forced battle in a cave (`btlda1`, chapter 3 party of 3) | `battle_cave` | OK to victory and back to the cave (`dfb1a`) (measured before the merge of main) | `Menu/face/f06 f10 f11` not found and checker-textured monsters at that time (fixed on main, not re-run) |
-| battle + Tactics page by pad (`btl_mt_d`, Restless armour x2 + Bullfinch) | `battle_tactics` + `battle_tactics_pad.txt` | OK: down/left reaches Tactics, page "Show No Mercy / Fight Wisely / Watch My Back / Don't Use Magic" (1/2), Circle backs out, Cross fights: commands for the 4 members, "Critical hit!", victory, back to the map; no DABT | `Sound: sound/SE0000.akb not found` (Sound owner); Fight -> Party with a 1-member selectable party ends on "not enough party members" with Cross taps unable to dismiss the message (observed once, 600 frames, `battle_tactics` first version) |
-| casino slot / poker (from a running town `hcout`) | `casino_slot` `casino_poker` | OK: slot machine with the paytable and 5000 tokens, bet window; poker table, paytable, "How much do you want to put down?" | `startCasino` straight after `eventinit` from the title state (no running town) faults the native (DABT FAR=0 right after `main.obb` is opened): always `town X` + `wait` first. Monster arena not reachable (below) |
-| monster book | `book` | OK: parchment + 12 `???` buttons + page bar (nothing seen yet) | sky backdrop and a floating island mesh are drawn over the left half of the parchment, not behind it (UI / Capture owner) |
-| staff roll | `staffroll` | native starts it (StoryStatus chapter 9 in `mlb1a`) and requests the port | `[WRN] UNPORTED StaffrollPort(port 12): category 3` (UI owner): screen stays black |
-| `Global::startTitle` from a map | `title_return` | OK: map -> sky scene with the credits text "Music Compo..." -> loops | the credits text is drawn upside down / mirrored (Capture or Staffroll owner) |
-| monster arena (fight stadium), shops / inn / church UIs, bank, ship, balloon | - | not reachable by warp: the arena is entered from the casino town scripts (`Global::setFightingArenaMapName` + `MaterielMenu_FIGHT_STADIUM`), the rest needs NPC / event interaction; only `bCasino_FightStadium_debugWin` (`DebugSetValue(10, 1, 8)` side effect) is a debug hook | open |
-| random encounters with `noencount` | cfg `warp=dab1 nodamage=1 noencount=1 heropos=1` + `cave_walk.txt` | OK: 2200 frames of walking in the Imuru cave (1277 position changes), no battle; the same run with `noencount` off loaded `btlda1` (one real random encounter) | - |
-| cheats | cfg `gold=12345 party_level=20 party_hp=500 party_mp=100 nodamage=1 noencount=1 warp=maout` | OK: log read-back "player N hpmax 500 mpmax 100" for the 18 party-capable players, `noencount armed, encounters off` | gold is only logged (no native getter) |
+Last full run (2026-10-31, main after the pad-play work, Vita3K, muted): **all 27 scenarios** of `tools/coverage/` finished with `DABT=0 STUB=0 UNPORTED=0 ERR=0` and no `[WRN]` after the warp. A scenario is a smoke test (a screenshot was looked at, the log has no issues), not a play-through.
+
+| place | warp script | result (screenshots looked at) |
+|---|---|---|
+| chapter 1-5 starts (Burland castle `caf1`, `cbf2`, Lakanaba shop `mfm1f1`, `mhg1n1`, hamlet `mlm1f1`) | `ch1_start` `ch2_start` `ch3_start` `ch4_start` `ch5_start` `ch5_heroine` (`event 109 1`) | OK: chapter title card, then the narration box on black; the heroine variant looks the same here (the hero name is not shown) |
+| town exterior, chapter 1 (Imuru `maout`) | `ch1_village` | OK: FLD map, buildings, NPCs, each character drawn once |
+| cave / well (`dab1`, `dbb2b`; chapter 3 cave `dfb1a`) | `ch1_cave` `ch1_well` `ch3_cave` | OK (lit cave, party sprites, torches) |
+| towns, chapters 2, 4, 5 (`mdout` Frenor, `miout`, `msout` Gotside) | `ch2_town` `ch4_town` `ch5_town` | OK (full town FLD, NPCs, hero pair) |
+| world map (`field`, chapter 5 party) | `field` `world_walk` | OK: widened 59-column map, ocean, islands, mountains, a castle, the party on the coast; 59-column walk |
+| forced battle, plains / mountain / cave (`btl_pl_d`, `btl_mt_d`, `btlda1`) | `battle_pl` + `battle_pad.txt`, `battle_cave` | OK to victory and back on the map (cave: back in `dfb1a`); face icons in the status boxes, command menu with PadFocus on Fight |
+| battle + Tactics page by pad (`btl_mt_d`) | `battle_tactics` + `battle_tactics_pad.txt` | OK: Tactics page by d-pad, Circle backs out, Cross fights to victory |
+| casino slot / poker (from a running town `hcout`) | `casino_slot` `casino_poker` | OK: slot machine with paytable and bet window, poker table with paytable |
+| monster book | `book` (from the title state) | OK: parchment, 12 `???` buttons, page bar; started from a real town (`maout`) the parchment is clean, the sky / island seen over it in the title-state warp was the `ev01` title scene still loaded |
+| staff roll | `staffroll` | OK: the credits scroll over the title backdrop (`StaffrollPort` is ported) |
+| `Global::startTitle` from a map | `title_return` | OK: map -> title scene with the credits text readable |
+| random encounters | cfg `warp=dab1 nodamage=1 noencount=1 heropos=1` + `cave_walk.txt` | earlier run: 2200 frames in the Imuru cave, no battle with `noencount`; a real random encounter without it |
+| cheats | cfg `gold=12345 party_level=20 party_hp=500 ...` | earlier run: read-back `player N hpmax 500 mpmax 100`, `noencount armed`; gold is only logged |
+
+Not reachable by warp: the monster arena (entered from the casino town scripts), the bank, ships and balloons; shop / inn / church screens need the NPC dialogue (a warp into `hay1f1` inn, `hak1f1` church, `ham1f1` shop only places the hero at the default tile; `ham1f1` shows the hero outside the drawn room).
 
 
 ### Debug options (testers)
@@ -163,10 +169,10 @@ Keys in `ux0:data/dqiv/config.txt` (all slots) or `dqivn<slot>.cfg`, inert unles
 ## Open problems / next steps
 From [docs/TODO_DQ4.md](docs/TODO_DQ4.md) (the authoritative list):
 
-* Play-through verification of everything beyond the title/menu: field, world map, battle, events, staff roll; real-hardware test (never done).
-* Native debug hooks (`DevCheats`, `WarpTest`, `BattleTest`) have to be re-derived from `libdq4core.so` (kept disabled until then).
-* `Sound` still uses the DQ5 state machine (the DQ4 `s_state/s_bgmNext` logic is not ported); the DQ4 clear-plane camera path (non-Adreno) is not ported (the DQ5 mesh plane is used); `MainLoopEx/FadeEx/MenuPortSystemEx` (non-NEON path) and the virtual-pad code of `TouchPad` are not ported (physical buttons replace the virtual pad).
-* Dead DQ5-only classes still in the tree (`Spotlight`, `Sepia`, `Volcano`, ...) to be removed.
+* Find the way out of the prologue by pad (docs/TODO_DQ4.md) and play Chapter 1 to the first dungeon without warps; shops, inn, church (save), chests and doors of real buildings were never operated by pad.
+* Real-hardware test (never done); sound only checked through log lines.
+* Not ported (not needed so far): `MainLoopEx/FadeEx/MenuPortSystemEx` (non-NEON path) and the virtual-pad code of `TouchPad` (physical buttons replace the virtual pad).
+* `Sepia` (the screen effect) does not exist in DQ4, but the `fld_*_sepia` map shaders and `dqiv_sepia_fld` are used by the native `fld_color` command, so they stay; they were never seen on screen.
 
 ## Build (developers)
 You need a standard (hardfp) [vitasdk](https://github.com/vitasdk) and these packages (`vdpm`):
