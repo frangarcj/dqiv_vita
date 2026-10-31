@@ -9,6 +9,7 @@
 #include <vector>
 
 #include <psp2/ctrl.h>
+#include <psp2/kernel/clib.h>
 #include <psp2/touch.h>
 
 #include "config.h"
@@ -38,6 +39,7 @@ bool DqvHeroPos(float* x, float* y, float* z); // game/NativeManager.cpp: last p
  *     <F> roam <timeout> [period=40]    walk about with the d-pad (down, right, up, left bursts of <period> frames) until a random battle starts; during the battle only Cross is tapped (every 20 frames);
  *                                     ends 120 frames after the battle stage went away again (victory) or at the timeout; later events are relative to that moment
  *     <F> autotap <btn> <period>        press <btn> for 2 frames every <period> frames from now on (0 = off), also while `walk`/`sync` hold the script
+ *     <F> shot  <label>                 ask Vita3K for a screenshot now (file dqivn<slot>_s<frame>_<label>.jpg; the run scripts collect dqivn<slot>_*)
  *     <F> log   <text>                  write a marker line to the log   <F> quit                  Application.Quit() (clean end of a headless run)
  */
 namespace vita_input {
@@ -57,7 +59,7 @@ static float g_moved;
 struct Sample { bool down; float x, y; };
 
 // ------------------------------------------------------------------------------------------------ script
-enum ActType { A_BTN_ON, A_BTN_OFF, A_TOUCH, A_TOUCH_UP, A_STICK, A_LOG, A_QUIT, A_SYNC, A_WALK, A_AUTOTAP, A_ROAM };
+enum ActType { A_BTN_ON, A_BTN_OFF, A_TOUCH, A_TOUCH_UP, A_STICK, A_LOG, A_QUIT, A_SYNC, A_WALK, A_AUTOTAP, A_ROAM, A_SHOT };
 struct Act { int frame; ActType type; unsigned mask; float x, y; int a, b; std::string text; };
 static std::vector<Act> g_script;
 static size_t g_scriptNext;
@@ -136,6 +138,8 @@ static void LoadScript() {
         Add(fr, A_ROAM, 0, 0, 0, atoi(w[2].c_str()), w.size() > 3 ? atoi(w[3].c_str()) : 40);
       } else if (cmd == "autotap" && w.size() >= 4) {
         Add(fr, A_AUTOTAP, ParseButtons(w[2]), 0, 0, atoi(w[3].c_str()));
+      } else if (cmd == "shot" && w.size() >= 3) {
+        Add(fr, A_SHOT, 0, 0, 0, 0, 0, w[2].c_str());
       } else if (cmd == "quit") {
         Add(fr, A_QUIT);
       } else { l_warn("input script %s:%d: cannot parse '%s'", path, lineNo, cmd.c_str()); break; }
@@ -198,6 +202,7 @@ static void RunScript(int frame) {
       case A_STICK: g_sLx = a.a & 0xFF; g_sLy = (a.a >> 8) & 0xFF; g_sRx = a.b & 0xFF; g_sRy = (a.b >> 8) & 0xFF; break;
       case A_AUTOTAP: g_autoMask = a.mask; g_autoPer = a.a; if (!a.a) g_sButtons &= ~a.mask; break;
       case A_LOG: l_info("SCRIPT f%d: %s", frame, a.text.c_str()); break;
+      case A_SHOT: { char msg[96]; snprintf(msg, sizeof(msg), "VITA3K_SCREENSHOT dqivn%d_s%05d_%s", (int)DQIVN_SLOT, frame, a.text.c_str()); sceClibPrintf("%s\n", msg); l_info("SCRIPT f%d: screenshot %s", frame, a.text.c_str()); break; }
       case A_QUIT: l_info("SCRIPT f%d: quit", frame); Application::Quit(); break;
       default: break;
     }

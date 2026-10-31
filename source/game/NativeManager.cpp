@@ -186,7 +186,10 @@ void NativeManager::cmd_chara() {
     }
     if ((num & 0xFF) == 0 && DevCheats::HeroPosLog()) { static Vector3 s_last; if ((v - s_last).magnitude() > 0.001f) { l_info("CHARA0 pos f%d (%.3f, %.3f, %.3f)", s_frame, v.x, v.y, v.z); s_last = v; } }   // hero position as sent by the native (walk tests)
   }
-  if (btst(num, 16384)) { int n2 = GetInt(); if (chara) chara->SetPattern(n2 & 0xFF, n2 >> 8); }
+  if (btst(num, 16384)) {
+    int n2 = GetInt(); if (chara) chara->SetPattern(n2 & 0xFF, n2 >> 8);
+    if ((num & 0xFF) == 0 && DevCheats::HeroPosLog()) { static int s_lastPat = -1; if (n2 != s_lastPat) { l_info("CHARA0 pattern f%d row %d col %d", s_frame, n2 & 0xFF, n2 >> 8); s_lastPat = n2; } }   // facing of the hero (walk / talk tests)
+  }
   if (btst(num, 32768)) { Vector3 v = GetVector3(); if (chara) chara->SetFieldPosition(v); }
 }
 void NativeManager::cmd_chara_on_off() {
@@ -348,6 +351,10 @@ void NativeManager::Update() { Update(TouchPad::m_press, TouchPad::m_toggle); }
 
 void NativeManager::Update(int padPress, int padToggle) {
   PadFocus::Mask(padPress, padToggle);        // [WP3] a MenuPortItem screen has the focus: its d-pad / A / B must not also reach the field logic
+  // DQ4: Global::NativeExec (libdq4core) turns the toggle word into the field commands: exactly 0x100 (PAD_ANY, the touch tap) = A = talk / check (TownPlayerManager::normalExec
+  // sets the player command 1 from it), B 0x400 = party-talk window, X 0x800 = command menu, Y 0x1000 = map.  PAD_A (0x200) is not read by the field logic, so Cross
+  // (PAD_A) pressed while no screen owns the focus is handed over as the tap.  (The DQ5 / DQ6 cores read toggle & 0x200 instead.)
+  if ((padToggle & 0x200) && !PadFocus::Owns()) padToggle = (padToggle & ~0x200) | 0x100;
   m_input_offset = 0;
   if (m_camera_flag > 0) {
     m_camera_flag = 0;
