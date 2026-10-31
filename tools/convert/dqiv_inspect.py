@@ -15,7 +15,7 @@ class Pack:
         self.d = d
         self.idx = open(os.path.join(d, "index.bin"), "rb").read()
         h = struct.unpack_from("<4s7I2I", self.idx, 0)
-        assert h[0] == b"DQIVP"
+        assert h[0] == b"DQIV"
         (_, ver, self.nobj, self.nres, self.objs_off, self.res_off, self.str_off, self.str_size) = h[:8]
         self.dfn = []
         for i in range(4):

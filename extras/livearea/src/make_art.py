@@ -50,7 +50,7 @@ def main():
     # startup: 280x158 gate image
     st = backdrop(icon, 280, 158, 0.4)
     st.paste(icon.resize((110, 110), Image.LANCZOS), (14, 24))
-    title(st, "DRAGON", 36, 28, cx=205); title(st, "QUEST V", 72, 28, cx=205)
+    title(st, "DRAGON", 36, 28, cx=205); title(st, "QUEST IV", 72, 28, cx=205)
     st.save(os.path.join(OUT, "startup.png"))
     for f in ("icon0", "bg0", "pic0", "startup"): print(f, Image.open(os.path.join(OUT, f + ".png")).size)
 

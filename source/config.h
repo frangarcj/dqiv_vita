@@ -2,8 +2,7 @@
  * config.h -- every path / address / size the native port depends on, in one place.
  *
  * DATA_PATH comes from CMake (-DDATA_PATH="ux0:data/dqiv/", trailing '/'); the rest is derived here.
- * The data directory is SHARED with the Unity+Mono experiment (port/): lib/, main.obb, assets/ are the same
- * files. Everything this port writes uses distinct names (log, saves) so both can coexist.
+ * Everything this port writes uses per-slot names (log, saves, cfg) so several worktrees can coexist.
  *
  *   lib/libdq4core.so lib/libsdlib_android.so   ARMv7 NEON libs of the APK (flat, original names)
  *   main.obb                                    the untouched OBB (libdq4core fopen()s + fseek()s it)

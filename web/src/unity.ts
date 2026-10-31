@@ -1,4 +1,4 @@
-// Unity 4.7 serialized file (format 9) reader + TypeTree value reader.
+// Unity 4.6.5 / 4.7 serialized file (format 9) reader + TypeTree value reader.
 // The value semantics mirror UnityPy 1.25's helpers/TypeTreeHelper.py (the reference converter's reader).
 import { CLASS_NAMES } from "./classids";
 import { TYPE_TREES } from "./typetrees";
@@ -11,7 +11,7 @@ export class PyFloat { constructor(public v: number) {} }
 
 const treeCache = new Map<number, TypeNode>();
 function mkNode(a: any): TypeNode { return { type: a[0], name: a[1], byteSize: 0, metaFlag: a[2], children: (a[3] ?? []).map(mkNode) }; }
-/** The game's files carry no type trees (stripped player build): like UnityPy we use the Unity 4.7.2 class database (typetrees.ts). */
+/** The game's files carry no type trees (stripped player build): like UnityPy we use its class database for 4.6.5f1 (typetrees.ts). */
 function classTree(classId: number): TypeNode | undefined {
   let n = treeCache.get(classId);
   if (!n && TYPE_TREES[classId]) treeCache.set(classId, n = mkNode(TYPE_TREES[classId]));

@@ -199,7 +199,7 @@ def write_pack(outdir, reg, results, container_entries, fails_gids, t0):
     objs_off = HDR
     res_off = objs_off + len(objs)
     str_off = res_off + len(resb)
-    hdr = bytearray(struct.pack("<4sIIIIIII", b"DQIVP", 1, n + 1, len(res_entries), objs_off, res_off, str_off, len(sp.b)))
+    hdr = bytearray(struct.pack("<4sIIIIIII", b"DQIV", 1, n + 1, len(res_entries), objs_off, res_off, str_off, len(sp.b)))
     hdr += struct.pack("<II", len(B.DF_NAMES), 0)
     hdr += bytes(64 - len(hdr))
     for i in range(8):

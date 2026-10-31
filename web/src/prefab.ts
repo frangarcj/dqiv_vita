@@ -67,13 +67,15 @@ function writeProps(w: B.W, className: string, props: Props) {
 }
 
 // ------------------------------------------------------------------ known MonoBehaviour layouts (no typetree in the files)
-const MB_SCHEMAS: Record<string, [string, "pptr" | "pptr[]"][]> = {
+type MbKind = "pptr" | "pptr[]" | "int";
+const MB_SCHEMAS: Record<string, [string, MbKind][]> = {
   MainLoop: [],
-  TouchPad: ["m_siColDebug", "m_siColMove", "m_siMovePad", "m_siMoveCurNormal", "m_siMoveCurBS", "m_siMoveCurLight", "m_siMoveDirs", "m_siMoveDirLight", "m_siMoveDirNormal"].map(n => [n, "pptr"]),
-  Boot: [["m_logoTexture", "pptr[]"], ["m_logoShader", "pptr"], ["m_obbMenuParts", "pptr"], ["m_obbFont", "pptr[]"], ["m_obbMat", "pptr[]"], ["m_obbmsg", "pptr"], ["m_quitmsg", "pptr"]],
+  // DQ4 (Unity 4.6.5): TouchPad serializes `public ePadState l_state` after the pptrs; Boot declares m_quitmsg third
+  TouchPad: [...["m_siColDebug", "m_siColMove", "m_siMovePad", "m_siMoveCurNormal", "m_siMoveCurBS", "m_siMoveCurLight", "m_siMoveDirs", "m_siMoveDirLight", "m_siMoveDirNormal"].map(n => [n, "pptr"] as [string, MbKind]), ["l_state", "int"]],
+  Boot: [["m_logoTexture", "pptr[]"], ["m_logoShader", "pptr"], ["m_quitmsg", "pptr"], ["m_obbMenuParts", "pptr"], ["m_obbFont", "pptr[]"], ["m_obbMat", "pptr[]"], ["m_obbmsg", "pptr"]],
 };
 
-function parseMbFields(raw: Uint8Array, schema: [string, string][]): [[string, any][], number] {
+function parseMbFields(raw: Uint8Array, schema: [string, MbKind][]): [[string, any][], number] {
   const dv = new DataView(raw.buffer, raw.byteOffset, raw.byteLength);
   let p = 8 + 4 + 8;                                   // m_GameObject, m_Enabled(+pad), m_Script
   const n = dv.getInt32(p, true);
@@ -82,6 +84,7 @@ function parseMbFields(raw: Uint8Array, schema: [string, string][]): [[string, a
   const out: [string, any][] = [];
   for (const [name, kind] of schema) {
     if (kind === "pptr") out.push([name, pptr()]);
+    else if (kind === "int") { out.push([name, dv.getInt32(p, true)]); p += 4; }
     else {
       const cnt = dv.getInt32(p, true); p += 4;
       const arr = [];
@@ -224,7 +227,8 @@ export class Builder {
         props.add("raw_hex", P_STR, [toHex(raw)]);
       }
       for (const [name, v] of fields) {
-        if (Array.isArray(v)) {
+        if (typeof v === "number") props.add(name, P_INT, [v]);
+        else if (Array.isArray(v)) {
           props.add(name + ".size", P_INT, [v.length]);
           v.forEach((e, i) => props.pptr(`${name}[${i}]`, e));
         } else props.pptr(name, v);
