@@ -53,7 +53,7 @@ rm -f "$FS/ux0/data/dqiv/trace$SLOT.on" "$FS/ux0/data/dqiv/replay$SLOT.on"
 rm -f "$FS/ux0/data/dqiv/input_script$SLOT.txt" "$FS/ux0/data/dqiv/charatest$SLOT.on" "$FS/ux0/data/dqiv/fxtest$SLOT.on"
 # CHARATEST="<first CharaTex idx> <count>": boot into the billboard sprite test scene (game/CharaTest.cpp) instead of the title
 [ -n "${CHARATEST:-}" ] && echo "$CHARATEST" > "$FS/ux0/data/dqiv/charatest$SLOT.on"
-# FXTEST="<battle|darklamp|morning|riremito|tabi|tabirev|spot|torch|sepia|buttons|endroll|slime> [start frame] [arg: endroll index 0-5]": boot into the screen-effect test scene (game/FxTest.cpp)
+# FXTEST="<battle|darklamp|morning|riremito|tabi|tabirev|buttons|all> [start frame]": boot into the screen-effect test scene (game/FxTest.cpp)
 [ -n "${FXTEST:-}" ] && echo "$FXTEST" > "$FS/ux0/data/dqiv/fxtest$SLOT.on"
 [ -n "${INPUT_SCRIPT:-}" ] && cp "$INPUT_SCRIPT" "$FS/ux0/data/dqiv/input_script$SLOT.txt"
 # ONE emulator on the whole Mac (16 GB RAM; swap shares the nearly full disk): serialize across all agents and all games.
