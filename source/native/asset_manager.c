@@ -30,6 +30,7 @@
 
 typedef struct {
     SceUID fd;
+    char path[256];
     int64_t base;      /* absolute offset of the window in the file */
     int64_t size;      /* window size */
     int64_t pos;       /* position inside the window */
@@ -125,8 +126,9 @@ static int64_t fl_data_off(SceUID fd, const fl_entry *e) {
     return (int64_t)e->hdr_off + 30 + *(uint16_t *)(lh + 26) + *(uint16_t *)(lh + 28);
 }
 
-static AAsset *asset_new(SceUID fd, int64_t base, int64_t size) {
+static AAsset *asset_new(SceUID fd, const char *path, int64_t base, int64_t size) {
     fake_asset *a = calloc(1, sizeof(*a));
+    snprintf(a->path, sizeof(a->path), "%s", path);
     a->fd = fd; a->base = base; a->size = size; a->pos = 0;
     sceIoLseek(fd, base, SCE_SEEK_SET);
     return (AAsset *)a;
@@ -151,7 +153,7 @@ AAsset *AAssetManager_open(AAssetManager *mgr, const char *filename, int mode) {
         int64_t off = fl_data_off(fd, e);
         if (off < 0) { sceIoClose(fd); return NULL; }
         l_debug("AAssetManager_open(obb:%s): off=%lld size=%u", lname, (long long)off, e->size);
-        return asset_new(fd, off, e->size);
+        return asset_new(fd, OBB_PATH, off, e->size);
     }
 
     /* 2. plain file below ASSETS_PATH */
@@ -161,7 +163,7 @@ AAsset *AAssetManager_open(AAssetManager *mgr, const char *filename, int mode) {
     if (fd >= 0) {
         int64_t size = sceIoLseek(fd, 0, SCE_SEEK_END);
         l_debug("AAssetManager_open(%s): size=%lld", path, (long long)size);
-        return asset_new(fd, 0, size);
+        return asset_new(fd, path, 0, size);
     }
 
     /* 3. last resort: a lowercase name of the filelist (a path relative to the OBB's assets/) */
@@ -171,7 +173,7 @@ AAsset *AAssetManager_open(AAssetManager *mgr, const char *filename, int mode) {
     const fl_entry *e = fl_find(lname);
     if (e && (fd = sceIoOpen(OBB_PATH, SCE_O_RDONLY, 0)) >= 0) {
         int64_t off = fl_data_off(fd, e);
-        if (off >= 0) return asset_new(fd, off, e->size);
+        if (off >= 0) return asset_new(fd, OBB_PATH, off, e->size);
         sceIoClose(fd);
     }
 
@@ -186,6 +188,15 @@ int AAsset_read(AAsset *asset, void *buf, size_t count) {
     if (left <= 0) return 0;
     if ((int64_t)count > left) count = (size_t)left;
     int r = sceIoRead(a->fd, buf, count);
+    if (r < 0) {   /* a console suspend invalidates open files unless FdFix or rePatch is installed */
+        SceUID fd = sceIoOpen(a->path, SCE_O_RDONLY, 0);
+        if (fd >= 0) {
+            sceIoClose(a->fd);
+            a->fd = fd;
+            sceIoLseek(fd, a->base + a->pos, SCE_SEEK_SET);
+            r = sceIoRead(fd, buf, count);
+        }
+    }
     if (r > 0) a->pos += r;
     return r;
 }

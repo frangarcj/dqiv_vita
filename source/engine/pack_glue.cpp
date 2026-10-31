@@ -113,7 +113,7 @@ static int BytesPerPixel(int pf) { return pf == DQIV_TF_A8 ? 1 : (pf == DQIV_TF_
 
 static Object* LoadTexture(uint32_t id) {
   DqvTexture hdr;
-  if (dqiv_read_part(g_pack, id, 0, sizeof(hdr), &hdr) != 0 || hdr.magic != DQIV_MAGIC_TEX) return nullptr;
+  if (dqiv_read_part(g_pack, id, 0, sizeof(hdr), &hdr) != 0 || hdr.magic != DQIV_MAGIC_TEX) { l_error("Texture %u: pack read failed", (unsigned)id); return nullptr; }
   Texture2D* t = new Texture2D();
   t->engineOwned = false;                                 // textures are never deleted by a sweep, only evicted
   t->name = PackName(id);

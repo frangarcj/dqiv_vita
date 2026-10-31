@@ -140,11 +140,29 @@ static void* aligned_alloc16(size_t n) {
     return (void*)a;
 }
 
+static int read_at(FILE* f, long pos, uint32_t len, void* dst) {
+    if (fseek(f, pos, SEEK_SET)) return -1;
+    return fread(dst, 1, len, f) == len ? 0 : -1;
+}
+
+/* A console suspend invalidates open files unless FdFix or rePatch is installed: reopen the data file when a read fails. */
+static int reopen_data_file(DqvPack* p, int i) {
+    char path[1024];
+    if (!p->dir) return -1;
+    snprintf(path, sizeof path, "%s/%s", p->dir, dqiv_str(p, p->hdr.data_files[i].name_off));
+    if (p->df[i]) fclose(p->df[i]);
+    p->df[i] = fopen(path, "rb");
+    return p->df[i] ? 0 : -1;
+}
+
 int dqiv_read_part(DqvPack* p, uint32_t id, uint32_t off, uint32_t len, void* dst) {
     const DqvObject* o = dqiv_object(p, id);
-    if (!o || !o->size || (uint64_t)off + len > o->size || !p->df[o->data_file]) return -1;
-    if (fseek(p->df[o->data_file], (long)(o->offset + off), SEEK_SET)) return -1;
-    return fread(dst, 1, len, p->df[o->data_file]) == len ? 0 : -1;
+    long pos;
+    if (!o || !o->size || (uint64_t)off + len > o->size) return -1;
+    pos = (long)(o->offset + off);
+    if (p->df[o->data_file] && read_at(p->df[o->data_file], pos, len, dst) == 0) return 0;
+    if (reopen_data_file(p, o->data_file)) return -1;
+    return read_at(p->df[o->data_file], pos, len, dst);
 }
 
 void* dqiv_load(DqvPack* p, uint32_t id, uint32_t* size_out) {
