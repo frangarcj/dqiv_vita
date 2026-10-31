@@ -46,6 +46,7 @@ MeshChara* NativeManager::m_dssa[24];
 FbxObject* NativeManager::m_model[16];
 NativeManager::FrameStats NativeManager::s_stats;
 static int s_frame = 0;
+static Vector3 s_charaPos[40]; static bool s_charaPosValid[40];      // last position the native sent for each character slot (input script `walk @slot`)
 static Vector3 s_heroPos; static bool s_heroPosValid = false;      // last position the native sent for character slot 0 (input script `walk`)
 
 NativeManager::NativeCmd NativeManager::m_cmd_tbl[NUM_CMDS] = {
@@ -179,6 +180,7 @@ void NativeManager::cmd_chara() {
   if (btst(num, 8192)) {
     Vector3 v = GetVector3();
     if (chara) { chara->SetPosition(v); chara->m_billboard_request = true; }
+    if ((num & 0xFF) < 40) { s_charaPos[num & 0xFF] = v; s_charaPosValid[num & 0xFF] = true; }
     if ((num & 0xFF) == 0) { s_heroPos = v; s_heroPosValid = true; }
     if ((num & 0xFF) != 0 && DevCheats::HeroPosLog() >= 2 && (num & 0xFF) < 40) {   // `heropos=2`: every character slot (NPC positions for walk scripts)
       static Vector3 s_lastN[40]; Vector3& l = s_lastN[num & 0xFF];
@@ -450,5 +452,6 @@ void NativeManager::Update(int padPress, int padToggle) {
 }
 
 bool DqvInBattle() { return NativeManager::InBattleStage(); }
+bool DqvCharaPos(int slot, float* x, float* z) { if ((unsigned)slot >= 40 || !s_charaPosValid[slot]) return false; *x = s_charaPos[slot].x; *z = s_charaPos[slot].z; return true; }
 bool DqvHeroPos(float* x, float* y, float* z) { if (!s_heroPosValid) return false; *x = s_heroPos.x; *y = s_heroPos.y; *z = s_heroPos.z; return true; }
 const char* DqvCurrentScene() { return NativeManager::s_sceneName.c_str(); }       // input script `sync` command (platform/vita_input.cpp)

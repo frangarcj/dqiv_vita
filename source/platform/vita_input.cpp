@@ -23,6 +23,7 @@
 using namespace miniunity;
 const char* DqvCurrentScene();                 // game/NativeManager.cpp: last map loaded by the native side (script `sync`)
 bool DqvInBattle();                           // game/NativeManager.cpp: the battle stage is up (script `roam`)
+bool DqvCharaPos(int slot, float* x, float* z);   // game/NativeManager.cpp: last position of any character slot (script `walk @slot`)
 bool DqvHeroPos(float* x, float* y, float* z); // game/NativeManager.cpp: last position the native sent for character 0 (script `walk`)
 
 /*
@@ -34,6 +35,7 @@ bool DqvHeroPos(float* x, float* y, float* z); // game/NativeManager.cpp: last p
  *     <F> touch <x> <y> [n=3]           finger down at (x,y) for n frames and lift (a tap)      <F>-<T>/<P> touch <x> <y> [n]
  *     <F> drag  <x0> <y0> <x1> <y1> [n=10]   finger swipe             <F> stick <lx> <ly> [<rx> <ry>]   analog sticks 0..255 (128 = centre)
  *     <F> sync  <text> [tap <btn> <period>]                   hold the script until NativeManager's last loaded map path contains <text>; later events are then relative to that moment
+ *     <F> walk  @<slot> [tol=1.0] [timeout=600]    same, following the character in native slot <slot> (an NPC; slots from `heropos=2` logs)
  *     <F> walk  <x> <z> [tol=0.5] [timeout=600] [map]   closed loop with the d-pad only: hold the directions that bring the hero (position as sent by the native, `heropos` units)
  *                                     towards (x,z) until within tol (or `timeout` frames, or the scene no longer contains [map]); later events are relative to that moment.  Screen up = +z, right = +x (calibrated: d-pad Up raises z)
  *     <F> roam <timeout> [period=40]    walk about with the d-pad (down, right, up, left bursts of <period> frames) until a random battle starts; during the battle only Cross is tapped (every 20 frames);
@@ -131,9 +133,12 @@ static void LoadScript() {
         unsigned m = 0; int per = 0;                                      // optional: `sync <text> tap <btn> <period>` taps while waiting
         if (w.size() >= 6 && w[3] == "tap") { m = ParseButtons(w[4]); per = atoi(w[5].c_str()); }
         Add(fr, A_SYNC, m, 0, 0, per, 0, w[2].c_str());
-      } else if (cmd == "walk" && w.size() >= 4) {
+      } else if (cmd == "walk" && w.size() >= 4 && w[2][0] != '@') {
         float tol = w.size() > 4 ? (float)atof(w[4].c_str()) : 0.5f; int to = w.size() > 5 ? atoi(w[5].c_str()) : 600;
         Add(fr, A_WALK, 0, (float)atof(w[2].c_str()), (float)atof(w[3].c_str()), to, (int)(tol * 1000.f), w.size() > 6 ? w[6].c_str() : "");
+      } else if (cmd == "walk" && w.size() >= 3 && w[2][0] == '@') {   // `walk @<slot> [tol=1.0] [timeout=600]`: follow a character (NPC) until within tol on both axes
+        float tol = w.size() > 3 ? (float)atof(w[3].c_str()) : 1.0f; int to = w.size() > 4 ? atoi(w[4].c_str()) : 600;
+        Add(fr, A_WALK, (unsigned)atoi(w[2].c_str() + 1) + 1, 0.f, 0.f, to, (int)(tol * 1000.f), "");
       } else if (cmd == "roam" && w.size() >= 3) {
         Add(fr, A_ROAM, 0, 0, 0, atoi(w[2].c_str()), w.size() > 3 ? atoi(w[3].c_str()) : 40);
       } else if (cmd == "autotap" && w.size() >= 4) {
@@ -164,7 +169,9 @@ static void RunScript(int frame) {
       const unsigned dirs = SCE_CTRL_UP | SCE_CTRL_DOWN | SCE_CTRL_LEFT | SCE_CTRL_RIGHT;
       if (!g_walkOn) { g_walkOn = true; g_walkStart = frame; g_walkLast = frame; l_info("SCRIPT f%d: walk to (%d, %d) /100", frame, (int)(a.x * 100.f), (int)(a.y * 100.f)); }
       float px, py, pz; bool have = ::DqvHeroPos(&px, &py, &pz);
-      float tol = a.b / 1000.f, dx = a.x - px, dz = a.y - pz;
+      float tx = a.x, tz = a.y;
+      if (a.mask) { if (!::DqvCharaPos((int)a.mask - 1, &tx, &tz)) have = false; }      // `walk @slot`: the target moves
+      float tol = a.b / 1000.f, dx = tx - px, dz = tz - pz;
       bool wrongMap = !a.text.empty() && !strstr(::DqvCurrentScene(), a.text.c_str());
       bool done = have && std::fabs(dx) <= tol && std::fabs(dz) <= tol;
       if (done || wrongMap || frame - g_walkStart > a.a) {
