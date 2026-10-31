@@ -7,6 +7,7 @@
 set -u
 DUR=${1:-40}
 SHOTS=${2:-300,600,900}
+[ -n "${TURBO:-}" ] && DUR=$(( DUR / 3 + 10 ))   # TURBO runs about 4x faster than real time: same frames in less wall-clock time
 HERE=$(cd "$(dirname "$0")/.." && pwd)
 V3K=/Users/frangar/Fun/vita3k/build/macos/bin
 BIN=$V3K/Vita3K.app/Contents/MacOS/Vita3K
