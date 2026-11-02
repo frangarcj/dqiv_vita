@@ -128,7 +128,7 @@ static void FitBattleZoom() {
   l_battleFrames++;
   if (l_battleFrames <= 90 && l_battleFrames >= 8 && MainLoop::m_camera) {
     float x0 = 1e9f, x1 = -1e9f, y0 = 1e9f, y1 = -1e9f;
-    for (int i = 0; i < 40; i++) {
+    for (int i = 0; i < 24; i++) {                                                  // m_dssa has 24 slots in DQ4 (40 in DQ5/DQ6)
       MeshChara* mc = NativeManager::GetMeshChara(i);
       if (!mc || !mc->m_chara || !mc->m_meshFilter || !mc->m_meshFilter->sharedMesh || !mc->m_renderer || !mc->m_renderer->enabled || mc->m_chara->layer != 0) continue;
       for (const Vector3& v : mc->m_meshFilter->sharedMesh->vertices) {
