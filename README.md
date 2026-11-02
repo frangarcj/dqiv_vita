@@ -8,7 +8,7 @@
 
 A port of *Dragon Quest IV: Chapters of the Chosen (Android)* for the **PlayStation Vita**, based on the original ARMv7 game. Like [FF3 Vita](https://github.com/frangarcj/ff3_vita) and [FF6 Vita](https://github.com/frangarcj/ff6_vita), it loads the Android game files instead of including them in the download. Everything the Unity engine did is reimplemented natively. You'll need your own copy of the game.
 
-**Download:** [dqivn.vpk (v1.0.0-rc1)](https://github.com/frangarcj/dqiv_vita/releases/download/v1.0.0-rc1/dqivn.vpk)
+**Download:** [dqivn.vpk (v1.0.0-rc2)](https://github.com/frangarcj/dqiv_vita/releases/download/v1.0.0-rc2/dqivn.vpk)
 
 ## Installation
 
