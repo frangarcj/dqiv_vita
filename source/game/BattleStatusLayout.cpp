@@ -20,7 +20,8 @@ public:
   Transform* root = nullptr; int frames = 4; float faceScale = 1.f, downPx = 0.f; bool init = false; bool faceDone[4] = {};
   Transform* cursor = nullptr; Vector3 cursorLast, cursorBase; bool cursorHave = false;      // the active-member arrow (BattleUpCursor), drawn by the Status camera so it can sit beside the enlarged face
   TextMesh* label[4] = {}; MenuParts* plate[4] = {}; int plateLines[4] = {-1, -1, -1, -1}, plateW[4] = {};
-  void Update() override {
+  // LateUpdate, not Update: MenuPortSystem::LateUpdate runs the frame's code, whose SetActiveRecursively(true) also turns the plates on; they must be off again before the frame is drawn
+  void LateUpdate() override {
     if (!root) return;
     if (!init) {
       init = true;
