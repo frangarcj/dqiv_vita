@@ -160,6 +160,9 @@ void TestColliders() {
   g->transform->localScale = Vector3(2, 1, 1); g->transform->localPosition = Vector3(10, 0, 0);
   Check(bc->Raycast(Ray{ Vector3(11.5f, 5, 0), Vector3(0, -2, 0) }, &h, 1e9f) && Near(h.distance, 4.f), "BoxCollider under scale+translation, non-unit direction: dist %.3f", h.distance);
   Check(!bc->Raycast(Ray{ Vector3(11.5f, 5, 0), Vector3(0, -2, 0) }, &h, 3.f), "maxDistance honoured");
+  g->SetActive(false);
+  Check(!bc->Raycast(Ray{ Vector3(11.5f, 5, 0), Vector3(0, -2, 0) }, &h, 1e9f), "collider of an inactive GameObject is not hit");
+  g->SetActive(true);
   GameObject* s = new GameObject("sph"); SphereCollider* sc = s->AddComponent<SphereCollider>(); sc->radius = 1; s->transform->localPosition = Vector3(0, 0, 10);
   Check(sc->Raycast(Ray{ Vector3(0, 0, 0), Vector3(0, 0, 1) }, &h, 1e9f) && Near(h.distance, 9.f), "SphereCollider dist %.3f", h.distance);
   GameObject* m = new GameObject("mesh"); MeshCollider* mc = m->AddComponent<MeshCollider>();

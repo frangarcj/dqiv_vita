@@ -16,6 +16,9 @@ LocalRay ToLocal(const Collider* c, const Ray& r) {
   Matrix4x4 w2l = c->transform()->worldToLocalMatrix();
   return LocalRay{ w2l.MultiplyPoint3x4(r.origin), w2l.MultiplyVector(r.direction) };
 }
+// Unity: a collider whose GameObject is inactive is not in the physics scene, so Collider.Raycast never hits it. MenuPortItem hides unused buttons
+// (an empty spell list, short item lists) with SetActiveRecursively(false); without this test their colliders still took touches.
+bool Live(const Collider* c) { return c->transform() && c->gameObject && c->gameObject->activeInHierarchy(); }
 bool Finish(const Ray& r, float t, float maxDist, RaycastHit* hit) {
   float len = r.direction.magnitude();
   if (t < 0 || t * len > maxDist) return false;
@@ -25,7 +28,7 @@ bool Finish(const Ray& r, float t, float maxDist, RaycastHit* hit) {
 }  // namespace
 
 bool BoxCollider::Raycast(const Ray& ray, RaycastHit* hit, float maxDist) const {
-  if (!transform()) return false;
+  if (!Live(this)) return false;
   LocalRay l = ToLocal(this, ray);
   Vector3 mn = center - size * 0.5f, mx = center + size * 0.5f;
   const float o[3] = { l.o.x, l.o.y, l.o.z }, d[3] = { l.d.x, l.d.y, l.d.z }, lo[3] = { mn.x, mn.y, mn.z }, hi[3] = { mx.x, mx.y, mx.z };
@@ -44,7 +47,7 @@ bool BoxCollider::Raycast(const Ray& ray, RaycastHit* hit, float maxDist) const 
 }
 
 bool SphereCollider::Raycast(const Ray& ray, RaycastHit* hit, float maxDist) const {
-  if (!transform()) return false;
+  if (!Live(this)) return false;
   Vector3 s = transform()->lossyScale();
   float sc = std::max(std::fabs(s.x), std::max(std::fabs(s.y), std::fabs(s.z)));
   Vector3 c = transform()->TransformPoint(center);
@@ -59,7 +62,7 @@ bool SphereCollider::Raycast(const Ray& ray, RaycastHit* hit, float maxDist) con
 }
 
 bool MeshCollider::Raycast(const Ray& ray, RaycastHit* hit, float maxDist) const {
-  if (!transform() || !sharedMesh) return false;
+  if (!Live(this) || !sharedMesh) return false;
   LocalRay l = ToLocal(this, ray);
   const std::vector<Vector3>& v = sharedMesh->vertices;
   float best = 1e30f;
