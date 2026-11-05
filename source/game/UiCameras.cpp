@@ -64,6 +64,14 @@ void RetagFrom(Transform* t, int from, int layer) {
   for (Transform* c : t->children()) RetagFrom(c, from, layer);
 }
 
+// lowest world z of the drawn meshes under t (UI plane = XZ, no rotation in the menu parts)
+static void LowestZ(Transform* t, float& z) {
+  if (!t->gameObject->activeSelf) return;
+  if (MeshFilter* mf = t->gameObject->GetComponent<MeshFilter>())
+    if (Mesh* m = mf->sharedMesh; m && !m->vertices.empty()) z = std::min(z, t->TransformPoint(m->bounds.min()).z);
+  for (Transform* c : t->children()) LowestZ(c, z);
+}
+
 void Update() {
   if (MenuMessage::m_window && BootEnabled()) {                  // the message window follows the phase: boot = centre panel (nominal portrait layout), game = bottom-centre dialogue
     int want = s_bootPorts > 0 ? kBootLayer : (g_dialogue ? kDialogueLayer : 8);
@@ -86,7 +94,14 @@ void Update() {
   float x = -Layout::DialogueShiftNdc() * halfW;
   g_dialogue->orthographicSize = H;
   float margin = 2.f;                                  // UI units between the window and the bottom edge (the original windows keep a small gap too)
-  float z = MenuMessage::s_bottomZ - margin + H;      // screen bottom (z - H) = window bottom - margin
+  // The Yes/No box hangs below the message window. Only canvas type 3 reserves its height in s_bottomZ; other windows (the inn's "Will you be staying?")
+  // open it too, and it fell below the bottom edge. While it is shown on this camera, its real lower edge counts.
+  float bottom = MenuMessage::s_bottomZ;
+  if (MenuPortItemTable::s_yesNoPort > 0 && MenuPortItemTable::s_yesNoPort < 32)
+    if (MenuPortItem* yn = dynamic_cast<MenuPortItem*>(MenuPortSystem::s_ports[MenuPortItemTable::s_yesNoPort]))
+      if (yn->m_uiLayer == kDialogueLayer && yn->m_objectActive && yn->m_bDraw)
+        for (MenuParts* parts : yn->m_partsList) LowestZ(parts->transform(), bottom);
+  float z = bottom - margin + H;                      // screen bottom (z - H) = window bottom - margin
   g_dialogue->transform()->setPosition(Vector3(x, 100.f, z));
 }
 }  // namespace UiCameras
