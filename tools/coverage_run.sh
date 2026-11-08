@@ -1,6 +1,6 @@
 #!/bin/bash
 # Coverage smoke tests: runs every tools/coverage/<name>.warp (WarpTest script, see game/WarpTest.hpp) one after the other in Vita3K (muted, one emulator at a time),
-# keeps screenshots + log extracts in build/coverage/<name>/ and prints a one-line verdict per scenario (counts of STUB / UNPORTED / ERR / DABT / fatal).
+# keeps screenshots + log extracts in build/coverage/<name>/ and prints a one-line verdict per scenario (counts of STUB / UNPORTED / ERR / DABT / NULL (null-page accesses) / fatal).
 #   tools/coverage_run.sh [name ...]       (default: all)       header lines of a .warp:  `#shots 450,650`  `#dur 60`  `#input <script file>`
 set -u
 HERE=$(cd "$(dirname "$0")/.." && pwd)
@@ -22,8 +22,10 @@ for n in "${NAMES[@]}"; do
   L=$HERE/build/dqivn.log
   sed -n '/WarpTest/,$p' "$L" | grep -E "STUB|UNPORTED|\[ERR\]|\[FTL\]|\[WRN\]" | sort | uniq -c > "$OUT/$n/issues.txt"
   grep -E "map_name|WarpTest" "$L" | cut -c1-140 > "$OUT/$n/maps.txt"
-  D=$(grep -c "DABT" "$HERE/build/vita3k-run.log"); S=$(grep -c "STUB" "$OUT/$n/issues.txt"); U=$(grep -c "UNPORTED" "$OUT/$n/issues.txt")
+  D=$(grep -c "DABT" "$HERE/build/vita3k-run.log")
+  # Vita3K logs a read or write in the null page (a NULL pointer + small offset) and lets the guest go on; the console kills the app there (v1.0.0-rc3 Colosseum crash)
+  Z=$(grep -cE "handle_access_violation.*Address=0x[0-9a-fA-F]{1,3}$" "$HERE/build/vita3k-run.log"); S=$(grep -c "STUB" "$OUT/$n/issues.txt"); U=$(grep -c "UNPORTED" "$OUT/$n/issues.txt")
   E=$(grep -c "\[ERR\]\|\[FTL\]" "$OUT/$n/issues.txt"); N=$(ls "$OUT/$n" | grep -c jpg); F=$(grep -c "^\[INF\] F[0-9]" "$L")
-  echo "$n: shots=$N frames=$F DABT=$D STUB=$S UNPORTED=$U ERR=$E"
+  echo "$n: shots=$N frames=$F DABT=$D NULL=$Z STUB=$S UNPORTED=$U ERR=$E"
 done
 rm -f "$FS/warp$SLOT.on"

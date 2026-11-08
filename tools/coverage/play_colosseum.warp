@@ -1,0 +1,9 @@
+#dur 200
+#input play_colosseum.txt
+delay 150
+chapter 2
+wait 300
+noencount 1
+field
+wait 1000
+town cccf1b
