@@ -1,5 +1,6 @@
 # PAD ONLY (v1.0.0-rc3 console crash): the area map opened and closed on the world map (Square, Circle), then Square in the Chapter 2 Colosseum (cccf1b: shop list, no town map).
 # Before the MenuItem::term fix the shop list sent to a closed port: MenuPort::Send(NULL), a data abort on the console, a null access (NULL=1, 'Address=0x4') in Vita3K.
+# The game autosaves on the way (saves<slot>/data5.dat + data9.dat), and Continue then resumes that autosave: keep this scenario out of the play_church -> play_load pair (the ch* name runs it first).
 0 sync worldmap
 150 shot w0
 160 tap square 4
