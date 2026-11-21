@@ -8,6 +8,9 @@
 //   +0x60  (0x1417ec)  sub r4, r4, #4     -> #kFieldBack   first column (also the packet's startX)
 //   +0x138 (0x1418c4)  cmp r2, #20        -> #kFieldFwd    last column (loop while col - base <= 20)
 //   +0x154 (0x1418e0)  sub r4, r3, #4     -> #kFieldBack   column reset at the start of each row
+// FieldData::drawSymbol has a separate culling rectangle. Its X range starts at cameraX - 128 and spans 256 units,
+// plus a margin of 64..96 per side. Widen that margin to 480 units on each side to cover the panoramic camera,
+// including the 1.25x field scale, the optional horizontal shift and up to 64 units of sprite width. Keep the original Y checks.
 // Every word is checked before it is written; a different libdq4core build is left alone.
 #include "native/field_patch.hpp"
 
@@ -29,6 +32,8 @@ bool PatchFieldBlock() {
     { 0x1417ec, 0xe2444004u, 0xe2444000u | kFieldBack },
     { 0x1418c4, 0xe3520014u, 0xe3520000u | kFieldFwd },
     { 0x1418e0, 0xe2434004u, 0xe2434000u | kFieldBack },
+    { 0x141fe4, 0xe0661001u, 0xe2411e1eu },   // drawSymbol: rsb r1, r6, r1 -> sub r1, r1, #480 (left)
+    { 0x141ff4, 0xe0800006u, 0xe2800e1eu },   // drawSymbol: add r0, r0, r6 -> add r0, r0, #480 (right)
   };
   for (const Site& s : sites) if (*(volatile uint32_t*)(base + s.vaddr) != s.expect) { l_error("PatchFieldBlock: unexpected word %08x at +%x, not patching", *(volatile uint32_t*)(base + s.vaddr), s.vaddr); return false; }
   for (const Site& s : sites) {
@@ -36,7 +41,7 @@ bool PatchFieldBlock() {
     kuKernelCpuUnrestrictedMemcpy((void*)(base + s.vaddr), &w, sizeof(w));
     kuKernelFlushCaches((void*)(base + s.vaddr), 4);
   }
-  l_success("world map tile block widened to %d columns (back %d, forward %d)", kFieldCols, kFieldBack, kFieldFwd);
+  l_success("world map tile block widened to %d columns (back %d, forward %d); symbol culling widened", kFieldCols, kFieldBack, kFieldFwd);
   return true;
 }
 

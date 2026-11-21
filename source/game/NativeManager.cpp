@@ -86,7 +86,7 @@ void NativeManager::cmd_fld_load() {
     m_fld.Term();
   }
   m_anim_list.clear();
-  FldObject::s_skyStretch = Layout::Wide() ? (float)Layout::SurfaceW() / (float)Layout::SurfaceH() / Layout::kDesignAspect : 1.f;   // landscape: widen the ev01 title sky
+  FldObject::s_skyStretch = Layout::Wide() ? (float)Layout::SurfaceW() / (float)Layout::SurfaceH() / Layout::kDesignAspect : 1.f;
   m_fld.Load(text);
   m_fld_load = true;
   if (num2 == 1) m_fld.SetDispScale(6.f, 6.f, 6.f);

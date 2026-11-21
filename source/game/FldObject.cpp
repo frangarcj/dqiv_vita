@@ -443,7 +443,9 @@ void FldObject::init_fld() {
     bset(m_map_objs[37]->flag, 134217728);
     set_priority2(m_map_objs[4].get(), 2999);
   }
-  if (s_skyStretch != 1.f && m_data_path.find("ev/ev01/") != std::string::npos && !m_map_objs.empty() && m_map_objs[0]->model) {   // landscape title: the cloud plane is only 34 units wide
+  // Object 0 is the distant sky plane in both the title and the ending flyover.
+  if (s_skyStretch != 1.f && (m_data_path == "map/ev/ev01/out/ev01" || m_data_path == "map/ev/ev09/out/ev09") &&
+      !m_map_objs.empty() && m_map_objs[0]->model) {
     m_map_objs[0]->scl.x *= s_skyStretch;
     m_map_objs[0]->model->localScale = m_map_objs[0]->scl;
   }
